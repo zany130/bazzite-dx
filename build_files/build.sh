@@ -42,5 +42,5 @@ sed -i -E \
      -e 's/^(kcm_plymouth\.desktop)=true/\1=false/' \
      /etc/xdg/kdeglobals
 
-systemctl enable bazzzite-autologin.service
+systemctl enable bazzite-autologin.service
 systemctl disable uupd.timer
