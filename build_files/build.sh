@@ -10,15 +10,34 @@ set -ouex pipefail
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # this installs a package from fedora repos
-dnf5 install -y tmux 
+dnf5 install -y \
+coolercontrol \
+kvantum \
+liqudctl \
+refind \
+refind-tools \
+sbctl \
+solaar
 
 # Use a COPR Example:
-#
-# dnf5 -y copr enable ublue-os/staging
-# dnf5 -y install package
-# Disable COPRs so they don't end up enabled on the final image:
-# dnf5 -y copr disable ublue-os/staging
+
+#dnf5 -y copr enable agundur/KCast
+#dnf5 -y install kcast
 
 #### Example for enabling a System Unit File
 
-systemctl enable podman.socket
+# Renable -deck specfic changes
+curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
+curl --retry 3 -Lo /etc/sddm.conf.d/steamos.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf && \
+curl --retry 3 -Lo /etc/sddm.conf.d/virtualkbd.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf
+
+ sed -i -E \
+      -e 's/^(action\/switch_user)=true/\1=false/' \
+      -e 's/^(action\/start_new_session)=true/\1=false/' \
+      -e 's/^(action\/lock_screen)=true/\1=false/' \
+      -e 's/^(kcm_sddm\.desktop)=true/\1=false/' \
+      -e 's/^(kcm_plymouth\.desktop)=true/\1=false/' \
+      /etc/xdg/kdeglobals
+
+ systemctl enable bazzzite-autologin.service
+ systemctl disable uupd.timer
