@@ -17,7 +17,7 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 dnf5 install -y \
 coolercontrol \
 kvantum \
-liqudctl \
+liquidctl \
 rEFInd \
 rEFInd-tools \
 sbctl \
