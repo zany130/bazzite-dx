@@ -19,12 +19,14 @@ coolercontrol \
 google-authenticator \
 kvantum \
 liquidctl \
-plasma-discover \
 rEFInd \
 rEFInd-tools \
 sbctl \
 smb4k \
 solaar
+
+# install only nessicary plasma-discover packages for plasmoids
+dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns plasma-discover-notifier
 
 # Enable COPR'S
 # dnf5 -y copr enable agundur/KCast
