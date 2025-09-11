@@ -30,17 +30,18 @@ sbctl \
 smb4k \
 solaar
 
-# Use a COPR Example:
-#copr enable agundur/KCast /
-copr enable deltacopy/darkly
-copr enable matinlotfali/KDE-Rounded-Corners 
+# Enable COPR'S
+dnf5 -y copr enable \
+agundur/KCast  \
+deltacopy/darkly \
+matinlotfali/KDE-Rounded-Corners
+
+# install packages from copr
 dnf5 install -y \
 darkly \
 kwin-effect-roundcorners
 
-#### Example for enabling a System Unit File
-
-# Renable -deck specfic changes
+### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
 curl --retry 3 -Lo /etc/sddm.conf.d/steamos.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf && \
 curl --retry 3 -Lo /etc/sddm.conf.d/virtualkbd.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf
