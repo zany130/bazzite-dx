@@ -16,14 +16,21 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 # Use a COPR Example:
 #copr enable agundur/KCast /
 copr enable deltacopy/darkly
- 
+copr enable matinlotfali/KDE-Rounded-Corners 
+
 # this installs a package from fedora repos
 dnf5 install -y \
 coolercontrol \
 darkly \
 google-authenticator \
 kvantum \
+kwin-effect-roundcorners \
 liquidctl \
+plasma-discover \
+plasma-discover-kns \
+plasma-discover-libs \
+plasma-discover-notifier \
+plasma-discover-packagekit \
 rEFInd \
 rEFInd-tools \
 sbctl \
