@@ -20,6 +20,7 @@ google-authenticator \
 kvantum \
 liquidctl \
 plasma-discover \
+plasma-discover-flatpak \
 plasma-discover-kns \
 plasma-discover-libs \
 plasma-discover-notifier \
