@@ -20,7 +20,6 @@ google-authenticator \
 kvantum \
 liquidctl \
 plasma-discover \
-plasma-discover-flatpak \
 rEFInd \
 rEFInd-tools \
 sbctl \
