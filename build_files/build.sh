@@ -31,10 +31,9 @@ smb4k \
 solaar
 
 # Enable COPR'S
-dnf5 -y copr enable \
-agundur/KCast  \
-deltacopy/darkly \
-matinlotfali/KDE-Rounded-Corners
+# dnf5 -y copr enable agundur/KCast
+dnf5 -y copr enable deltacopy/darkly
+dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 
 # install packages from copr
 dnf5 install -y \
