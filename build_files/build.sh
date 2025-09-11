@@ -33,12 +33,13 @@ solaar
 # Enable COPR'S
 # dnf5 -y copr enable agundur/KCast
 dnf5 -y copr enable deltacopy/darkly
+dnf5 -y copr enable errornointernet/klassy/
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-
 # install packages from copr
 dnf5 install -y \
 darkly \
-kwin-effect-roundcorners
+kwin-effect-roundcorners \
+klassy
 
 ### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
