@@ -21,10 +21,6 @@ kvantum \
 liquidctl \
 plasma-discover \
 plasma-discover-flatpak \
-plasma-discover-kns \
-plasma-discover-libs \
-plasma-discover-notifier \
-plasma-discover-packagekit \
 rEFInd \
 rEFInd-tools \
 sbctl \
