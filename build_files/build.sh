@@ -22,6 +22,7 @@ liquidctl \
 rEFInd \
 rEFInd-tools \
 sbctl \
+smb4k \
 solaar
 
 # Use a COPR Example:
