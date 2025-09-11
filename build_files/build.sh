@@ -16,6 +16,7 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 # this installs a package from fedora repos
 dnf5 install -y \
 coolercontrol \
+google-authenticator \
 kvantum \
 liquidctl \
 rEFInd \
