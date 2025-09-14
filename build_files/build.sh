@@ -15,8 +15,8 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
-sudo dnf5 config-manager setopt rpmfusion-nonfree.enabled=1
-sudo dnf5 config-manager setopt rpmfusion-free.enabled=1
+dnf5 config-manager setopt rpmfusion-nonfree.enabled=1
+dnf5 config-manager setopt rpmfusion-free.enabled=1
 
 # this installs a package from fedora repos
 dnf5 install -y \
