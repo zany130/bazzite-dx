@@ -19,6 +19,8 @@ coolercontrol \
 google-authenticator \
 kvantum \
 liquidctl \
+megasync \
+dolphin-megasync \
 rEFInd \
 rEFInd-tools \
 sbctl \
