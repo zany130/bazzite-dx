@@ -29,6 +29,7 @@ kvantum \
 liquidctl \
 megasync \
 dolphin-megasync \
+python3-pygame \
 rEFInd \
 rEFInd-tools \
 sbctl \
