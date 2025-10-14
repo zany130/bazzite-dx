@@ -42,11 +42,14 @@ dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover
 # Enable COPR'S
 # dnf5 -y copr enable agundur/KCast
 dnf5 -y copr enable deltacopy/darkly
+dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable errornointernet/klassy
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 # install packages from copr
 dnf5 install -y \
 darkly \
+HeadsetControl \
+HeadsetControl-Qt \
 kwin-effect-roundcorners \
 klassy
 
