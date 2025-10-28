@@ -1,0 +1,24 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+
+  "enabledManagers": ["dockerfile"],
+
+  "docker": {
+    "pinDigests": true
+  },
+
+  "packageRules": [
+    {
+      "matchManagers": ["dockerfile"],
+      "matchDatasources": ["docker"],
+      "matchFileNames": ["Containerfile", "**/Containerfile", "Dockerfile", "**/Dockerfile"],
+      "matchPackagePatterns": ["^ghcr\\.io/ublue-os/"],
+      "groupName": "Bazzite base image",
+      "labels": ["renovate", "base-image"],
+      "automerge": true,
+      "automergeType": "branch",
+      "stabilityDays": 0
+    }
+  ]
+}
