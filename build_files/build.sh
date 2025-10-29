@@ -45,13 +45,16 @@ dnf5 -y copr enable deltacopy/darkly
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable errornointernet/klassy
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
+dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin 
+
 # install packages from copr
 dnf5 install -y \
 darkly \
 HeadsetControl \
 HeadsetControl-Qt \
 kwin-effect-roundcorners \
-klassy
+klassy \
+wallpaper-engine-kde-plugin
 
 ### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
