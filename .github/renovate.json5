@@ -19,6 +19,8 @@
     },
     {
       "automerge": true,
+      "automergeType": "pr",
+      "stabilityDays": 0,
       "matchUpdateTypes": ["digest"],
       "matchDepNames": ["ghcr.io/ublue-os/bazzite-dx"],
     }
