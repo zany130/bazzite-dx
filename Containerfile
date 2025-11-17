@@ -3,7 +3,7 @@ FROM scratch AS ctx
 COPY build_files /
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:488fd1b83cf03467111f0b978461c495398821a22370d0d2c37c42689dd43877
+FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:b61cae041752f65687b8e9f103adcb3c2c894cb467b68aba38fb3d796396b705
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
@@ -18,13 +18,25 @@ FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:488fd1b83cf03467111f0b978461c4953
 ## make modifications desired in your image and install packages by modifying the build.sh script
 ## the following RUN directive does all the things required to run "build.sh" as recommended.
 
+COPY system_files/ /
+
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \
     --mount=type=cache,dst=/var/log \
     --mount=type=tmpfs,dst=/tmp \
     /ctx/build.sh && \
+    \
+    # Enforce correct permissions on sensitive files
+    chmod 0440 /etc/sudoers.d/1-AllowScripts && \
+    chmod 0644 /etc/pam.d/sshd && \
+    chmod 0644 /etc/polkit-1/rules.d/90-plugin-loader.rules && \
+    chmod 0644 /etc/ublue-os/topgrade.toml && \
+    chmod 0644 /etc/ssh/sshd_config.d/99-bazzite.conf && \
+    chmod 0755 /usr/local/sbin/reset-video-port && \
+    \
     ostree container commit
     
 ### LINTING
 ## Verify final image and contents are correct.
 RUN bootc container lint
+

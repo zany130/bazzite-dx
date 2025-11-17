@@ -1,0 +1,116 @@
+#!/bin/sh
+# Usage:
+#   ./reset-port.sh <NUMBER|PCI-ID> <PORT>   # e.g. 1 DP-2  or  0000:03:00.0 DP-2
+#   ./reset-port.sh --list                   # Show available connectors
+#
+# Notes:
+# - You need to have a sudoers rule for example:  zany130 ALL=(ALL) NOPASSWD: /home/zany130/Scripts/reset-video-port.sh
+# - This script re-execs itself via sudo (no password) if not already root,
+#   then runs everything as root with NO inner 'sudo' calls.
+
+set -u
+
+# If not root, re-exec this script via sudo (this matches your sudoers rule).
+if [ "$(id -u)" != "0" ]; then
+  exec sudo -n "$0" "$@"
+fi
+
+# ---------- helpers ----------
+build_pci_to_card_map() {
+  # prints lines: "<PCI-ID> <cardN>"
+  for p in /sys/class/drm/card*/device; do
+    [ -e "$p" ] || continue
+    card="$(basename "$(dirname "$p")")"                    # card0, card1, ...
+    dev="$(basename "$(readlink -f "$p" 2>/dev/null)")" || dev=""
+    [ -n "$dev" ] || continue
+    printf "%s %s\n" "$dev" "$card"
+  done
+}
+
+card_from_pci() {
+  pci="$1"
+  build_pci_to_card_map | awk -v p="$pci" '$1==p{print $2; exit}'
+}
+
+list_connectors() {
+  echo "Available connectors:"
+  /usr/bin/find /sys/kernel/debug/dri -maxdepth 3 -type f -name trigger_hotplug 2>/dev/null \
+  | while IFS= read -r f; do
+      # Expect: /sys/kernel/debug/dri/<BASE>/<PORT>/trigger_hotplug
+      base="$(basename "$(dirname "$(dirname "$f")")")"   # BASE = numeric card dir or PCI-ID
+      port="$(basename "$(dirname "$f")")"
+      [ -n "$base" ] || continue
+      if printf "%s" "$base" | grep -Eq '^[0-9]+$'; then
+        printf "  %s/%s\n" "$base" "$port"
+      else
+        c="$(card_from_pci "$base")"
+        if [ -n "$c" ]; then
+          printf "  %s/%s  (aka %s/%s)\n" "${c#card}" "$port" "$base" "$port"
+        else
+          printf "  %s/%s\n" "$base" "$port"
+        fi
+      fi
+    done | sort -u || true
+
+  # Fallback hint if nothing exists
+  if [ "$(/usr/bin/find /sys/kernel/debug/dri -type f -name trigger_hotplug 2>/dev/null | wc -l)" -eq 0 ]; then
+    echo "  (none found)"
+    echo "Hint: mount debugfs: sudo mount -t debugfs none /sys/kernel/debug"
+  fi
+}
+
+candidate_bases() {
+  key="$1"
+  if printf "%s" "$key" | grep -Eq '^[0-9]+$'; then
+    printf "%s\n" "$key"
+    num="card${key}"
+    build_pci_to_card_map | awk -v c="$num" '$2==c{print $1}'
+  else
+    printf "%s\n" "$key"
+    c="$(card_from_pci "$key")"
+    [ -n "$c" ] && printf "%s\n" "${c#card}"
+  fi
+}
+
+# ---------- modes ----------
+if [ "${1:-}" = "--list" ]; then
+  list_connectors
+  exit 0
+fi
+
+if [ -z "${1:-}" ] || [ -z "${2:-}" ]; then
+  echo "Usage: $0 <NUMBER|PCI-ID> <PORT>"
+  echo "       $0 --list"
+  exit 1
+fi
+
+INPUT_BASE="$1"   # e.g. 1  or  0000:03:00.0
+PORT="$2"
+
+# Resolve target path (try numeric and PCI layouts)
+TARGET=""
+for base in $(candidate_bases "$INPUT_BASE"); do
+  case "$base" in
+    card[0-9]*) base="${base#card}" ;;
+  esac
+  path="/sys/kernel/debug/dri/${base}/${PORT}/trigger_hotplug"
+  [ -e "$path" ] && { TARGET="$path"; break; }
+done
+
+if [ -z "$TARGET" ]; then
+  echo "Error: Could not find trigger_hotplug for '$INPUT_BASE' port '$PORT'."
+  list_connectors
+  echo "Tip: Use one of the pairs above. Examples:"
+  echo "  $0 1 DP-2"
+  echo "  $0 0000:03:00.0 DP-2"
+  exit 1
+fi
+
+# Trigger hotplug (we are root now; no sudo, no tee needed)
+if printf "1" > "$TARGET"; then
+  echo "Success: Hotplug reset triggered on $(dirname "$TARGET" | awk -F'/dri/' '{print $2}')"
+else
+  status=$?
+  echo "Error: Failed to trigger hotplug. Exit code: $status"
+  exit $status
+fi

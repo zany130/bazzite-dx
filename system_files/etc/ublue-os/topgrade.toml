@@ -1,0 +1,6 @@
+[misc]
+only = ["system", "distrobox", "containers", "app_man", "flatpak", "brew_cask", "brew_formula", "firmware", "chezmoi", "pip3", "pipx", "cargo", "dotnet", "node", "gem", "spicetify", "micro", "protonup", "tldr", "waydroid", "protonup", "custom_commands"]
+
+[commands]
+"Mozilla GNOME Themes" = "/usr/libexec/topgrade/mozilla-gnome-theme-update"
+"Third Party CSS Loader Themes" = "/usr/libexec/topgrade/third-party-css-loader-update"
