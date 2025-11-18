@@ -23,7 +23,7 @@ FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:b61cae041752f65687b8e9f103adcb3c2
 ## Uncomment the following line if one desires to make /opt immutable and be able to be used
 ## by the package manager.
 
- RUN rm /opt && mkdir /opt
+# RUN rm /opt && mkdir /opt
 
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script
