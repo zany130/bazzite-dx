@@ -8,6 +8,8 @@ StartLimitBurst=5
 [Service]
 Type=simple
 RemainAfterExit=true
+User=zany130
+Group=zany130
 ExecStart=/usr/local/bin/LG_Buddy_Startup
 ExecStop=/usr/local/bin/LG_Buddy_Shutdown
 StandardOutput=journal
