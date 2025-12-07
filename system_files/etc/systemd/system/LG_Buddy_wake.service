@@ -5,6 +5,8 @@ After=suspend.target hibernate.target hybrid-sleep.target suspend-then-hibernate
 [Service]
 Type=oneshot
 RemainAfterExit=false
+User=zany130
+Group=zany130
 ExecStart=/usr/local/bin/LG_Buddy_Startup
 StandardOutput=journal
 StandardError=journal
