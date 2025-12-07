@@ -44,6 +44,11 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod 0644 /etc/ublue-os/topgrade.toml && \
     chmod 0644 /etc/ssh/sshd_config.d/99-bazzite.conf && \
     chmod 0755 /usr/local/sbin/reset-video-port && \
+    # Mark binaries as executable
+    chmod +x /etc/NetworkManager/dispatcher.d/pre-down.d/LG_Buddy_sleep && \
+	chmod +x /usr/bin/LG_Buddy_Startup && \
+ 	chmod +x /usr/bin/LG_Buddy_Shutdown && \
+    chmod +x /usr/local/sbin/reset-video-port && \
     \
     ostree container commit
     

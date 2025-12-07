@@ -1,0 +1,27 @@
+#!/bin/bash
+
+# ============================================================================
+# LG TV Shutdown Script
+# Turns off LG WebOS TV on system shutdown (but not reboot)
+# ============================================================================
+
+# UPDATE THESE: Change to match your setup
+USERNAME="zany130"
+ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
+
+# Ignore if this is a reboot - we only care about shutdown
+if systemctl list-jobs | grep -q -E 'reboot.target.*start'; then
+    echo "System is rebooting, leaving TV on"
+    exit 0
+fi
+
+# Get the current power state of the TV
+power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
+
+# If the TV is on, turn it off. Otherwise do nothing.
+if [[ "$power_state" == "Active" ]]; then
+    echo "Turning off TV"
+    "$ALGA_PATH" power off
+else
+    echo "TV is already powered off"
+fi

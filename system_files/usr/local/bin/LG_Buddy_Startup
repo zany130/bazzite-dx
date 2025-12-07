@@ -1,0 +1,38 @@
+#!/bin/bash
+
+# ============================================================================
+# LG TV Startup Script
+# Turns on LG WebOS TV and switches to specified input on system boot
+# ============================================================================
+
+# UPDATE THESE: Change to match your setup
+USERNAME="zany130"
+ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
+TV_IP="192.168.4.48"
+TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HDMI_4)
+
+# Wait for local network to be connected (60 second timeout)
+nm-online -q -t 60
+
+# Check if TV is reachable on network
+# (TV network interface is sometimes off when in standby)
+if ! ping -c 1 -W 2 "$TV_IP" >/dev/null 2>&1; then
+    echo "TV is not reachable on network at $TV_IP"
+    exit 1
+fi
+
+# NOTE: The power state check is commented out due to a bug in alga where
+# 'alga power screen-state' doesn't work when the TV is off.
+# Uncomment these lines once the bug is fixed to avoid unnecessary commands.
+
+# Get the current power state of the TV
+# power_state=$("$ALGA_PATH" power screen-state | cut -d':' -f2 | xargs)
+
+# if [[ "$power_state" != "Active" ]]; then
+    echo "Turning on TV and switching to $TV_INPUT"
+    "$ALGA_PATH" power on
+    sleep 10
+    "$ALGA_PATH" input set "$TV_INPUT"
+# else
+#     echo "TV is already powered on"
+# fi
