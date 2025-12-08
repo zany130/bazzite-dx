@@ -28,11 +28,11 @@ fi
 # Get the current power state of the TV
 # power_state=$("$ALGA_PATH" power screen-state | cut -d':' -f2 | xargs)
 
-# if [[ "$power_state" != "Active" ]]; then
+ if [[ "$power_state" != "Active" ]]; then
     echo "Turning on TV and switching to $TV_INPUT"
     "$ALGA_PATH" power on
     sleep 10
     "$ALGA_PATH" input set "$TV_INPUT"
-# else
-#     echo "TV is already powered on"
-# fi
+ else
+     echo "TV is already powered on"
+ fi
