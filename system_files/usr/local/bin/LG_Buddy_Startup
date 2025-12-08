@@ -21,12 +21,8 @@ if ! ping -c 1 -W 2 "$TV_IP" >/dev/null 2>&1; then
     exit 1
 fi
 
-# NOTE: The power state check is commented out due to a bug in alga where
-# 'alga power screen-state' doesn't work when the TV is off.
-# Uncomment these lines once the bug is fixed to avoid unnecessary commands.
-
 # Get the current power state of the TV
-# power_state=$("$ALGA_PATH" power screen-state | cut -d':' -f2 | xargs)
+ power_state=$("$ALGA_PATH" power screen-state | cut -d':' -f2 | xargs)
 
  if [[ "$power_state" != "Active" ]]; then
     echo "Turning on TV and switching to $TV_INPUT"
