@@ -22,6 +22,7 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 dnf5 install -y \
 btfs \
 cockpit \
+cockpit-ws-selinux \
 cockpit-system \
 cockpit-ostree \
 cockpit-networkmanager \
