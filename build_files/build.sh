@@ -21,6 +21,12 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 # this installs a package from fedora repos
 dnf5 install -y \
 btfs \
+cockpit-system \
+cockpit-ostree \
+cockpit-podman \
+cockpit-networkmanager \
+cockpit-selinux \
+cockpit-storaged \
 coolercontrol \
 filelight \
 google-authenticator \
