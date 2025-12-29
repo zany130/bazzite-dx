@@ -17,6 +17,7 @@ if ! nm-online -q -t 60; then
 fi
 
 # Give TV's network interface a moment to be ready
+# 3 seconds is a reasonable delay to allow the TV's network interface to initialize
 sleep 3
 
 # Validate that alga executable exists and is executable
