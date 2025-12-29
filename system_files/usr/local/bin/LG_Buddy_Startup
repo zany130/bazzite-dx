@@ -8,27 +8,31 @@
 # UPDATE THESE: Change to match your setup
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
-TV_IP="192.168.4.48"
 TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HDMI_4)
 
 # Wait for local network to be connected (60 second timeout)
-nm-online -q -t 60
+if ! nm-online -q -t 60; then
+    echo "Network did not come online"
+    exit 1
+fi
 
-# Check if TV is reachable on network
-# (TV network interface is sometimes off when in standby)
-if ! ping -c 1 -W 2 "$TV_IP" >/dev/null 2>&1; then
-    echo "TV is not reachable on network at $TV_IP"
+# Give TV's network interface a moment to be ready
+sleep 3
+
+# Validate that alga executable exists and is executable
+if [[ ! -x "$ALGA_PATH" ]]; then
+    echo "Error: alga executable not found or not executable at $ALGA_PATH"
     exit 1
 fi
 
 # Get the current power state of the TV
- power_state=$("$ALGA_PATH" power screen-state | cut -d':' -f2 | xargs)
+power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
 
- if [[ "$power_state" != "Active" ]]; then
+if [[ "$power_state" != "Active" ]]; then
     echo "Turning on TV and switching to $TV_INPUT"
     "$ALGA_PATH" power on
     sleep 10
     "$ALGA_PATH" input set "$TV_INPUT"
- else
-     echo "TV is already powered on"
- fi
+else
+    echo "TV is already powered on"
+fi
