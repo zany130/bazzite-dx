@@ -29,6 +29,7 @@ cockpit-networkmanager \
 cockpit-selinux \
 cockpit-storaged \
 coolercontrol \
+ds-inhibit \
 filelight \
 google-authenticator \
 konsole \
