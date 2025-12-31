@@ -23,11 +23,7 @@ dnf5 install -y \
 btfs \
 cockpit \
 cockpit-ws-selinux \
-cockpit-system \
 cockpit-ostree \
-cockpit-networkmanager \
-cockpit-selinux \
-cockpit-storaged \
 coolercontrol \
 ds-inhibit \
 filelight \
