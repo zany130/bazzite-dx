@@ -25,7 +25,6 @@ cockpit \
 cockpit-ws-selinux \
 cockpit-ostree \
 coolercontrol \
-ds-inhibit \
 filelight \
 google-authenticator \
 konsole \
