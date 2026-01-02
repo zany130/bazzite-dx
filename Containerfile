@@ -3,7 +3,7 @@ FROM scratch AS ctx
 COPY build_files /
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:e1e0634929dcfd0e2af7f7a44073e35258ab71a2f6848982f601c16162d9cc84
+FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:6d50c94cbd676aca21480b7469c4b3a11ea1cebbfccd54854863edd37ace8b05
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
