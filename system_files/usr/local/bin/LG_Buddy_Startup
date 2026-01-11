@@ -16,10 +16,6 @@ if ! nm-online -q -t 60; then
     exit 1
 fi
 
-# Give TV's network interface a moment to be ready
-# 3 seconds is a reasonable delay to allow the TV's network interface to initialize
-sleep 3
-
 # Validate that alga executable exists and is executable
 if [[ ! -x "$ALGA_PATH" ]]; then
     echo "Error: alga executable not found or not executable at $ALGA_PATH"
@@ -32,7 +28,7 @@ power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xarg
 if [[ "$power_state" != "Active" ]]; then
     echo "Turning on TV and switching to $TV_INPUT"
     "$ALGA_PATH" power on
-    sleep 10
+    sleep 7
     "$ALGA_PATH" input set "$TV_INPUT"
 else
     echo "TV is already powered on"
