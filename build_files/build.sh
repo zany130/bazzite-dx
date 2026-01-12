@@ -18,7 +18,7 @@ echo 'Enabling RPM Fusion Repository.'
 dnf5 config-manager setopt rpmfusion-nonfree.enabled=1
 dnf5 config-manager setopt rpmfusion-free.enabled=1
 
-# this installs a package from fedora repos
+# this installs a package from Fedora repos
 dnf5 install -y \
 btfs \
 cockpit \
@@ -39,11 +39,10 @@ sbctl \
 smb4k \
 solaar
 
-# install only nessicary plasma-discover packages for plasmoids
+# install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns plasma-discover-notifier
 
 # Enable COPR'S
-# dnf5 -y copr enable agundur/KCast
 dnf5 -y copr enable deltacopy/darkly
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable errornointernet/klassy
