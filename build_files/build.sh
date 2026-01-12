@@ -37,7 +37,9 @@ rEFInd \
 rEFInd-tools \
 sbctl \
 smb4k \
-solaar
+solaar \
+vlc \
+vlc-plugins-all
 
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns plasma-discover-notifier
