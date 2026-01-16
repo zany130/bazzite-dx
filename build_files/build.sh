@@ -34,7 +34,6 @@ python3-pygame \
 rEFInd \
 rEFInd-tools \
 sbctl \
-smb4k \
 solaar \
 vlc \
 vlc-plugins-all
@@ -70,8 +69,8 @@ sed -i -E \
 systemctl enable bazzite-autologin.service
 systemctl disable uupd.timer
 
-# this uninstalls a 
+# this uninstalls a package
 dnf5 remove -y \
 kate \
 kwrite \
-kfind \
+kfind 
