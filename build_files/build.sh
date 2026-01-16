@@ -25,9 +25,7 @@ cockpit \
 cockpit-ws-selinux \
 cockpit-ostree \
 coolercontrol \
-filelight \
 google-authenticator \
-konsole \
 kvantum \
 liquidctl \
 megasync \
@@ -45,19 +43,15 @@ vlc-plugins-all
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns plasma-discover-notifier
 
 # Enable COPR'S
-dnf5 -y copr enable deltacopy/darkly
 dnf5 -y copr enable birkch/HeadsetControl
-dnf5 -y copr enable errornointernet/klassy
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin 
 
 # install packages from copr
 dnf5 install -y \
-darkly \
 HeadsetControl \
 HeadsetControl-Qt \
 kwin-effect-roundcorners \
-klassy \
 wallpaper-engine-kde-plugin
 
 ### Renable -deck specfic changes
@@ -75,3 +69,9 @@ sed -i -E \
 
 systemctl enable bazzite-autologin.service
 systemctl disable uupd.timer
+
+# this uninstalls a 
+dnf5 remove -y \
+kate \
+kwrite \
+kfind \
