@@ -2,11 +2,11 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:best-practices"],
 
+  "platformAutomerge": true,
   "rebaseWhen": "never",
 
   "packageRules": [
     {
-      // Mirror upstream bazzite-dx completely
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/ublue-os/bazzite-dx"],
       "automerge": true,
