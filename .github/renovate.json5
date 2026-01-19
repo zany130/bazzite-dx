@@ -9,8 +9,7 @@
     {
       "matchDatasources": ["docker"],
       "matchPackageNames": ["ghcr.io/ublue-os/bazzite-dx"],
-      "automerge": true,
-      "automergeType": "branch"
+      "automerge": true
     }
   ]
 }
