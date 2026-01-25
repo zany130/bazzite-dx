@@ -22,8 +22,10 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 dnf5 install -y \
 btfs \
 cockpit \
-cockpit-ws-selinux \
+cockpit-machines \
+cockpit-sosreport \
 cockpit-ostree \
+cockpit-ws-selinux \
 coolercontrol \
 google-authenticator \
 kvantum \
@@ -38,8 +40,24 @@ solaar \
 vlc \
 vlc-plugins-all
 
+# Download and verify cockpit-file-sharing with checksum
+COCKPIT_FS_VERSION="4.5.2"
+COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION}-1.el9.noarch.rpm"
+COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/v${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
+COCKPIT_FS_SHA256="1cf9930da223e6010be0c0e416e9755d17be87b181a9e7704185b7b31b1e782e"
+
+echo "Downloading ${COCKPIT_FS_RPM}..."
+curl --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}"
+
+echo "Verifying checksum..."
+echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
+
+echo "Installing ${COCKPIT_FS_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
+rm -f "/tmp/${COCKPIT_FS_RPM}"
+
 # install only necessary plasma-discover packages for plasmoids
-dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns plasma-discover-notifier
+dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
