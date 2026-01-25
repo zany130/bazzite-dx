@@ -114,20 +114,32 @@ LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to cont
 
 Edit the following files to match your setup:
 
-1. **Update username in all scripts** (replace `zany130` with your actual username):
+1. **Update username in all scripts and service file** (replace `zany130` with your actual username):
    ```bash
    sudo nano /usr/local/bin/LG_Buddy_Startup
    sudo nano /usr/local/bin/LG_Buddy_Shutdown
    sudo nano /usr/lib/systemd/system-sleep/lg-buddy-sleep
+   sudo nano /etc/systemd/system/LG_Buddy.service
    ```
    
-   In each file, change the line:
+   In the scripts, change the line:
    ```bash
    USERNAME="zany130"
    ```
    to:
    ```bash
    USERNAME="<your-username>"
+   ```
+   
+   In the service file (`/etc/systemd/system/LG_Buddy.service`), change:
+   ```ini
+   User=zany130
+   Group=zany130
+   ```
+   to:
+   ```ini
+   User=<your-username>
+   Group=<your-username>
    ```
 
 2. **Set your TV input** in `/usr/local/bin/LG_Buddy_Startup`:
@@ -140,8 +152,9 @@ Edit the following files to match your setup:
    alga input list
    ```
 
-3. **Enable the service:**
+3. **Reload systemd and enable the service:**
    ```bash
+   sudo systemctl daemon-reload
    sudo systemctl enable --now LG_Buddy.service
    ```
 
