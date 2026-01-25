@@ -39,7 +39,7 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `HeadsetControl` & `HeadsetControl-Qt` - USB headset control
 
 **File Systems & Storage:**
-- `btfs` - Btrfs filesystem tools
+- `btfs` - BitTorrent filesystem
 - `megasync` & `dolphin-megasync` - MEGA cloud storage integration
 
 **Boot & Security:**
