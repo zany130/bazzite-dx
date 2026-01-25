@@ -1,6 +1,6 @@
 # bazzite-dx
 
-This is a customized version of [Bazzite-DX](https://github.com/ublue-os/bazzite) (Desktop Experience) with additional tools, packages, and automation specifically tailored for a gaming PC setup with LG WebOS TV integration.
+This is a customized version of [Bazzite-DX](https://github.com/ublue-os/bazzite) (Developer Experience) with additional tools, packages, and automation specifically tailored for a gaming PC setup with LG WebOS TV integration.
 
 ## Quick Start
 
