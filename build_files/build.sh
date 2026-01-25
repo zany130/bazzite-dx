@@ -39,7 +39,6 @@ sbctl \
 solaar \
 vlc \
 vlc-plugins-all \
-https://github.com/ocristopfer/cockpit-sensors/releases/latest/download/cockpit-sensors.noarch.rpm \
 https://github.com/45Drives/cockpit-file-sharing/releases/download/v4.5.2/cockpit-file-sharing-4.5.2-1.el9.noarch.rpm
 
 # install only necessary plasma-discover packages for plasmoids
