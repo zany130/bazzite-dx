@@ -83,14 +83,10 @@ A utility script for triggering display port hotplug events to resolve display d
 
 ### Configuration Changes
 
-**Security & Access:**
-- SSH configured with keyboard-interactive and public key authentication (password auth disabled)
-- Polkit rule allowing `wheel` group to start/stop `plugin_loader.service`
-- Sudoers rule for passwordless execution of `reset-video-port`
-
-**System Updates:**
-- Custom Topgrade configuration for comprehensive system updates
-- Disabled `uupd.timer` in favor of manual updates
+- Custom SSH configuration
+- Custom Polkit rules
+- Custom sudoers rules for video port reset
+- Custom Topgrade configuration
 
 ## LG Buddy Setup
 
