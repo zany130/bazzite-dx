@@ -22,8 +22,10 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 dnf5 install -y \
 btfs \
 cockpit \
-cockpit-ws-selinux \
+cockpit-machines \
+cockpit-sosreport \
 cockpit-ostree \
+cockpit-ws-selinux \
 coolercontrol \
 google-authenticator \
 kvantum \
@@ -36,10 +38,12 @@ rEFInd-tools \
 sbctl \
 solaar \
 vlc \
-vlc-plugins-all
+vlc-plugins-all \
+https://github.com/ocristopfer/cockpit-sensors/releases/latest/download/cockpit-sensors.noarch.rpm \
+https://github.com/45Drives/cockpit-file-sharing/releases/download/v4.5.2/cockpit-file-sharing-4.5.2-1.el9.noarch.rpm
 
 # install only necessary plasma-discover packages for plasmoids
-dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns plasma-discover-notifier
+dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
