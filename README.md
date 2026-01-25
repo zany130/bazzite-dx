@@ -29,7 +29,7 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 
 **Desktop & Utilities:**
 - `kvantum` - Qt theme engine
-- `plasma-discover` - KDE package discovery (minimal install)
+- `plasma-discover` - KDE package discovery (minimal install, for plasmoid packages only)
 - `kwin-effect-roundcorners` - Rounded window corners for KDE
 - `wallpaper-engine-kde-plugin` - Wallpaper Engine support
 
@@ -48,7 +48,7 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `google-authenticator` - Two-factor authentication
 
 **Media & Development:**
-- `vlc` & `vlc-plugins-all` - Media player
+- `vlc` & `vlc-plugins-all` - Media player (flatpak version has broken Blu-ray support)
 - `python3-pygame` - Python game development
 
 **Deck-Specific Enhancements:**
