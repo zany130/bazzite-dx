@@ -1,6 +1,6 @@
 # bazzite-dx
 
-This is a customized version of [Bazzite-DX](https://github.com/ublue-os/bazzite) (Desktop Experience) with additional tools, packages, and automation specifically tailored for a gaming PC setup with LG WebOS TV integration.
+This is a customized version of [Bazzite-DX](https://github.com/ublue-os/bazzite) (Developer Experience) with additional tools, packages, and automation specifically tailored for a gaming PC setup with LG WebOS TV integration.
 
 ## Quick Start
 
@@ -94,21 +94,28 @@ LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to cont
 
 ### Prerequisites
 
-1. **Install alga:**
+1. **Install pipx (if not already installed):**
+   
+   Bazzite comes with Homebrew pre-installed, so you can use it to install pipx:
    ```bash
-   # Download latest release from GitHub
-   curl -L https://github.com/webosbrew/alga/releases/latest/download/alga-linux-x86_64 -o ~/.local/bin/alga
-   chmod +x ~/.local/bin/alga
+   brew install pipx
+   pipx ensurepath
    ```
    
-   > **Note:** For production use, verify the download by checking the SHA256 checksum from the [releases page](https://github.com/webosbrew/alga/releases).
+   > **Note:** You may need to restart your terminal or source your shell configuration after running `pipx ensurepath`.
 
-2. **Pair with your TV:**
+2. **Install alga:**
+   ```bash
+   pipx install alga
+   ```
+
+3. **Pair with your TV:**
    ```bash
    # This will prompt you to accept the connection on your TV
-   alga discover
-   alga --device <TV_IP> pair
+   alga tv add <identifier> [TV_IP_or_hostname]
    ```
+   
+   > **Note:** If no hostname or IP is provided, alga will default to "lgwebostv" which should work if your TV is discoverable on your network.
 
 ### Configuration
 
