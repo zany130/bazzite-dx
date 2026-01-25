@@ -22,8 +22,6 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 dnf5 install -y \
 btfs \
 cockpit \
-cockpit-machines \
-cockpit-sosreport \
 cockpit-ostree \
 cockpit-ws-selinux \
 coolercontrol \
