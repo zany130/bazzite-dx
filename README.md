@@ -1,6 +1,211 @@
-# image-template
+# bazzite-dx
 
-This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
+This is a customized version of [Bazzite-DX](https://github.com/ublue-os/bazzite) (Desktop Experience) with additional tools, packages, and automation specifically tailored for a gaming PC setup with LG WebOS TV integration.
+
+## Quick Start
+
+If you're already on a Universal Blue or Bazzite system, you can switch to this image with:
+
+```bash
+sudo bootc switch ghcr.io/zany130/bazzite-dx:latest
+sudo systemctl reboot
+```
+
+After switching, configure [LG Buddy](#lg-buddy-setup) if you have an LG WebOS TV, and check out the [Video Port Reset](#video-port-reset) tool if you experience display issues.
+
+## Changes vs Upstream Bazzite
+
+This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image with the following modifications:
+
+### Additional Packages
+
+**System Management & Monitoring:**
+- `cockpit` - Web-based system management interface
+- `cockpit-machines` - Virtual machine management
+- `cockpit-sosreport` - System diagnostics
+- `cockpit-ostree` - OSTree/bootc management
+- `cockpit-file-sharing` - File sharing management (from 45Drives)
+- `coolercontrol` - Hardware cooling control
+
+**Desktop & Utilities:**
+- `kvantum` - Qt theme engine
+- `plasma-discover` - KDE package discovery (minimal install)
+- `kwin-effect-roundcorners` - Rounded window corners for KDE
+- `wallpaper-engine-kde-plugin` - Wallpaper Engine support
+
+**Hardware & Peripherals:**
+- `solaar` - Logitech device manager
+- `liquidctl` - Liquid cooling control
+- `HeadsetControl` & `HeadsetControl-Qt` - USB headset control
+
+**File Systems & Storage:**
+- `btfs` - Btrfs filesystem tools
+- `megasync` & `dolphin-megasync` - MEGA cloud storage integration
+
+**Boot & Security:**
+- `rEFInd` & `rEFInd-tools` - Boot manager
+- `sbctl` - Secure Boot management
+- `google-authenticator` - Two-factor authentication
+
+**Media & Development:**
+- `vlc` & `vlc-plugins-all` - Media player
+- `python3-pygame` - Python game development
+
+**Deck-Specific Enhancements:**
+- Re-enabled Steam Deck specific configurations
+- Custom SDDM themes and virtual keyboard
+- Disabled unnecessary session/lock screen options
+- Auto-login service enabled
+
+### LG Buddy - WebOS TV Automation
+
+A complete automation suite for controlling LG WebOS TVs, including automatic power management and input switching.
+
+**Components:**
+- **Systemd Service** (`LG_Buddy.service`) - Controls TV at boot and shutdown
+- **Startup Script** (`LG_Buddy_Startup`) - Powers on TV and switches to correct input
+- **Shutdown Script** (`LG_Buddy_Shutdown`) - Powers off TV (but not on reboot)
+- **Sleep Hook** (`lg-buddy-sleep`) - Manages TV state during suspend/resume
+
+**Setup Instructions:** See [LG Buddy Setup](#lg-buddy-setup) section below.
+
+### Video Port Reset Tool
+
+A utility script for triggering display port hotplug events to resolve display detection issues.
+
+**Features:**
+- Reset individual display ports (DP, HDMI)
+- List all available video connectors
+- Supports both card numbers and PCI addresses
+- Passwordless sudo access for the reset command
+
+**Usage Instructions:** See [Video Port Reset](#video-port-reset) section below.
+
+### Configuration Changes
+
+**Security & Access:**
+- SSH configured with keyboard-interactive and public key authentication (password auth disabled)
+- Polkit rule allowing `wheel` group to start/stop `plugin_loader.service`
+- Sudoers rule for passwordless execution of `reset-video-port`
+
+**System Updates:**
+- Custom Topgrade configuration for comprehensive system updates
+- Disabled `uupd.timer` in favor of manual updates
+
+## LG Buddy Setup
+
+LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to control your LG WebOS TV.
+
+### Prerequisites
+
+1. **Install alga:**
+   ```bash
+   # Download latest release from GitHub
+   curl -L https://github.com/webosbrew/alga/releases/latest/download/alga-linux-x86_64 -o ~/.local/bin/alga
+   chmod +x ~/.local/bin/alga
+   ```
+
+2. **Pair with your TV:**
+   ```bash
+   # This will prompt you to accept the connection on your TV
+   alga discover
+   alga --device <TV_IP> pair
+   ```
+
+### Configuration
+
+Edit the following files to match your setup:
+
+1. **Update username in all scripts** (replace `zany130` with your username):
+   ```bash
+   sudo nano /usr/local/bin/LG_Buddy_Startup
+   sudo nano /usr/local/bin/LG_Buddy_Shutdown
+   sudo nano /usr/lib/systemd/system-sleep/lg-buddy-sleep
+   ```
+
+2. **Set your TV input** in `/usr/local/bin/LG_Buddy_Startup`:
+   ```bash
+   TV_INPUT="HDMI_1"  # Change to HDMI_2, HDMI_3, etc. as needed
+   ```
+   
+   To find your input name:
+   ```bash
+   alga input list
+   ```
+
+3. **Enable the service:**
+   ```bash
+   sudo systemctl enable --now LG_Buddy.service
+   ```
+
+### How It Works
+
+- **On Boot:** TV turns on and switches to your PC's HDMI input
+- **On Shutdown:** TV turns off (only on shutdown, not reboot)
+- **On Sleep:** TV turns off if it was on
+- **On Wake:** TV returns to previous power state
+
+### Troubleshooting
+
+Check service logs:
+```bash
+journalctl -u LG_Buddy.service -f
+```
+
+Check sleep hook logs:
+```bash
+journalctl -t lg-buddy-sleep -f
+```
+
+## Video Port Reset
+
+The video port reset tool helps resolve display detection issues by triggering a hotplug event on your video connectors.
+
+### Usage
+
+**List available connectors:**
+```bash
+sudo reset-video-port --list
+```
+
+This will show output like:
+```
+Available connectors:
+  1/DP-1
+  1/DP-2
+  1/HDMI-A-1
+```
+
+**Reset a specific port:**
+```bash
+# Using card number and port name
+sudo reset-video-port 1 DP-2
+
+# Using PCI address
+sudo reset-video-port 0000:03:00.0 DP-2
+```
+
+### Common Use Cases
+
+- Display not detected after boot
+- Black screen on monitor wake
+- Resolution not switching correctly
+- VRR/FreeSync/G-Sync issues
+
+### Automation
+
+Add to your desktop environment's autostart if you need to reset a port on every boot:
+```bash
+sudo reset-video-port 1 DP-2
+```
+
+The command has passwordless sudo access via a sudoers rule, so it won't prompt for a password.
+
+---
+
+# Template Information
+
+This repository is based on the [Universal Blue image-template](https://github.com/ublue-os/image-template) for building custom [bootc](https://github.com/bootc-dev/bootc) images.
 
 # Community
 
