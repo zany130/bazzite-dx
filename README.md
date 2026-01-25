@@ -100,6 +100,8 @@ LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to cont
    curl -L https://github.com/webosbrew/alga/releases/latest/download/alga-linux-x86_64 -o ~/.local/bin/alga
    chmod +x ~/.local/bin/alga
    ```
+   
+   > **Note:** For production use, verify the download by checking the SHA256 checksum from the [releases page](https://github.com/webosbrew/alga/releases).
 
 2. **Pair with your TV:**
    ```bash
@@ -112,11 +114,20 @@ LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to cont
 
 Edit the following files to match your setup:
 
-1. **Update username in all scripts** (replace `zany130` with your username):
+1. **Update username in all scripts** (replace `zany130` with your actual username):
    ```bash
    sudo nano /usr/local/bin/LG_Buddy_Startup
    sudo nano /usr/local/bin/LG_Buddy_Shutdown
    sudo nano /usr/lib/systemd/system-sleep/lg-buddy-sleep
+   ```
+   
+   In each file, change the line:
+   ```bash
+   USERNAME="zany130"
+   ```
+   to:
+   ```bash
+   USERNAME="<your-username>"
    ```
 
 2. **Set your TV input** in `/usr/local/bin/LG_Buddy_Startup`:
