@@ -47,8 +47,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod 0644 /etc/systemd/system/beep-startup.service && \
     # Mark binaries as executable
     chmod +x /usr/lib/systemd/system-sleep/lg-buddy-sleep && \
-	chmod +x /usr/local/bin/LG_Buddy_Startup && \
- 	chmod +x /usr/local/bin/LG_Buddy_Shutdown && \
+    chmod +x /usr/local/bin/LG_Buddy_Startup && \
+    chmod +x /usr/local/bin/LG_Buddy_Shutdown && \
     chmod +x /usr/local/sbin/reset-video-port && \
     \
     ostree container commit

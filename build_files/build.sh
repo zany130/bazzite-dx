@@ -61,7 +61,7 @@ dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin 
+dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin
 
 # install packages from copr
 dnf5 install -y \
@@ -91,4 +91,4 @@ systemctl disable uupd.timer
 dnf5 remove -y \
 kate \
 kwrite \
-kfind 
+kfind
