@@ -5,7 +5,7 @@ After=sysinit.target
 
 [Service]
 Type=oneshot
-ExecStart=/usr/bin/beep -f 1000 -l 120 -n -f 1500 -l 140 -n -f 1700 -l 200
+ExecStart=-/usr/bin/beep -f 1000 -l 120 -n -f 1500 -l 140 -n -f 1700 -l 200
 RemainAfterExit=yes
 StandardOutput=journal
 StandardError=journal
