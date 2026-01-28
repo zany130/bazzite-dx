@@ -8,7 +8,7 @@ FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:55bc650bf73bb9bff2010a3efe55d5066
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
 # FROM ghcr.io/ublue-os/bluefin-nvidia:stable
-# 
+#
 # ... and so on, here are more base images
 # Universal Blue Images: https://github.com/orgs/ublue-os/packages
 # Fedora base image: quay.io/fedora/fedora-bootc:41
@@ -52,7 +52,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod +x /usr/local/sbin/reset-video-port && \
     \
     ostree container commit
-    
+
 ### LINTING
 ## Verify final image and contents are correct.
 RUN bootc container lint
