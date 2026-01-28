@@ -1,56 +1,44 @@
 #!/bin/bash
 
-# systemd-sleep hook for LG Buddy
-# Arguments: 
-#   $1: "pre" (before sleep) or "post" (after wake)
-#   $2: "suspend", "hibernate", "hybrid-sleep", or "suspend-then-hibernate"
-
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
-STATE_FILE="/tmp/lg_buddy_pre_sleep_state"
+TV_INPUT="HDMI_1"
 
 case "$1/$2" in
     pre/*)
-        # Before sleep - turn off TV if it's on
         logger -t lg-buddy-sleep "Pre-sleep: Checking TV state before $2"
         
-        # Run as the correct user and check power state
         power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
         
         logger -t lg-buddy-sleep "TV power state: $power_state"
         
         if [[ "$power_state" == "Active" ]]; then
-            logger -t lg-buddy-sleep "TV is active, powering off"
+            logger -t lg-buddy-sleep "Powering off TV"
             sudo -u "$USERNAME" "$ALGA_PATH" power off
-            # Save state so we know to turn it back on after wake
-            echo "was_active" > "$STATE_FILE"
         else
-            logger -t lg-buddy-sleep "TV is already powered off"
-            echo "was_off" > "$STATE_FILE"
+            logger -t lg-buddy-sleep "TV already off"
         fi
         ;;
         
     post/*)
-        # After wake - optionally turn TV back on if it was on before sleep
         logger -t lg-buddy-sleep "Post-sleep: Woke up from $2"
         
-        # Wait a moment for network to stabilize
         sleep 2
         
-        if [ -f "$STATE_FILE" ]; then
-            previous_state=$(cat "$STATE_FILE")
-            logger -t lg-buddy-sleep "Previous TV state was: $previous_state"
-            
-            if [[ "$previous_state" == "was_active" ]]; then
-                logger -t lg-buddy-sleep "TV was active before sleep, turning back on"
-                sudo -u "$USERNAME" "$ALGA_PATH" power on
-            else
-                logger -t lg-buddy-sleep "TV was off before sleep, leaving off"
-            fi
-            
-            rm -f "$STATE_FILE"
+        power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
+        
+        if [[ "$power_state" != "Active" ]]; then
+            logger -t lg-buddy-sleep "Turning on TV and switching to $TV_INPUT"
+            sudo -u "$USERNAME" "$ALGA_PATH" power on
+            sleep 7
+            sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
         else
-            logger -t lg-buddy-sleep "No previous state file found"
+            logger -t lg-buddy-sleep "TV already on, checking input"
+            current_input=$(sudo -u "$USERNAME" "$ALGA_PATH" input get 2>&1 | grep -o 'HDMI_[0-9]')
+            if [[ "$current_input" != "$TV_INPUT" ]]; then
+                logger -t lg-buddy-sleep "Switching to $TV_INPUT"
+                sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
+            fi
         fi
         ;;
 esac
