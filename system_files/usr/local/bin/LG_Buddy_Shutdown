@@ -15,13 +15,5 @@ if systemctl list-jobs | grep -q -E 'reboot.target.*start'; then
     exit 0
 fi
 
-# Get the current power state of the TV
-power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
-
-# If the TV is on, turn it off. Otherwise do nothing.
-if [[ "$power_state" == "Active" ]]; then
-    echo "Turning off TV"
-    "$ALGA_PATH" power off
-else
-    echo "TV is already powered off"
-fi
+echo "Turning off TV"
+"$ALGA_PATH" power off
