@@ -7,51 +7,22 @@
 
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
-STATE_FILE="/tmp/lg_buddy_pre_sleep_state"
+TV_INPUT="HDMI_1"
 
 case "$1/$2" in
     pre/*)
-        # Before sleep - turn off TV if it's on
-        logger -t lg-buddy-sleep "Pre-sleep: Checking TV state before $2"
-        
-        # Run as the correct user and check power state
-        power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
-        
-        logger -t lg-buddy-sleep "TV power state: $power_state"
-        
-        if [[ "$power_state" == "Active" ]]; then
-            logger -t lg-buddy-sleep "TV is active, powering off"
-            sudo -u "$USERNAME" "$ALGA_PATH" power off
-            # Save state so we know to turn it back on after wake
-            echo "was_active" > "$STATE_FILE"
-        else
-            logger -t lg-buddy-sleep "TV is already powered off"
-            echo "was_off" > "$STATE_FILE"
-        fi
+        logger -t lg-buddy-sleep "Pre-sleep: Turning off TV before $2"
+        sudo -u "$USERNAME" "$ALGA_PATH" power off 2>&1 | logger -t lg-buddy-sleep
         ;;
         
     post/*)
-        # After wake - optionally turn TV back on if it was on before sleep
-        logger -t lg-buddy-sleep "Post-sleep: Woke up from $2"
+        logger -t lg-buddy-sleep "Post-sleep: Woke up from $2, turning on TV"
         
-        # Wait a moment for network to stabilize
         sleep 2
         
-        if [ -f "$STATE_FILE" ]; then
-            previous_state=$(cat "$STATE_FILE")
-            logger -t lg-buddy-sleep "Previous TV state was: $previous_state"
-            
-            if [[ "$previous_state" == "was_active" ]]; then
-                logger -t lg-buddy-sleep "TV was active before sleep, turning back on"
-                sudo -u "$USERNAME" "$ALGA_PATH" power on
-            else
-                logger -t lg-buddy-sleep "TV was off before sleep, leaving off"
-            fi
-            
-            rm -f "$STATE_FILE"
-        else
-            logger -t lg-buddy-sleep "No previous state file found"
-        fi
+        sudo -u "$USERNAME" "$ALGA_PATH" power on 2>&1 | logger -t lg-buddy-sleep
+        sleep 7
+        sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT" 2>&1 | logger -t lg-buddy-sleep
         ;;
 esac
 
