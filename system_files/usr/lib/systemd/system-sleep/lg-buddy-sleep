@@ -4,54 +4,65 @@
 # Arguments: 
 #   $1: "pre" (before sleep) or "post" (after wake)
 #   $2: "suspend", "hibernate", "hybrid-sleep", or "suspend-then-hibernate"
+#
+# STATELESS DESIGN:
+# - Pre-sleep: Always turn TV off (idempotent - safe even if already off)
+# - Post-sleep: Always turn TV on (console-like behavior)
+# - No state file needed - deterministic behavior regardless of previous state
 
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
-STATE_FILE="/tmp/lg_buddy_pre_sleep_state"
+
+# Retry function for network-dependent commands
+retry_command() {
+    local max_attempts=3
+    local delay=2
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if sudo -u "$USERNAME" "$ALGA_PATH" "$@" 2>&1; then
+            return 0
+        fi
+        
+        if [ $attempt -lt $max_attempts ]; then
+            logger -t lg-buddy-sleep "Command failed (attempt $attempt/$max_attempts), retrying in ${delay}s..."
+            sleep $delay
+        fi
+        attempt=$((attempt + 1))
+    done
+    
+    logger -t lg-buddy-sleep "Command failed after $max_attempts attempts"
+    return 1
+}
 
 case "$1/$2" in
     pre/*)
-        # Before sleep - turn off TV if it's on
-        logger -t lg-buddy-sleep "Pre-sleep: Checking TV state before $2"
-        
-        # Run as the correct user and check power state
-        power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
-        
-        logger -t lg-buddy-sleep "TV power state: $power_state"
-        
-        if [[ "$power_state" == "Active" ]]; then
-            logger -t lg-buddy-sleep "TV is active, powering off"
-            sudo -u "$USERNAME" "$ALGA_PATH" power off
-            # Save state so we know to turn it back on after wake
-            echo "was_active" > "$STATE_FILE"
-        else
-            logger -t lg-buddy-sleep "TV is already powered off"
-            echo "was_off" > "$STATE_FILE"
-        fi
+        # Before sleep - always turn off TV (idempotent)
+        # The TV's power off command is safe to call even if TV is already off
+        logger -t lg-buddy-sleep "Pre-sleep: Turning off TV before $2"
+        retry_command power off
         ;;
         
     post/*)
-        # After wake - optionally turn TV back on if it was on before sleep
-        logger -t lg-buddy-sleep "Post-sleep: Woke up from $2"
+        # After wake - always turn TV on (console-like behavior)
+        # The PC waking means the user wants to use it, so TV should be on
+        logger -t lg-buddy-sleep "Post-sleep: Woke up from $2, turning TV on"
         
-        # Wait a moment for network to stabilize
-        sleep 2
+        # Wait for network to stabilize before attempting commands
+        sleep 3
         
-        if [ -f "$STATE_FILE" ]; then
-            previous_state=$(cat "$STATE_FILE")
-            logger -t lg-buddy-sleep "Previous TV state was: $previous_state"
-            
-            if [[ "$previous_state" == "was_active" ]]; then
-                logger -t lg-buddy-sleep "TV was active before sleep, turning back on"
-                sudo -u "$USERNAME" "$ALGA_PATH" power on
-            else
-                logger -t lg-buddy-sleep "TV was off before sleep, leaving off"
-            fi
-            
-            rm -f "$STATE_FILE"
-        else
-            logger -t lg-buddy-sleep "No previous state file found"
-        fi
+        # Turn on TV and switch to correct input (idempotent commands)
+        retry_command power on
+        
+        # Allow TV time to boot before switching input
+        sleep 5
+        
+        # Read TV input from startup script config or default to HDMI_1
+        TV_INPUT=$(grep '^TV_INPUT=' /usr/local/bin/LG_Buddy_Startup 2>/dev/null | cut -d'"' -f2)
+        TV_INPUT=${TV_INPUT:-HDMI_1}
+        
+        retry_command input set "$TV_INPUT"
+        logger -t lg-buddy-sleep "TV powered on and switched to $TV_INPUT"
         ;;
 esac
 

@@ -3,11 +3,39 @@
 # ============================================================================
 # LG TV Shutdown Script
 # Turns off LG WebOS TV on system shutdown (but not reboot)
+# 
+# STATELESS/IDEMPOTENT DESIGN:
+# - Always issues power off command on shutdown
+# - Command is safe to run even if TV is already off
+# - No state checking needed - deterministic behavior
+# - Includes retry logic for reliability
 # ============================================================================
 
 # UPDATE THESE: Change to match your setup
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
+
+# Retry function for network-dependent commands
+retry_command() {
+    local max_attempts=3
+    local delay=1
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if "$ALGA_PATH" "$@" 2>&1; then
+            return 0
+        fi
+        
+        if [ $attempt -lt $max_attempts ]; then
+            echo "Command failed (attempt $attempt/$max_attempts), retrying in ${delay}s..."
+            sleep $delay
+        fi
+        attempt=$((attempt + 1))
+    done
+    
+    echo "Command failed after $max_attempts attempts"
+    return 1
+}
 
 # Ignore if this is a reboot - we only care about shutdown
 if systemctl list-jobs | grep -q -E 'reboot.target.*start'; then
@@ -15,13 +43,8 @@ if systemctl list-jobs | grep -q -E 'reboot.target.*start'; then
     exit 0
 fi
 
-# Get the current power state of the TV
-power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
+# Always turn off TV on shutdown (idempotent - safe even if already off)
+echo "Turning off TV for system shutdown"
+retry_command power off
 
-# If the TV is on, turn it off. Otherwise do nothing.
-if [[ "$power_state" == "Active" ]]; then
-    echo "Turning off TV"
-    "$ALGA_PATH" power off
-else
-    echo "TV is already powered off"
-fi
+echo "TV shutdown sequence complete"

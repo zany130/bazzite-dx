@@ -74,13 +74,20 @@ sudo systemctl disable beep-startup.service
 
 ### LG Buddy - WebOS TV Automation
 
-A complete automation suite for controlling LG WebOS TVs, including automatic power management and input switching.
+A complete automation suite for controlling LG WebOS TVs with stateless, console-like behavior. The system is designed to be deterministic and resilient to missed events, crashes, or manual TV input changes.
 
 **Components:**
 - **Systemd Service** (`LG_Buddy.service`) - Controls TV at boot and shutdown (requires manual configuration and enablement)
-- **Startup Script** (`LG_Buddy_Startup`) - Powers on TV and switches to correct input
-- **Shutdown Script** (`LG_Buddy_Shutdown`) - Powers off TV (but not on reboot)
-- **Sleep Hook** (`lg-buddy-sleep`) - Manages TV state during suspend/resume
+- **Startup Script** (`LG_Buddy_Startup`) - Powers on TV and switches to correct input (idempotent)
+- **Shutdown Script** (`LG_Buddy_Shutdown`) - Powers off TV on shutdown only, not on reboot (idempotent)
+- **Sleep Hook** (`lg-buddy-sleep`) - Manages TV during suspend/resume with stateless behavior
+
+**Design Philosophy:**
+- **Stateless**: No state files or tracking - behavior is deterministic every time
+- **Idempotent**: Commands are always safe to run, even if TV is already in desired state
+- **Console-like**: PC wake = TV on, PC sleep/shutdown = TV off
+- **Resilient**: Includes retry logic for network-dependent operations
+- **Deterministic**: Same behavior regardless of previous state or missed events
 
 > **Note:** The LG_Buddy service is **not enabled by default** because it requires user-specific configuration. See [LG Buddy Setup](#lg-buddy-setup) section below for complete setup instructions.
 
@@ -184,10 +191,23 @@ Edit the following files to match your setup:
 
 ### How It Works
 
-- **On Boot:** TV turns on and switches to your PC's HDMI input
-- **On Shutdown:** TV turns off (only on shutdown, not reboot)
-- **On Sleep:** TV turns off if it was on
-- **On Wake:** TV returns to previous power state
+**Stateless, Console-Like Behavior:**
+
+- **On Boot:** TV always turns on and switches to your PC's HDMI input (safe even if already on)
+- **On Shutdown:** TV always turns off on shutdown only (not on reboot; safe even if already off)
+- **On Sleep/Suspend:** TV always turns off (safe even if already off)
+- **On Wake/Resume:** TV always turns on and switches to correct input (console-like behavior)
+
+**Why Stateless?**
+
+The system behaves like a game console - when you turn it on, the display should be ready. No state tracking means:
+- No state files to get lost or corrupted
+- Resilient to missed events (e.g., if suspend event was missed)
+- Works correctly even if TV was manually changed
+- Deterministic behavior every time
+- Includes automatic retry logic for network reliability
+
+All commands are idempotent, meaning they're safe to run multiple times without side effects.
 
 ### Troubleshooting
 

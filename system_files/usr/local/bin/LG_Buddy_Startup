@@ -3,12 +3,40 @@
 # ============================================================================
 # LG TV Startup Script
 # Turns on LG WebOS TV and switches to specified input on system boot
+# 
+# STATELESS/IDEMPOTENT DESIGN:
+# - Always issues power on and input switch commands
+# - Commands are safe to run even if TV is already on/on correct input
+# - No state checking needed - deterministic behavior every boot
+# - Includes retry logic for reliability
 # ============================================================================
 
 # UPDATE THESE: Change to match your setup
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HDMI_4)
+
+# Retry function for network-dependent commands
+retry_command() {
+    local max_attempts=3
+    local delay=2
+    local attempt=1
+    
+    while [ $attempt -le $max_attempts ]; do
+        if "$ALGA_PATH" "$@" 2>&1; then
+            return 0
+        fi
+        
+        if [ $attempt -lt $max_attempts ]; then
+            echo "Command failed (attempt $attempt/$max_attempts), retrying in ${delay}s..."
+            sleep $delay
+        fi
+        attempt=$((attempt + 1))
+    done
+    
+    echo "Command failed after $max_attempts attempts"
+    return 1
+}
 
 # Wait for local network to be connected (60 second timeout)
 if ! nm-online -q -t 60; then
@@ -22,14 +50,17 @@ if [[ ! -x "$ALGA_PATH" ]]; then
     exit 1
 fi
 
-# Get the current power state of the TV
-power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
+# Always turn on TV and switch to correct input (idempotent commands)
+# These commands are safe to run even if TV is already on/on correct input
+echo "Ensuring TV is on and set to $TV_INPUT"
 
-if [[ "$power_state" != "Active" ]]; then
-    echo "Turning on TV and switching to $TV_INPUT"
-    "$ALGA_PATH" power on
-    sleep 7
-    "$ALGA_PATH" input set "$TV_INPUT"
-else
-    echo "TV is already powered on"
-fi
+# Turn on TV (safe even if already on)
+retry_command power on
+
+# Allow TV time to boot and process power on command
+sleep 7
+
+# Switch to correct input (safe even if already on this input)
+retry_command input set "$TV_INPUT"
+
+echo "TV startup sequence complete"
