@@ -31,10 +31,6 @@ if [[ "$power_state" != "Active" ]]; then
     sleep 7
     "$ALGA_PATH" input set "$TV_INPUT"
 else
-    echo "TV already on, checking input"
-    current_input=$("$ALGA_PATH" input get 2>/dev/null | grep -o 'HDMI_[0-9]\+')
-    if [[ "$current_input" != "$TV_INPUT" ]]; then
-        echo "Switching to $TV_INPUT"
-        "$ALGA_PATH" input set "$TV_INPUT"
-    fi
+    echo "TV already on, switching to $TV_INPUT"
+    "$ALGA_PATH" input set "$TV_INPUT"
 fi

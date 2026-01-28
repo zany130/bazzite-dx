@@ -47,12 +47,8 @@ case "$1/$2" in
             sleep 7
             sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
         else
-            logger -t lg-buddy-sleep "TV already on, checking input"
-            current_input=$(sudo -u "$USERNAME" "$ALGA_PATH" input get 2>&1 | grep -o 'HDMI_[0-9]\+')
-            if [[ "$current_input" != "$TV_INPUT" ]]; then
-                logger -t lg-buddy-sleep "Switching to $TV_INPUT"
-                sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
-            fi
+            logger -t lg-buddy-sleep "TV already on, switching to $TV_INPUT"
+            sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
         fi
         ;;
 esac
