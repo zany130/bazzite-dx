@@ -85,6 +85,7 @@ sed -i -E \
 
 systemctl enable bazzite-autologin.service
 systemctl enable beep-startup.service
+systemctl enable LG_Buddy.service
 systemctl disable uupd.timer
 
 # this uninstalls a package
