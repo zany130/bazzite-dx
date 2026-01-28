@@ -41,7 +41,7 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `megasync` & `dolphin-megasync` - MEGA cloud storage integration
 
 **Boot & Security:**
-- 'beep' - Custom PC speaker beeps
+- `beep` - Custom PC speaker beeps
 - `rEFInd` & `rEFInd-tools` - Boot manager
 - `sbctl` - Secure Boot management
 - `google-authenticator` - Two-factor authentication
