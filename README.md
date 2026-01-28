@@ -45,6 +45,7 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `rEFInd` & `rEFInd-tools` - Boot manager
 - `sbctl` - Secure Boot management
 - `google-authenticator` - Two-factor authentication
+
 **Media & Development:**
 - `vlc` & `vlc-plugins-all` - Media player (flatpak version has broken Blu-ray support)
 - `python3-pygame` - Python game development
@@ -104,7 +105,7 @@ A utility script for triggering display port hotplug events to resolve display d
 
 ## LG Buddy Setup
 
-LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to control your LG WebOS TV.
+LG Buddy requires the [alga](https://github.com/Tenzer/alga) CLI tool to control your LG WebOS TV.
 
 ### Prerequisites
 
