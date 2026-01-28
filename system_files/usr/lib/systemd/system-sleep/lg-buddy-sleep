@@ -9,6 +9,11 @@ USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 TV_INPUT="HDMI_1"
 
+# Verify that the alga executable exists and is executable
+if [[ ! -x "$ALGA_PATH" ]]; then
+    logger -t lg-buddy-sleep "Error: alga executable not found or not executable at '$ALGA_PATH'"
+    exit 1
+fi
 case "$1/$2" in
     pre/*)
         # Before sleep - turn off TV if it's on
