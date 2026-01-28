@@ -7,7 +7,7 @@
 
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
-TV_INPUT="HDMI_1"
+TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HDMI_4)
 
 case "$1/$2" in
     pre/*)
@@ -18,7 +18,7 @@ case "$1/$2" in
     post/*)
         logger -t lg-buddy-sleep "Post-sleep: Woke up from $2, turning on TV"
         
-        sleep 2
+        sleep 2  # Wait for network
         
         sudo -u "$USERNAME" "$ALGA_PATH" power on 2>&1 | logger -t lg-buddy-sleep
         sleep 7
