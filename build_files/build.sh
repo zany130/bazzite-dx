@@ -20,6 +20,7 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 
 # this installs a package from Fedora repos
 dnf5 install -y \
+beep \
 btfs \
 cockpit \
 cockpit-ostree \
@@ -60,7 +61,7 @@ dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin 
+dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin
 
 # install packages from copr
 dnf5 install -y \
@@ -83,10 +84,11 @@ sed -i -E \
      /etc/xdg/kdeglobals
 
 systemctl enable bazzite-autologin.service
+systemctl enable beep-startup.service
 systemctl disable uupd.timer
 
 # this uninstalls a package
 dnf5 remove -y \
 kate \
 kwrite \
-kfind 
+kfind
