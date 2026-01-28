@@ -45,7 +45,6 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `rEFInd` & `rEFInd-tools` - Boot manager
 - `sbctl` - Secure Boot management
 - `google-authenticator` - Two-factor authentication
-- 
 **Media & Development:**
 - `vlc` & `vlc-plugins-all` - Media player (flatpak version has broken Blu-ray support)
 - `python3-pygame` - Python game development
