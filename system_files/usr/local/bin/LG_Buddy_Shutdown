@@ -3,6 +3,11 @@
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 
+if [[ ! -x "$ALGA_PATH" ]]; then
+    echo "alga not found at $ALGA_PATH"
+    exit 1
+fi
+
 if systemctl list-jobs | grep -q -E 'reboot.target.*start'; then
     echo "Rebooting, no action"
     exit 0
