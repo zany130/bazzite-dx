@@ -10,12 +10,6 @@ USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HDMI_4)
 
-# Wait for local network to be connected (60 second timeout)
-if ! nm-online -q -t 60; then
-    echo "Network did not come online"
-    exit 1
-fi
-
 # Validate that alga executable exists and is executable
 if [[ ! -x "$ALGA_PATH" ]]; then
     echo "Error: alga executable not found or not executable at $ALGA_PATH"
@@ -31,5 +25,6 @@ if [[ "$power_state" != "Active" ]]; then
     sleep 7
     "$ALGA_PATH" input set "$TV_INPUT"
 else
-    echo "TV is already powered on"
+    echo "TV already on, switching to $TV_INPUT"
+    "$ALGA_PATH" input set "$TV_INPUT"
 fi

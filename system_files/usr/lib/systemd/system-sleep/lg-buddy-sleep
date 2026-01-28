@@ -7,8 +7,13 @@
 
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
-STATE_FILE="/tmp/lg_buddy_pre_sleep_state"
+TV_INPUT="HDMI_1"
 
+# Verify that the alga executable exists and is executable
+if [[ ! -x "$ALGA_PATH" ]]; then
+    logger -t lg-buddy-sleep "Error: alga executable not found or not executable at '$ALGA_PATH'"
+    exit 1
+fi
 case "$1/$2" in
     pre/*)
         # Before sleep - turn off TV if it's on
@@ -22,35 +27,28 @@ case "$1/$2" in
         if [[ "$power_state" == "Active" ]]; then
             logger -t lg-buddy-sleep "TV is active, powering off"
             sudo -u "$USERNAME" "$ALGA_PATH" power off
-            # Save state so we know to turn it back on after wake
-            echo "was_active" > "$STATE_FILE"
         else
             logger -t lg-buddy-sleep "TV is already powered off"
-            echo "was_off" > "$STATE_FILE"
         fi
         ;;
         
     post/*)
-        # After wake - optionally turn TV back on if it was on before sleep
+        # After wake - turn TV back on and switch to correct input
         logger -t lg-buddy-sleep "Post-sleep: Woke up from $2"
         
         # Wait a moment for network to stabilize
         sleep 2
         
-        if [ -f "$STATE_FILE" ]; then
-            previous_state=$(cat "$STATE_FILE")
-            logger -t lg-buddy-sleep "Previous TV state was: $previous_state"
-            
-            if [[ "$previous_state" == "was_active" ]]; then
-                logger -t lg-buddy-sleep "TV was active before sleep, turning back on"
-                sudo -u "$USERNAME" "$ALGA_PATH" power on
-            else
-                logger -t lg-buddy-sleep "TV was off before sleep, leaving off"
-            fi
-            
-            rm -f "$STATE_FILE"
+        power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
+        
+        if [[ "$power_state" != "Active" ]]; then
+            logger -t lg-buddy-sleep "Turning on TV and switching to $TV_INPUT"
+            sudo -u "$USERNAME" "$ALGA_PATH" power on
+            sleep 7
+            sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
         else
-            logger -t lg-buddy-sleep "No previous state file found"
+            logger -t lg-buddy-sleep "TV already on, switching to $TV_INPUT"
+            sudo -u "$USERNAME" "$ALGA_PATH" input set "$TV_INPUT"
         fi
         ;;
 esac

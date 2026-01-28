@@ -9,6 +9,12 @@
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 
+# Validate that alga executable exists and is executable
+if [[ ! -x "$ALGA_PATH" ]]; then
+    echo "Error: alga executable not found or not executable at $ALGA_PATH"
+    exit 1
+fi
+
 # Ignore if this is a reboot - we only care about shutdown
 if systemctl list-jobs | grep -q -E 'reboot.target.*start'; then
     echo "System is rebooting, leaving TV on"
