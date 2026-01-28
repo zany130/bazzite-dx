@@ -21,8 +21,6 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 
 **System Management & Monitoring:**
 - `cockpit` - Web-based system management interface
-- `cockpit-machines` - Virtual machine management
-- `cockpit-sosreport` - System diagnostics
 - `cockpit-ostree` - OSTree/bootc management
 - `cockpit-file-sharing` - File sharing management (from 45Drives)
 - `coolercontrol` - Hardware cooling control
@@ -43,18 +41,18 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `megasync` & `dolphin-megasync` - MEGA cloud storage integration
 
 **Boot & Security:**
+- 'beep' - Custom PC speaker beeps
 - `rEFInd` & `rEFInd-tools` - Boot manager
 - `sbctl` - Secure Boot management
 - `google-authenticator` - Two-factor authentication
-
+- 
 **Media & Development:**
 - `vlc` & `vlc-plugins-all` - Media player (flatpak version has broken Blu-ray support)
 - `python3-pygame` - Python game development
 
 **Deck-Specific Enhancements:**
-- Re-enabled Steam Deck specific configurations
+- Re-enabled Steam Deck-specific configurations
 - Custom SDDM themes and virtual keyboard
-- Disabled unnecessary session/lock screen options
 - Auto-login service enabled
 
 ### Retro Chime - Boot Sound
@@ -63,7 +61,7 @@ A nostalgic boot chime that plays at startup using the PC speaker (beep program)
 
 **Features:**
 - Three ascending tones (1000Hz, 1500Hz, 1700Hz) play at early boot stage
-- Non-blocking - won't delay boot or prevent system from starting
+- Non-blocking - won't delay boot or prevent the system from starting
 - Automatically enabled by default
 - Does not cause boot failures on systems without PC speaker hardware
 
@@ -78,7 +76,7 @@ A complete automation suite for controlling LG WebOS TVs, including automatic po
 
 **Components:**
 - **Systemd Service** (`LG_Buddy.service`) - Controls TV at boot and shutdown (requires manual configuration and enablement)
-- **Startup Script** (`LG_Buddy_Startup`) - Powers on TV and switches to correct input
+- **Startup Script** (`LG_Buddy_Startup`) - Powers on TV and switches to the correct input
 - **Shutdown Script** (`LG_Buddy_Shutdown`) - Powers off TV (but not on reboot)
 - **Sleep Hook** (`lg-buddy-sleep`) - Manages TV state during suspend/resume
 
@@ -132,7 +130,7 @@ LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to cont
    alga tv add <identifier> [TV_IP_or_hostname]
    ```
    
-   > **Note:** If no hostname or IP is provided, alga will default to "lgwebostv" which should work if your TV is discoverable on your network.
+   > **Note:** If no hostname or IP is provided, alga will default to "lgwebostv," which should work if your TV is discoverable on your network.
 
 ### Configuration
 
@@ -184,10 +182,8 @@ Edit the following files to match your setup:
 
 ### How It Works
 
-- **On Boot:** TV turns on and switches to your PC's HDMI input
-- **On Shutdown:** TV turns off (only on shutdown, not reboot)
-- **On Sleep:** TV turns off if it was on
-- **On Wake:** TV returns to previous power state
+- **On Boot/Wake:** TV turns on and switches to your PC's HDMI input
+- **On Shutdown/Sleep/suspend:** TV turns off (only on shutdown or sleep/suspend, not reboot)
 
 ### Troubleshooting
 
@@ -243,7 +239,7 @@ Add to your desktop environment's autostart if you need to reset a port on every
 sudo reset-video-port 1 DP-2
 ```
 
-The command has passwordless sudo access via a sudoers rule, so it won't prompt for a password.
+The command has passwordless sudo access via a sudoers rule so that it won't prompt for a password.
 
 ---
 
