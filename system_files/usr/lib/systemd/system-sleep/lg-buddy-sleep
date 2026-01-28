@@ -1,28 +1,37 @@
 #!/bin/bash
 
+# systemd-sleep hook for LG Buddy
+# Arguments: 
+#   $1: "pre" (before sleep) or "post" (after wake)
+#   $2: "suspend", "hibernate", "hybrid-sleep", or "suspend-then-hibernate"
+
 USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 TV_INPUT="HDMI_1"
 
 case "$1/$2" in
     pre/*)
+        # Before sleep - turn off TV if it's on
         logger -t lg-buddy-sleep "Pre-sleep: Checking TV state before $2"
         
+        # Run as the correct user and check power state
         power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
         
         logger -t lg-buddy-sleep "TV power state: $power_state"
         
         if [[ "$power_state" == "Active" ]]; then
-            logger -t lg-buddy-sleep "Powering off TV"
+            logger -t lg-buddy-sleep "TV is active, powering off"
             sudo -u "$USERNAME" "$ALGA_PATH" power off
         else
-            logger -t lg-buddy-sleep "TV already off"
+            logger -t lg-buddy-sleep "TV is already powered off"
         fi
         ;;
         
     post/*)
+        # After wake - turn TV back on and switch to correct input
         logger -t lg-buddy-sleep "Post-sleep: Woke up from $2"
         
+        # Wait a moment for network to stabilize
         sleep 2
         
         power_state=$(sudo -u "$USERNAME" "$ALGA_PATH" power screen-state 2>&1 | cut -d':' -f2 | xargs)
