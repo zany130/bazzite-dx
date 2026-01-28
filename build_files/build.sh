@@ -20,6 +20,7 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 
 # this installs a package from Fedora repos
 dnf5 install -y \
+beep \
 btfs \
 cockpit \
 cockpit-ostree \
@@ -83,6 +84,7 @@ sed -i -E \
      /etc/xdg/kdeglobals
 
 systemctl enable bazzite-autologin.service
+systemctl enable beep-startup.service
 systemctl disable uupd.timer
 
 # this uninstalls a package

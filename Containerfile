@@ -44,6 +44,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod 0644 /etc/ublue-os/topgrade.toml && \
     chmod 0644 /etc/ssh/sshd_config.d/99-bazzite.conf && \
     chmod 0755 /usr/local/sbin/reset-video-port && \
+    chmod 0644 /etc/systemd/system/beep-startup.service && \
     # Mark binaries as executable
     chmod +x /usr/lib/systemd/system-sleep/lg-buddy-sleep && \
 	chmod +x /usr/local/bin/LG_Buddy_Startup && \
