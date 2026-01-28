@@ -57,15 +57,32 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - Disabled unnecessary session/lock screen options
 - Auto-login service enabled
 
+### Retro Chime - Boot Sound
+
+A nostalgic boot chime that plays at startup using the PC speaker (beep program).
+
+**Features:**
+- Three ascending tones (1000Hz, 1500Hz, 1700Hz) play at early boot stage
+- Non-blocking - won't delay boot or prevent system from starting
+- Automatically enabled by default
+- Gracefully fails on systems without PC speaker hardware
+
+**How to disable (if desired):**
+```bash
+sudo systemctl disable beep-startup.service
+```
+
 ### LG Buddy - WebOS TV Automation
 
 A complete automation suite for controlling LG WebOS TVs, including automatic power management and input switching.
 
 **Components:**
-- **Systemd Service** (`LG_Buddy.service`) - Controls TV at boot and shutdown
+- **Systemd Service** (`LG_Buddy.service`) - Controls TV at boot and shutdown (requires manual configuration and enablement)
 - **Startup Script** (`LG_Buddy_Startup`) - Powers on TV and switches to correct input
 - **Shutdown Script** (`LG_Buddy_Shutdown`) - Powers off TV (but not on reboot)
 - **Sleep Hook** (`lg-buddy-sleep`) - Manages TV state during suspend/resume
+
+> **Note:** The LG_Buddy service is **not enabled by default** because it requires user-specific configuration. See [LG Buddy Setup](#lg-buddy-setup) section below for complete setup instructions.
 
 **Setup Instructions:** See [LG Buddy Setup](#lg-buddy-setup) section below.
 
