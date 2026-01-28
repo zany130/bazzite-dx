@@ -65,7 +65,7 @@ A nostalgic boot chime that plays at startup using the PC speaker (beep program)
 - Three ascending tones (1000Hz, 1500Hz, 1700Hz) play at early boot stage
 - Non-blocking - won't delay boot or prevent system from starting
 - Automatically enabled by default
-- Gracefully fails on systems without PC speaker hardware
+- Does not cause boot failures on systems without PC speaker hardware
 
 **How to disable (if desired):**
 ```bash
