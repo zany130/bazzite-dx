@@ -17,6 +17,7 @@ ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HDMI_4)
 
 # Retry function for network-dependent commands
+# Note: Duplicated across scripts to avoid external dependencies and keep each script self-contained
 retry_command() {
     local max_attempts=3
     local delay=2

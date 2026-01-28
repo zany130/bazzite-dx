@@ -16,6 +16,8 @@ USERNAME="zany130"
 ALGA_PATH="/home/${USERNAME}/.local/bin/alga"
 
 # Retry function for network-dependent commands
+# Note: Duplicated across scripts to avoid external dependencies and keep each script self-contained
+# Uses shorter delay (1s) for shutdown to avoid delaying system shutdown
 retry_command() {
     local max_attempts=3
     local delay=1
