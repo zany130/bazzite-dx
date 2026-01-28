@@ -105,7 +105,7 @@ A utility script for triggering display port hotplug events to resolve display d
 
 ## LG Buddy Setup
 
-LG Buddy requires the [alga](https://github.com/webosbrew/alga) CLI tool to control your LG WebOS TV.
+LG Buddy requires the [alga](https://github.com/Tenzer/alga) CLI tool to control your LG WebOS TV.
 
 ### Prerequisites
 
