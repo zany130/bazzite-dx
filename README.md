@@ -11,7 +11,7 @@ sudo bootc switch ghcr.io/zany130/bazzite-dx:latest
 sudo systemctl reboot
 ```
 
-After switching, configure [LG Buddy](#lg-buddy-setup) if you have an LG WebOS TV, and check out the [Video Port Reset](#video-port-reset) tool if you experience display issues.
+After switching, configure [LG Buddy](#lg-buddy-setup) if you have an LG WebOS TV, check out the [Video Port Reset](#video-port-reset) tool if you experience display issues, and see [Waypipe](#waypipe---remote-gui-applications) for running GUI applications remotely over SSH.
 
 ## Changes vs Upstream Bazzite
 
