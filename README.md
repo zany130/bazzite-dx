@@ -46,6 +46,9 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `sbctl` - Secure Boot management
 - `google-authenticator` - Two-factor authentication
 
+**Remote Access:**
+- `waypipe` - Run GUI applications remotely over SSH (Wayland equivalent of X11 forwarding)
+
 **Media & Development:**
 - `vlc` & `vlc-plugins-all` - Media player (flatpak version has broken Blu-ray support)
 - `python3-pygame` - Python game development
@@ -240,6 +243,71 @@ sudo reset-video-port 1 DP-2
 ```
 
 The command has passwordless sudo access via a sudoers rule so that it won't prompt for a password.
+
+## Waypipe - Remote GUI Applications
+
+Waypipe enables running GUI applications remotely over SSH on Wayland, similar to X11 forwarding but optimized for Wayland compositors.
+
+### Features
+
+- Run Wayland GUI applications over SSH
+- Low latency with optimized protocol compression
+- Works with any Wayland compositor (KDE Plasma, GNOME, Sway, etc.)
+- Automatic clipboard sharing
+- Hardware video decoding support
+
+### Prerequisites
+
+Both the local and remote systems should have waypipe installed. This image already includes waypipe.
+
+### Usage
+
+**Basic usage - Run a single application:**
+```bash
+# From your local machine, connect and run an application
+waypipe ssh user@remote-host application-name
+
+# Example: Run Firefox from a remote machine
+waypipe ssh user@remote-host firefox
+```
+
+**Using with existing SSH sessions:**
+```bash
+# On the remote machine in an SSH session
+waypipe --socket /tmp/waypipe.sock server &
+
+# Then run applications through waypipe
+WAYLAND_DISPLAY=/tmp/waypipe.sock application-name
+```
+
+**Performance tuning:**
+```bash
+# Higher compression for slower networks
+waypipe --compress zstd ssh user@remote-host application-name
+
+# Lower latency for faster networks
+waypipe --compress none ssh user@remote-host application-name
+```
+
+### SSH Configuration
+
+For the best experience, ensure your SSH configuration supports compression:
+```bash
+# In ~/.ssh/config or /etc/ssh/ssh_config
+Host remote-host
+    Compression yes
+    ServerAliveInterval 60
+```
+
+### Troubleshooting
+
+If applications fail to start:
+1. Verify both systems are running Wayland (not X11)
+2. Check that the application supports Wayland
+3. Ensure SSH connection is working: `ssh user@remote-host`
+4. Try with verbose mode: `waypipe -d ssh user@remote-host application-name`
+
+For more information, see the [waypipe documentation](https://gitlab.freedesktop.org/mstoeckl/waypipe).
 
 ---
 
