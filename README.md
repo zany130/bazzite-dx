@@ -271,15 +271,9 @@ waypipe ssh user@remote-host application-name
 waypipe ssh user@remote-host firefox
 ```
 
-**Using with existing SSH sessions:**
-```bash
-# On the remote machine in an SSH session
-waypipe --socket /tmp/waypipe.sock server &
+**Advanced usage:**
 
-# Then run applications through waypipe
-WAYLAND_DISPLAY=/tmp/waypipe.sock application-name
-```
-
+The recommended and supported pattern for most users is `waypipe ssh user@remote-host application-name` as shown above. If you need to integrate waypipe with more complex or existing SSH setups (such as multi-hop connections or custom socket handling), refer to the upstream waypipe documentation for complete, up‑to‑date client/server examples.
 **Performance tuning:**
 ```bash
 # Higher compression for slower networks
