@@ -37,7 +37,8 @@ rEFInd-tools \
 sbctl \
 solaar \
 vlc \
-vlc-plugins-all
+vlc-plugins-all \
+waypipe
 
 # Download and verify cockpit-file-sharing with checksum
 COCKPIT_FS_VERSION="4.5.2"

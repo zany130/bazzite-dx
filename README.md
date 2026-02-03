@@ -11,7 +11,7 @@ sudo bootc switch ghcr.io/zany130/bazzite-dx:latest
 sudo systemctl reboot
 ```
 
-After switching, configure [LG Buddy](#lg-buddy-setup) if you have an LG WebOS TV, and check out the [Video Port Reset](#video-port-reset) tool if you experience display issues.
+After switching, configure [LG Buddy](#lg-buddy-setup) if you have an LG WebOS TV, check out the [Video Port Reset](#video-port-reset) tool if you experience display issues, and see [Waypipe](#waypipe---remote-gui-applications) for running GUI applications remotely over SSH.
 
 ## Changes vs Upstream Bazzite
 
@@ -45,6 +45,9 @@ This custom image extends the base `ghcr.io/ublue-os/bazzite-dx:latest` image wi
 - `rEFInd` & `rEFInd-tools` - Boot manager
 - `sbctl` - Secure Boot management
 - `google-authenticator` - Two-factor authentication
+
+**Remote Access:**
+- `waypipe` - Run GUI applications remotely over SSH (Wayland equivalent of X11 forwarding)
 
 **Media & Development:**
 - `vlc` & `vlc-plugins-all` - Media player (flatpak version has broken Blu-ray support)
@@ -240,6 +243,65 @@ sudo reset-video-port 1 DP-2
 ```
 
 The command has passwordless sudo access via a sudoers rule so that it won't prompt for a password.
+
+## Waypipe - Remote GUI Applications
+
+Waypipe enables running GUI applications remotely over SSH on Wayland, similar to X11 forwarding but optimized for Wayland compositors.
+
+### Features
+
+- Run Wayland GUI applications over SSH
+- Low latency with optimized protocol compression
+- Works with any Wayland compositor (KDE Plasma, GNOME, Sway, etc.)
+- Automatic clipboard sharing
+- Hardware video decoding support
+
+### Prerequisites
+
+Both the local and remote systems should have waypipe installed. This image already includes waypipe.
+
+### Usage
+
+**Basic usage - Run a single application:**
+```bash
+# From your local machine, connect and run an application
+waypipe ssh user@remote-host application-name
+
+# Example: Run Firefox from a remote machine
+waypipe ssh user@remote-host firefox
+```
+
+**Advanced usage:**
+
+The recommended and supported pattern for most users is `waypipe ssh user@remote-host application-name` as shown above. If you need to integrate waypipe with more complex or existing SSH setups (such as multi-hop connections or custom socket handling), refer to the upstream waypipe documentation for complete, up‑to‑date client/server examples.
+**Performance tuning:**
+```bash
+# Higher compression for slower networks
+waypipe --compress zstd ssh user@remote-host application-name
+
+# Lower latency for faster networks
+waypipe --compress none ssh user@remote-host application-name
+```
+
+### SSH Configuration
+
+For the best experience, ensure your SSH configuration supports compression:
+```bash
+# In ~/.ssh/config or /etc/ssh/ssh_config
+Host remote-host
+    Compression yes
+    ServerAliveInterval 60
+```
+
+### Troubleshooting
+
+If applications fail to start:
+1. Verify both systems are running Wayland (not X11)
+2. Check that the application supports Wayland
+3. Ensure SSH connection is working: `ssh user@remote-host`
+4. Try with verbose mode: `waypipe -d ssh user@remote-host application-name`
+
+For more information, see the [waypipe documentation](https://gitlab.freedesktop.org/mstoeckl/waypipe).
 
 ---
 
