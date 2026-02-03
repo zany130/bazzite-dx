@@ -76,7 +76,7 @@ read_config() {
     while IFS= read -r line; do
         # Skip comments and empty lines
         [[ "$line" =~ ^[[:space:]]*# ]] && continue
-        [[ -z "${line// /}" ]] && continue
+        [[ "$line" =~ ^[[:space:]]*$ ]] && continue
         
         # Add command to array
         commands+=("$line")
