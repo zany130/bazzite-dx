@@ -66,10 +66,10 @@ Controls LG WebOS TV at boot/shutdown/sleep. Not enabled by default - requires s
 **Components:** systemd service, startup/shutdown scripts, sleep hook
 
 **Setup:**
-1. Install alga: `brew install pipx && pipx install alga`
+1. Install alga: `brew install pipx`, then `pipx install alga` (may need to restart shell)
 2. Pair TV: `alga tv add <identifier> [TV_IP]`
 3. Edit files, replace `zany130` with your username:
-   - `/usr/local/bin/LG_Buddy_Startup` - Set `TV_INPUT="HDMI_X"` (find with `alga input list`)
+   - `/usr/local/bin/LG_Buddy_Startup` - Set `TV_INPUT="HDMI_1"` (find options with `alga input list`)
    - `/usr/local/bin/LG_Buddy_Shutdown`
    - `/usr/lib/systemd/system-sleep/lg-buddy-sleep`
    - `/etc/systemd/system/LG_Buddy.service` - Update `User=` and `Group=`
