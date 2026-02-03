@@ -73,6 +73,60 @@ A nostalgic boot chime that plays at startup using the PC speaker (beep program)
 sudo systemctl disable beep-startup.service
 ```
 
+### Gamescope Headless Apps - Background Applications
+
+Automatically launches background applications alongside your Gamescope/Steam session. Perfect for cloud sync clients, chat apps, and system utilities that need to run invisibly in the background.
+
+**What it does:**
+- Launches apps after Gamescope starts but before Steam initializes
+- Runs apps via xvfb-run (virtual X11 display) so they don't appear in Gamescope
+- Apps continue running throughout your gaming session
+- Automatically stops when you exit the Gamescope session
+
+**Default Apps (launched if installed):**
+- **megasync** - MEGA cloud storage sync
+- **Discord** (Flatpak) - Chat application (started minimized)
+- **pCloud** - Alternative cloud storage client
+- **OpenRGB** - RGB lighting control
+
+**How to disable:**
+```bash
+# Create the disable flag
+mkdir -p ~/.config/gamescope
+touch ~/.config/gamescope/disable-apps
+
+# Then restart your Gamescope session (logout/login or reboot)
+```
+
+**How to re-enable:**
+```bash
+rm ~/.config/gamescope/disable-apps
+# Then restart your Gamescope session
+```
+
+**How to customize:**
+The script is located at `/usr/libexec/startGamescopeApps.sh`. To add custom apps in your own image fork:
+1. Edit the script to add your app following the existing pattern
+2. Apps are checked for existence before launching (gracefully skips if not installed)
+3. Use `command -v myapp` to check for native apps, or `flatpak list | grep` for flatpaks
+
+**Troubleshooting:**
+```bash
+# Check if apps are running
+ps aux | grep -E '(megasync|Discord|pcloud|openrgb)'
+
+# Check logs (from within Gamescope session)
+journalctl --user -u gamescope-session-plus@steam.service -f | grep gamescopeApps
+```
+
+**Why this is useful:**
+- Cloud sync keeps working while gaming (auto-sync screenshots, saves, etc.)
+- Discord keeps you connected to voice chat without visible windows
+- RGB controls maintain your lighting profile
+- No manual app launching needed - everything starts automatically
+
+> **Note:** This feature only works when using the Gamescope/Steam session. It does not affect Plasma or other desktop sessions.
+
 ### LG Buddy - WebOS TV Automation
 
 A complete automation suite for controlling LG WebOS TVs, including automatic power management and input switching.

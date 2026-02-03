@@ -50,6 +50,9 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod +x /usr/local/bin/LG_Buddy_Startup && \
     chmod +x /usr/local/bin/LG_Buddy_Shutdown && \
     chmod +x /usr/local/sbin/reset-video-port && \
+    # Gamescope session customization
+    chmod 0755 /usr/share/gamescope-session-plus/sessions.d/steam && \
+    chmod 0755 /usr/libexec/startGamescopeApps.sh && \
     \
     ostree container commit
 
