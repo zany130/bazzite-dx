@@ -3,8 +3,7 @@
 # Gamescope Headless Apps Launcher
 # Starts additional background applications for Gamescope sessions
 # ============================================================================
-# This script is called from the post_gamescope_start() hook in the steam
-# session configuration (/usr/share/gamescope-session-plus/sessions.d/steam).
+# This script is called from gamescopeApps.service (systemd user unit).
 #
 # It launches applications that need to run in the background alongside the
 # Gamescope/Steam session but don't need to be visible in the Gamescope
@@ -12,17 +11,18 @@
 #
 # Design Notes:
 #   - Uses xvfb-run to provide virtual X11 display for GUI apps
-#   - Runs in background (doesn't block Steam startup)
+#   - Managed by systemd (automatic restart on crash)
 #   - Check for disable flag to allow per-user opt-out
 #   - Gracefully handles missing applications (skip with warning)
-#   - Logs to stderr (captured by gamescope-session-plus journal)
+#   - Logs to systemd journal
+#   - Keeps running (sleep infinity) to maintain systemd cgroup
 # ============================================================================
 
 set -euo pipefail
 
 # Configuration
 DISABLE_FLAG="${HOME}/.config/gamescope/disable-apps"
-PID_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gamescope-apps.pid"
+LOCK_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gamescope-apps.lock"
 LOG_TAG="gamescopeApps"
 
 # Logging helper
@@ -30,7 +30,7 @@ log() {
     echo "[$LOG_TAG] $*" >&2
 }
 
-# Check if user has opted out
+# Check if user has opted out (systemd should also check via ConditionPathExists)
 if [[ -f "$DISABLE_FLAG" ]]; then
     log "Headless apps disabled by user (found: $DISABLE_FLAG)"
     exit 0
@@ -42,24 +42,20 @@ if [[ -z "${XDG_RUNTIME_DIR:-}" ]]; then
     exit 1
 fi
 
-# Check if already running (prevent duplicate launches)
-if [[ -f "$PID_FILE" ]]; then
-    PID=$(cat "$PID_FILE" 2>/dev/null || echo "")
-    if [[ -n "$PID" ]] && kill -0 "$PID" 2>/dev/null; then
-        log "Already running (PID: $PID)"
-        exit 0
-    else
-        log "Stale PID file found, removing"
-        rm -f "$PID_FILE"
-    fi
+# Ensure xvfb-run exists
+if ! command -v xvfb-run &>/dev/null; then
+    log "ERROR: xvfb-run not found"
+    exit 1
 fi
 
-# Write our PID to lock file
-echo $$ > "$PID_FILE"
-log "Starting headless apps (PID: $$)"
+# Prevent duplicate runs using flock
+exec 200>"$LOCK_FILE"
+if ! flock -n 200; then
+    log "Another instance is already running, exiting"
+    exit 0
+fi
 
-# Cleanup PID file on exit
-trap 'rm -f "$PID_FILE"' EXIT
+log "Starting headless apps (PID: $$)"
 
 # ============================================================================
 # Launch Applications
@@ -76,20 +72,21 @@ trap 'rm -f "$PID_FILE"' EXIT
 # Function to launch app via xvfb-run
 launch_app() {
     local app_name="$1"
-    local app_cmd="$2"
+    shift
     
     log "Launching: $app_name"
     
-    # Launch in background and detach from this script's process group
-    # This ensures apps continue running even if this script exits
-    if ! xvfb-run -a -s "-screen 0 1024x768x24" bash -c "$app_cmd" &>/dev/null &
+    # Launch in background via xvfb-run
+    # Apps will be children of this script, kept in the systemd cgroup
+    if ! xvfb-run -a -s "-screen 0 1024x768x24" "$@" &>/dev/null &
     then
         log "WARNING: Failed to launch $app_name"
         return 1
     fi
     
-    # Give app a moment to start
-    sleep 1
+    local pid=$!
+    log "Started: $app_name (PID: $pid)"
+    
     return 0
 }
 
@@ -105,7 +102,7 @@ APPS_LAUNCHED=0
 # 1. MEGAsync - Cloud storage sync
 # Automatically syncs MEGA cloud storage in the background
 if command -v megasync &>/dev/null; then
-    if launch_app "megasync" "megasync"; then
+    if launch_app "megasync" megasync; then
         ((APPS_LAUNCHED++))
     fi
 else
@@ -115,7 +112,7 @@ fi
 # 2. Discord - Flatpak version
 # Chat application, started minimized
 if flatpak list 2>/dev/null | grep -q com.discordapp.Discord; then
-    if launch_app "Discord" "flatpak run com.discordapp.Discord --start-minimized"; then
+    if launch_app "Discord" flatpak run com.discordapp.Discord --start-minimized; then
         ((APPS_LAUNCHED++))
     fi
 else
@@ -125,7 +122,7 @@ fi
 # 3. pCloud - Cloud storage (if installed)
 # Alternative cloud storage client
 if command -v pcloud &>/dev/null; then
-    if launch_app "pCloud" "pcloud"; then
+    if launch_app "pCloud" pcloud; then
         ((APPS_LAUNCHED++))
     fi
 else
@@ -135,7 +132,7 @@ fi
 # 4. OpenRGB - RGB lighting control
 # Controls RGB lighting on peripherals and components
 if command -v openrgb &>/dev/null; then
-    if launch_app "OpenRGB" "openrgb --startminimized"; then
+    if launch_app "OpenRGB" openrgb --startminimized; then
         ((APPS_LAUNCHED++))
     fi
 else
@@ -156,5 +153,8 @@ fi
 
 log "Successfully launched $APPS_LAUNCHED application(s)"
 
-# Exit successfully - apps will continue running in background
-exit 0
+# Keep script running to maintain systemd cgroup
+# This ensures all child processes stay in the service's control group
+# and are properly managed/cleaned up by systemd
+log "Keeping service alive (sleep infinity)"
+sleep infinity

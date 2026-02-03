@@ -1,0 +1,58 @@
+# Headless apps for Gamescope session
+# Launches background applications (cloud sync, chat, RGB control) invisibly
+# alongside the Gamescope/Steam session.
+#
+# This service is bound to gamescope-session-plus@steam.service and stops
+# automatically when switching to Plasma or logging out.
+#
+# To disable: systemctl --user mask gamescopeApps.service
+#             OR: touch ~/.config/gamescope/disable-apps
+# To enable:  systemctl --user unmask gamescopeApps.service
+#             AND: rm ~/.config/gamescope/disable-apps
+
+[Unit]
+Description=Headless background apps for Gamescope session
+Documentation=man:systemd.service(5)
+
+# Only run if user hasn't disabled it via flag file
+ConditionPathExists=!%h/.config/gamescope/disable-apps
+
+# Conflict with Plasma - don't run when Plasma is active
+Conflicts=plasma-workspace.target
+
+# Wait for Gamescope session to be ready
+After=gamescope-session-plus@steam.service
+BindsTo=gamescope-session-plus@steam.service
+
+# Stop when not needed (session ends)
+StopWhenUnneeded=yes
+
+[Service]
+Type=exec
+KillMode=control-group
+
+# Launch the apps via our script
+ExecStart=/usr/libexec/startGamescopeApps.sh
+
+# Cleanup message
+ExecStopPost=/bin/sh -c 'echo "[gamescopeApps] Stopped and cleaned up" >&2'
+
+# Timeouts to prevent hanging
+TimeoutStartSec=30
+TimeoutStopSec=10
+
+# Restart on crash (but not on clean exit)
+Restart=on-failure
+RestartSec=5
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gamescopeApps
+
+[Install]
+# Not directly installed - activated via Wants= from gamescope-session-plus
+# But can be enabled/disabled by user if desired
+WantedBy=default.target

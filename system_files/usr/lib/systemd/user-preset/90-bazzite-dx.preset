@@ -1,0 +1,4 @@
+# Bazzite-DX systemd user unit presets
+# Enables the headless apps service by default for all users
+
+enable gamescopeApps.service

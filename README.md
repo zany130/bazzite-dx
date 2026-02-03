@@ -75,13 +75,14 @@ sudo systemctl disable beep-startup.service
 
 ### Gamescope Headless Apps - Background Applications
 
-Automatically launches background applications alongside your Gamescope/Steam session. Perfect for cloud sync clients, chat apps, and system utilities that need to run invisibly in the background.
+Automatically launches background applications alongside your Gamescope/Steam session using systemd units. Perfect for cloud sync clients, chat apps, and system utilities that need to run invisibly in the background.
 
 **What it does:**
-- Launches apps after Gamescope starts but before Steam initializes
+- Launches apps after Gamescope session starts via systemd service
 - Runs apps via xvfb-run (virtual X11 display) so they don't appear in Gamescope
 - Apps continue running throughout your gaming session
-- Automatically stops when you exit the Gamescope session
+- Automatically stops when you exit the Gamescope session or switch to Plasma
+- Automatic restart on crash (systemd managed)
 
 **Default Apps (launched if installed):**
 - **megasync** - MEGA cloud storage sync
@@ -89,19 +90,45 @@ Automatically launches background applications alongside your Gamescope/Steam se
 - **pCloud** - Alternative cloud storage client
 - **OpenRGB** - RGB lighting control
 
+**Implementation:**
+- Uses systemd user units in `/usr/lib/systemd/user/` (part of image)
+- Drop-in override for gamescope-session-plus (doesn't modify upstream)
+- No upstream file overrides - low maintenance
+
 **How to disable:**
 ```bash
-# Create the disable flag
+# Method 1: Simple flag file (recommended)
 mkdir -p ~/.config/gamescope
 touch ~/.config/gamescope/disable-apps
+# Then logout/login or restart service
 
-# Then restart your Gamescope session (logout/login or reboot)
+# Method 2: Systemd mask
+systemctl --user mask gamescopeApps.service
 ```
 
 **How to re-enable:**
 ```bash
+# Method 1: Remove flag file
 rm ~/.config/gamescope/disable-apps
-# Then restart your Gamescope session
+
+# Method 2: Systemd unmask
+systemctl --user unmask gamescopeApps.service
+```
+
+**Management commands:**
+```bash
+# Check status
+systemctl --user status gamescopeApps.service
+
+# View logs
+journalctl --user -u gamescopeApps.service -f
+
+# Restart
+systemctl --user restart gamescopeApps.service
+
+# Manual start/stop
+systemctl --user start gamescopeApps.service
+systemctl --user stop gamescopeApps.service
 ```
 
 **How to customize:**
@@ -110,13 +137,26 @@ The script is located at `/usr/libexec/startGamescopeApps.sh`. To add custom app
 2. Apps are checked for existence before launching (gracefully skips if not installed)
 3. Use `command -v myapp` to check for native apps, or `flatpak list | grep` for flatpaks
 
+**Why systemd units instead of session hooks:**
+- ✅ No upstream file overrides (low maintenance)
+- ✅ Automatic restart on crash
+- ✅ Better process management and logging
+- ✅ Doesn't diverge from ChimeraOS steam session
+- ✅ Independent of upstream changes
+
 **Troubleshooting:**
 ```bash
+# Check if service is enabled
+systemctl --user is-enabled gamescopeApps.service
+
 # Check if apps are running
 ps aux | grep -E '(megasync|Discord|pcloud|openrgb)'
 
-# Check logs (from within Gamescope session)
-journalctl --user -u gamescope-session-plus@steam.service -f | grep gamescopeApps
+# View detailed logs
+journalctl --user -u gamescopeApps.service --since today
+
+# Test the script manually
+/usr/libexec/startGamescopeApps.sh
 ```
 
 **Why this is useful:**
