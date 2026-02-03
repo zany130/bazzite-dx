@@ -5,6 +5,8 @@
 # This service is bound to gamescope-session-plus@steam.service and stops
 # automatically when switching to Plasma or logging out.
 #
+# Activation: Only via Wants= from gamescope-session-plus@steam.service drop-in
+#
 # To disable: systemctl --user mask gamescopeApps.service
 #             OR: touch ~/.config/gamescope/disable-apps
 # To enable:  systemctl --user unmask gamescopeApps.service
@@ -52,7 +54,4 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=gamescopeApps
 
-[Install]
-# Not directly installed - activated via Wants= from gamescope-session-plus
-# But can be enabled/disabled by user if desired
-WantedBy=default.target
+# No [Install] section - activated only via Wants= from gamescope-session-plus@steam.service drop-in

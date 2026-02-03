@@ -110,7 +110,7 @@ systemctl --user restart gamescopeApps.service
 - Reads commands from config file(s)
 - Launches each via xvfb-run (virtual X11 display)
 - Apps run invisibly in background
-- Automatic restart on crash (systemd managed)
+- Service restarts on failure (systemd managed)
 - Stops when you exit Gamescope or switch to Plasma
 
 **Default Apps (as shipped in /etc/gamescope-apps.conf):**

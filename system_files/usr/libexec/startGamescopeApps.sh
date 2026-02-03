@@ -93,8 +93,9 @@ launch_app() {
     log "Launching: $app_cmd"
     
     # Launch in background via xvfb-run
+    # Uses bash -lc to properly handle the command string with arguments
     # Apps will be children of this script, kept in the systemd cgroup
-    if ! xvfb-run -a -s "-screen 0 1024x768x24" $app_cmd &>/dev/null &
+    if ! xvfb-run -a -s "-screen 0 1024x768x24" bash -lc "$app_cmd" &>/dev/null &
     then
         log "WARNING: Failed to launch: $app_cmd"
         return 1

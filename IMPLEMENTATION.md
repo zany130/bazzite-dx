@@ -126,28 +126,49 @@ This implementation is optimized for:
 
 ## Adding Custom Apps
 
-Edit `/usr/libexec/startGamescopeApps.sh`:
+Apps are configured via config files, not by editing `/usr/libexec/startGamescopeApps.sh` directly.
 
-```bash
-# 5. Your App - Description
-if command -v myapp &>/dev/null; then
-    if launch_app "MyApp" myapp --args; then
-        ((APPS_LAUNCHED++))
-    fi
-else
-    log "myapp not found, skipping"
-fi
-```
+The service reads its app list from configuration files in this order:
 
-For Flatpak apps:
+1. **System-wide defaults** (packaged, read-only): `/etc/gamescope-apps.conf`
+2. **Optional per-user overrides**: `~/.config/gamescope/apps.conf`
 
-```bash
-if flatpak list 2>/dev/null | grep -q com.example.MyApp; then
-    if launch_app "MyApp" flatpak run com.example.MyApp; then
-        ((APPS_LAUNCHED++))
-    fi
-fi
-```
+### To add or remove apps:
+
+1. **View the system defaults:**
+   ```bash
+   cat /etc/gamescope-apps.conf
+   ```
+
+2. **Create your user config** (if it doesn't exist):
+   ```bash
+   mkdir -p ~/.config/gamescope
+   cp /etc/gamescope-apps.conf ~/.config/gamescope/apps.conf
+   ```
+
+3. **Edit your config:**
+   ```bash
+   nano ~/.config/gamescope/apps.conf
+   ```
+
+4. **Add/remove apps** - one command per line:
+   ```bash
+   # Native app
+   myapp --args
+   
+   # Flatpak app
+   flatpak run com.example.MyApp --startup-flags
+   
+   # Comment out to disable
+   # pcloud
+   ```
+
+5. **Apply changes:**
+   ```bash
+   systemctl --user restart gamescopeApps.service
+   ```
+
+This keeps the packaged script unmodified and makes future updates low-maintenance, while allowing both system-wide and per-user customization through configuration.
 
 ## Troubleshooting
 
