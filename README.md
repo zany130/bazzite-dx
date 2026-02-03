@@ -73,6 +73,116 @@ A nostalgic boot chime that plays at startup using the PC speaker (beep program)
 sudo systemctl disable beep-startup.service
 ```
 
+### Gamescope Headless Apps - Background Applications (Config-Driven)
+
+Automatically launches background applications alongside your Gamescope/Steam session. **Ultra-low maintenance**: just edit a simple config file to add/remove apps - no script editing needed!
+
+**Config-File Driven Approach:**
+```bash
+# System default (shipped in image)
+/etc/gamescope-apps.conf
+
+# Your personal override (optional)
+~/.config/gamescope/apps.conf
+```
+
+**Simple config format** - one command per line:
+```
+# This is a comment
+megasync
+flatpak run com.discordapp.Discord --start-minimized
+pcloud
+openrgb --startminimized
+```
+
+**Adding/Removing Apps:**
+```bash
+# Option 1: Edit system default (in your image fork)
+# Edit: system_files/etc/gamescope-apps.conf
+
+# Option 2: Create user override (at runtime)
+cp /etc/gamescope-apps.conf ~/.config/gamescope/apps.conf
+nano ~/.config/gamescope/apps.conf
+systemctl --user restart gamescopeApps.service
+```
+
+**What it does:**
+- Reads commands from config file(s)
+- Launches each via xvfb-run (virtual X11 display)
+- Apps run invisibly in background
+- Service restarts on failure (systemd managed)
+- Stops when you exit Gamescope or switch to Plasma
+
+**Default Apps (as shipped in /etc/gamescope-apps.conf):**
+- **megasync** - MEGA cloud storage sync
+- **Discord** (Flatpak) - Chat application (started minimized)
+
+**Commented out (easy to enable):**
+- **pCloud** - Cloud storage
+- **nextcloud** - Cloud sync
+- **OpenRGB** - RGB lighting control
+
+**How to disable:**
+```bash
+# Disable all apps (flag file)
+touch ~/.config/gamescope/disable-apps
+
+# Or disable the service
+systemctl --user mask gamescopeApps.service
+```
+
+**How to re-enable:**
+```bash
+# Remove flag
+rm ~/.config/gamescope/disable-apps
+
+# Or unmask service
+systemctl --user unmask gamescopeApps.service
+```
+
+**Management commands:**
+```bash
+# Check status
+systemctl --user status gamescopeApps.service
+
+# View logs (shows which apps were launched)
+journalctl --user -u gamescopeApps.service -f
+
+# Restart (after config changes)
+systemctl --user restart gamescopeApps.service
+```
+
+**Why config-driven:**
+- ✅ **Ultra-low maintenance** - just edit a text file
+- ✅ **No script editing** required
+- ✅ **No code changes** to add/remove apps
+- ✅ **User can override** system defaults
+- ✅ **No upstream overrides** - stays aligned with Bazzite
+
+**Implementation details:**
+- Systemd user units in `/usr/lib/systemd/user/`
+- Drop-in for gamescope-session-plus (doesn't modify upstream)
+- Config file approach for maximum flexibility
+- Part of immutable image, but user-configurable
+
+**Troubleshooting:**
+```bash
+# Check if service is running
+systemctl --user is-active gamescopeApps.service
+
+# Check what commands are in config
+cat /etc/gamescope-apps.conf
+cat ~/.config/gamescope/apps.conf  # if exists
+
+# View detailed logs
+journalctl --user -u gamescopeApps.service --since today
+
+# Test script manually
+/usr/libexec/startGamescopeApps.sh
+```
+
+> **Note:** This feature only works in Gamescope/Steam session. Apps do not run in Plasma or other sessions.
+
 ### LG Buddy - WebOS TV Automation
 
 A complete automation suite for controlling LG WebOS TVs, including automatic power management and input switching.
