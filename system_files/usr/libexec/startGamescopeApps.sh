@@ -1,21 +1,22 @@
 #!/bin/bash
 # ============================================================================
-# Gamescope Headless Apps Launcher
-# Starts additional background applications for Gamescope sessions
+# Gamescope Headless Apps Launcher - Config-Driven
 # ============================================================================
-# This script is called from gamescopeApps.service (systemd user unit).
+# Launches background applications for Gamescope sessions from config files.
+# This script reads simple config files and launches each command via xvfb-run.
 #
-# It launches applications that need to run in the background alongside the
-# Gamescope/Steam session but don't need to be visible in the Gamescope
-# compositor (e.g., sync clients, chat apps, RGB control).
+# Config files (processed in order, later overrides earlier):
+#   1. /etc/gamescope-apps.conf        (system default, part of image)
+#   2. ~/.config/gamescope/apps.conf   (user override, optional)
 #
-# Design Notes:
-#   - Uses xvfb-run to provide virtual X11 display for GUI apps
-#   - Managed by systemd (automatic restart on crash)
-#   - Check for disable flag to allow per-user opt-out
-#   - Gracefully handles missing applications (skip with warning)
-#   - Logs to systemd journal
-#   - Keeps running (sleep infinity) to maintain systemd cgroup
+# Config format:
+#   - One command per line
+#   - Lines starting with # are comments
+#   - Empty lines are ignored
+#   - Commands are executed as-is via xvfb-run
+#
+# Managed by: gamescopeApps.service (systemd user unit)
+# Disable: touch ~/.config/gamescope/disable-apps
 # ============================================================================
 
 set -euo pipefail
@@ -24,6 +25,10 @@ set -euo pipefail
 DISABLE_FLAG="${HOME}/.config/gamescope/disable-apps"
 LOCK_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gamescope-apps.lock"
 LOG_TAG="gamescopeApps"
+
+# Config file locations
+SYSTEM_CONFIG="/etc/gamescope-apps.conf"
+USER_CONFIG="${HOME}/.config/gamescope/apps.conf"
 
 # Logging helper
 log() {
@@ -55,106 +60,103 @@ if ! flock -n 200; then
     exit 0
 fi
 
-log "Starting headless apps (PID: $$)"
+log "Starting headless apps launcher (PID: $$)"
 
-# ============================================================================
-# Launch Applications
-# ============================================================================
-# Each app is launched via xvfb-run which provides a virtual X11 display.
-# This is necessary for GUI applications that expect X11 but don't need to
-# be visible in Gamescope (which uses Wayland internally).
-#
-# xvfb-run options:
-#   -a: Auto-select display number (avoids conflicts)
-#   -s: Server arguments for Xvfb (screen size and color depth)
-# ============================================================================
+# Function to read and parse config file
+read_config() {
+    local config_file="$1"
+    local commands=()
+    
+    if [[ ! -f "$config_file" ]]; then
+        return 0
+    fi
+    
+    log "Reading config: $config_file"
+    
+    while IFS= read -r line; do
+        # Skip comments and empty lines
+        [[ "$line" =~ ^[[:space:]]*# ]] && continue
+        [[ -z "${line// /}" ]] && continue
+        
+        # Add command to array
+        commands+=("$line")
+    done < "$config_file"
+    
+    printf '%s\n' "${commands[@]}"
+}
 
 # Function to launch app via xvfb-run
 launch_app() {
-    local app_name="$1"
-    shift
+    local app_cmd="$*"
+    local app_name="${1%% *}"  # First word is the app name
     
-    log "Launching: $app_name"
+    log "Launching: $app_cmd"
     
     # Launch in background via xvfb-run
     # Apps will be children of this script, kept in the systemd cgroup
-    if ! xvfb-run -a -s "-screen 0 1024x768x24" "$@" &>/dev/null &
+    if ! xvfb-run -a -s "-screen 0 1024x768x24" $app_cmd &>/dev/null &
     then
-        log "WARNING: Failed to launch $app_name"
+        log "WARNING: Failed to launch: $app_cmd"
         return 1
     fi
     
     local pid=$!
-    log "Started: $app_name (PID: $pid)"
+    log "Started: $app_name (PID: $pid, command: $app_cmd)"
     
     return 0
 }
 
 # ============================================================================
-# Application Definitions
-# ============================================================================
-# Add or remove applications here. Each app is checked for existence before
-# launching, so missing apps are gracefully skipped.
+# Read Configuration Files
 # ============================================================================
 
 APPS_LAUNCHED=0
+declare -a ALL_COMMANDS
 
-# 1. MEGAsync - Cloud storage sync
-# Automatically syncs MEGA cloud storage in the background
-if command -v megasync &>/dev/null; then
-    if launch_app "megasync" megasync; then
-        ((APPS_LAUNCHED++))
-    fi
-else
-    log "megasync not found, skipping"
+# Read system config (if exists)
+if [[ -f "$SYSTEM_CONFIG" ]]; then
+    log "Loading system config: $SYSTEM_CONFIG"
+    mapfile -t SYSTEM_COMMANDS < <(read_config "$SYSTEM_CONFIG")
+    ALL_COMMANDS+=("${SYSTEM_COMMANDS[@]}")
 fi
 
-# 2. Discord - Flatpak version
-# Chat application, started minimized
-if flatpak list 2>/dev/null | grep -q com.discordapp.Discord; then
-    if launch_app "Discord" flatpak run com.discordapp.Discord --start-minimized; then
-        ((APPS_LAUNCHED++))
-    fi
-else
-    log "Discord flatpak not found, skipping"
+# Read user config (if exists) - this can override or add to system config
+if [[ -f "$USER_CONFIG" ]]; then
+    log "Loading user config: $USER_CONFIG"
+    log "User config will be used instead of system config"
+    # Clear system commands if user has their own config
+    ALL_COMMANDS=()
+    mapfile -t USER_COMMANDS < <(read_config "$USER_CONFIG")
+    ALL_COMMANDS+=("${USER_COMMANDS[@]}")
 fi
 
-# 3. pCloud - Cloud storage (if installed)
-# Alternative cloud storage client
-if command -v pcloud &>/dev/null; then
-    if launch_app "pCloud" pcloud; then
-        ((APPS_LAUNCHED++))
-    fi
-else
-    log "pcloud not found, skipping"
+# Check if we have any commands to run
+if [[ ${#ALL_COMMANDS[@]} -eq 0 ]]; then
+    log "No commands found in config files"
+    log "Hint: Edit $SYSTEM_CONFIG or create $USER_CONFIG"
+    exit 0
 fi
 
-# 4. OpenRGB - RGB lighting control
-# Controls RGB lighting on peripherals and components
-if command -v openrgb &>/dev/null; then
-    if launch_app "OpenRGB" openrgb --startminimized; then
-        ((APPS_LAUNCHED++))
-    fi
-else
-    log "openrgb not found, skipping"
-fi
+log "Found ${#ALL_COMMANDS[@]} command(s) to launch"
 
 # ============================================================================
-# Add more applications here following the same pattern:
-# ============================================================================
-# if command -v myapp &>/dev/null; then
-#     if launch_app "MyApp" "myapp --args"; then
-#         ((APPS_LAUNCHED++))
-#     fi
-# else
-#     log "myapp not found, skipping"
-# fi
+# Launch Applications
 # ============================================================================
 
-log "Successfully launched $APPS_LAUNCHED application(s)"
+for cmd in "${ALL_COMMANDS[@]}"; do
+    if launch_app $cmd; then
+        ((APPS_LAUNCHED++))
+    fi
+done
 
+log "Successfully launched $APPS_LAUNCHED/${#ALL_COMMANDS[@]} application(s)"
+
+# ============================================================================
+# Keep Service Running
+# ============================================================================
 # Keep script running to maintain systemd cgroup
 # This ensures all child processes stay in the service's control group
 # and are properly managed/cleaned up by systemd
-log "Keeping service alive (sleep infinity)"
+
+log "Service active, keeping processes alive (sleep infinity)"
 sleep infinity

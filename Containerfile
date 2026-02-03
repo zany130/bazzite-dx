@@ -54,6 +54,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod 0644 /usr/lib/systemd/user/gamescopeApps.service && \
     chmod 0644 /usr/lib/systemd/user/gamescope-session-plus@.service.d/10-apps.conf && \
     chmod 0644 /usr/lib/systemd/user-preset/90-bazzite-dx.preset && \
+    chmod 0644 /etc/gamescope-apps.conf && \
     chmod 0755 /usr/libexec/startGamescopeApps.sh && \
     # Enable gamescope apps service by default (apply preset)
     systemctl --global preset gamescopeApps.service && \
