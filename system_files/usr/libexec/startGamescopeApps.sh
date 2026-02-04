@@ -22,13 +22,13 @@
 set -euo pipefail
 
 # Configuration
-DISABLE_FLAG="${HOME}/.config/gamescope/disable-apps"
+DISABLE_FLAG="$HOME/.config/gamescope/disable-apps"
 LOCK_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gamescope-apps.lock"
 LOG_TAG="gamescopeApps"
 
 # Config file locations
 SYSTEM_CONFIG="/etc/gamescope-apps.conf"
-USER_CONFIG="${HOME}/.config/gamescope/apps.conf"
+USER_CONFIG="$HOME/.config/gamescope/apps.conf"
 
 # Logging helper
 log() {
@@ -92,19 +92,17 @@ launch_app() {
     
     log "Launching: $app_cmd"
     
-    # Launch in background via xvfb-run
+    # Launch in background via xvfb-run (fire-and-forget)
     # Uses bash -lc to properly handle the command string with arguments
     # Apps will be children of this script, kept in the systemd cgroup
-    if ! xvfb-run -a -s "-screen 0 1024x768x24" bash -lc "$app_cmd" &>/dev/null &
-    then
-        log "WARNING: Failed to launch: $app_cmd"
-        return 1
-    fi
+    # Note: xvfb-run may return non-zero even on success, so we don't check exit code
+    xvfb-run -a -s "-screen 0 1024x768x24" bash -lc "$app_cmd" &>/dev/null &
     
     local pid=$!
     log "Started: $app_name (PID: $pid, command: $app_cmd)"
     
-    return 0
+    # Return the PID for startup validation
+    echo "$pid"
 }
 
 # ============================================================================
@@ -144,13 +142,36 @@ log "Found ${#ALL_COMMANDS[@]} command(s) to launch"
 # Launch Applications
 # ============================================================================
 
+declare -A APP_PIDS  # Associative array: PID -> command
+
 for cmd in "${ALL_COMMANDS[@]}"; do
-    if launch_app $cmd; then
+    pid=$(launch_app $cmd)
+    if [[ -n "$pid" ]]; then
+        APP_PIDS[$pid]="$cmd"
         ((APPS_LAUNCHED++))
     fi
 done
 
-log "Successfully launched $APPS_LAUNCHED/${#ALL_COMMANDS[@]} application(s)"
+log "Launched $APPS_LAUNCHED application(s), waiting 2 seconds to validate startup..."
+
+# Wait 2 seconds to allow apps to initialize
+sleep 2
+
+# Check which apps are still running
+STARTUP_FAILURES=0
+for pid in "${!APP_PIDS[@]}"; do
+    if ! kill -0 "$pid" 2>/dev/null; then
+        # Process already exited - likely a startup failure
+        log "WARNING: App crashed during startup: ${APP_PIDS[$pid]} (PID: $pid)"
+        ((STARTUP_FAILURES++))
+    fi
+done
+
+if [[ $STARTUP_FAILURES -eq 0 ]]; then
+    log "All $APPS_LAUNCHED application(s) started successfully"
+else
+    log "Startup complete: $((APPS_LAUNCHED - STARTUP_FAILURES))/$APPS_LAUNCHED succeeded, $STARTUP_FAILURES failed"
+fi
 
 # ============================================================================
 # Keep Service Running
