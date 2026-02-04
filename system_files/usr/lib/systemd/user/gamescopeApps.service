@@ -26,6 +26,9 @@ Conflicts=plasma-workspace.target
 After=gamescope-session-plus@steam.service
 BindsTo=gamescope-session-plus@steam.service
 
+StartLimitBurst=3
+StartLimitIntervalSec=60
+
 [Service]
 Type=exec
 KillMode=control-group
@@ -43,8 +46,7 @@ TimeoutStopSec=10
 # Restart on crash (but not on clean exit)
 Restart=on-failure
 RestartSec=5
-StartLimitBurst=3
-StartLimitIntervalSec=60
+
 
 # Logging
 StandardOutput=journal

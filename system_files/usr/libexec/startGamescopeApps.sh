@@ -19,7 +19,7 @@
 # Disable: touch ~/.config/gamescope/disable-apps
 # ============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 # Configuration
 DISABLE_FLAG="$HOME/.config/gamescope/disable-apps"
@@ -145,7 +145,7 @@ log "Found ${#ALL_COMMANDS[@]} command(s) to launch"
 declare -A APP_PIDS  # Associative array: PID -> command
 
 for cmd in "${ALL_COMMANDS[@]}"; do
-    pid=$(launch_app $cmd)
+    pid=$(launch_app "$cmd")
     if [[ -n "$pid" ]]; then
         APP_PIDS[$pid]="$cmd"
         ((APPS_LAUNCHED++))
@@ -171,7 +171,11 @@ if [[ $STARTUP_FAILURES -eq 0 ]]; then
     log "All $APPS_LAUNCHED application(s) started successfully"
 else
     log "Startup complete: $((APPS_LAUNCHED - STARTUP_FAILURES))/$APPS_LAUNCHED succeeded, $STARTUP_FAILURES failed"
+
+    log "At least one app failed during startup — exiting with failure to trigger restart"
+    exit 1
 fi
+
 
 # ============================================================================
 # Keep Service Running
