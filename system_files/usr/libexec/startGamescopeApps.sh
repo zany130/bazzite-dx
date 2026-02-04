@@ -19,7 +19,7 @@
 # Disable: touch ~/.config/gamescope/disable-apps
 # ============================================================================
 
-set -euo pipefail
+set -uo pipefail
 
 # Configuration
 DISABLE_FLAG="$HOME/.config/gamescope/disable-apps"
