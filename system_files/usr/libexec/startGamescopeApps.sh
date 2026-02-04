@@ -145,7 +145,7 @@ log "Found ${#ALL_COMMANDS[@]} command(s) to launch"
 declare -A APP_PIDS  # Associative array: PID -> command
 
 for cmd in "${ALL_COMMANDS[@]}"; do
-    pid=$(launch_app $cmd)
+    pid=$(launch_app "$cmd")
     if [[ -n "$pid" ]]; then
         APP_PIDS[$pid]="$cmd"
         ((APPS_LAUNCHED++))
