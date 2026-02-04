@@ -22,13 +22,13 @@
 set -euo pipefail
 
 # Configuration
-DISABLE_FLAG="${HOME}/.config/gamescope/disable-apps"
+DISABLE_FLAG="$HOME/.config/gamescope/disable-apps"
 LOCK_FILE="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/gamescope-apps.lock"
 LOG_TAG="gamescopeApps"
 
 # Config file locations
 SYSTEM_CONFIG="/etc/gamescope-apps.conf"
-USER_CONFIG="${HOME}/.config/gamescope/apps.conf"
+USER_CONFIG="$HOME/.config/gamescope/apps.conf"
 
 # Logging helper
 log() {
@@ -92,14 +92,11 @@ launch_app() {
     
     log "Launching: $app_cmd"
     
-    # Launch in background via xvfb-run
+    # Launch in background via xvfb-run (fire-and-forget)
     # Uses bash -lc to properly handle the command string with arguments
     # Apps will be children of this script, kept in the systemd cgroup
-    if ! xvfb-run -a -s "-screen 0 1024x768x24" bash -lc "$app_cmd" &>/dev/null &
-    then
-        log "WARNING: Failed to launch: $app_cmd"
-        return 1
-    fi
+    # Note: xvfb-run may return non-zero even on success, so we don't check exit code
+    xvfb-run -a -s "-screen 0 1024x768x24" bash -lc "$app_cmd" &>/dev/null &
     
     local pid=$!
     log "Started: $app_name (PID: $pid, command: $app_cmd)"
