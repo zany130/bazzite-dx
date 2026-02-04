@@ -171,7 +171,11 @@ if [[ $STARTUP_FAILURES -eq 0 ]]; then
     log "All $APPS_LAUNCHED application(s) started successfully"
 else
     log "Startup complete: $((APPS_LAUNCHED - STARTUP_FAILURES))/$APPS_LAUNCHED succeeded, $STARTUP_FAILURES failed"
+
+    log "At least one app failed during startup — exiting with failure to trigger restart"
+    exit 1
 fi
+
 
 # ============================================================================
 # Keep Service Running
