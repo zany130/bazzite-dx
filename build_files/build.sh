@@ -47,7 +47,10 @@ COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/downlo
 COCKPIT_FS_SHA256="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
-curl --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}"
+if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
+  echo "Failed to download ${COCKPIT_FS_RPM}" >&2
+  exit 1
+fi
 
 echo "Verifying checksum..."
 echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
