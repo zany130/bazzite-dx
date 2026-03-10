@@ -41,10 +41,10 @@ vlc-plugins-all \
 waypipe
 
 # Download and verify cockpit-file-sharing with checksum
-COCKPIT_FS_VERSION="4.5.2"
-COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION}-1.el9.noarch.rpm"
+COCKPIT_FS_VERSION="4.5.4"
+COCKPIT_FS_RPM="cockpit-file-sharing-4.5.4-8.el9.noarch.rpm"
 COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/v${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
-COCKPIT_FS_SHA256="1cf9930da223e6010be0c0e416e9755d17be87b181a9e7704185b7b31b1e782e"
+COCKPIT_FS_SHA256="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
 curl --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}"
