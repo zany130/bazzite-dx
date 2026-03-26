@@ -23,6 +23,7 @@ dnf5 install -y \
 autofs \
 beep \
 btfs \
+bsdtar \
 cockpit \
 cockpit-ostree \
 cockpit-ws-selinux \
