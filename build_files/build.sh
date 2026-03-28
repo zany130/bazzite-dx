@@ -61,6 +61,9 @@ echo "Installing ${COCKPIT_FS_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
 
+# install only necessary plasma-discover packages for plasmoids
+dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
+
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
