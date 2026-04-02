@@ -42,8 +42,9 @@ waypipe
 
 # Download and verify cockpit-file-sharing with checksum
 COCKPIT_FS_VERSION="4.5.4"
-COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION}-8.el9.noarch.rpm"
-COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/v${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
+COCKPIT_FS_RELEASE="8"
+COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION}-${COCKPIT_FS_RELEASE}.el9.noarch.rpm"
+COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/v${COCKPIT_FS_VERSION}-${COCKPIT_FS_RELEASE}/${COCKPIT_FS_RPM}"
 COCKPIT_FS_SHA256="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
