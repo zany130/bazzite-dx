@@ -20,8 +20,10 @@ dnf5 config-manager setopt rpmfusion-free.enabled=1
 
 # this installs a package from Fedora repos
 dnf5 install -y \
+autofs \
 beep \
 btfs \
+bsdtar \
 cockpit \
 cockpit-ostree \
 cockpit-ws-selinux \
