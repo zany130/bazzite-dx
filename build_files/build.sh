@@ -47,7 +47,7 @@ COCKPIT_FS_VERSION="4.5.4"
 COCKPIT_FS_RELEASE="8"
 COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION}-${COCKPIT_FS_RELEASE}.el9.noarch.rpm"
 COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/v${COCKPIT_FS_VERSION}-${COCKPIT_FS_RELEASE}/${COCKPIT_FS_RPM}"
-COCKPIT_FS_SHA256="0019dfc4b32d63c1392aa264aed2253c1e0c2fb09216f8e2cc269bbfb8bb49b5"
+COCKPIT_FS_SHA256="c4b61fa167297c682b8895140919ec640cc7e6cf2bf7a7e963d0c3e59fb22b48"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
 if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
