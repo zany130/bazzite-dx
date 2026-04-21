@@ -33,7 +33,10 @@ kvantum \
 liquidctl \
 megasync \
 dolphin-megasync \
+mpv \
 python3-pygame \
+qt6-qtgrpc \
+qt6-qtquickcontrols2 \
 rEFInd \
 rEFInd-tools \
 sbctl \
