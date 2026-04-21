@@ -70,14 +70,12 @@ dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin
 
 # install packages from copr
 dnf5 install -y \
 HeadsetControl \
 HeadsetControl-Qt \
-kwin-effect-roundcorners \
-wallpaper-engine-kde-plugin
+kwin-effect-roundcorners
 
 ### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
