@@ -77,7 +77,23 @@ HeadsetControl-Qt \
 kwin-effect-roundcorners
 
 ### Install wallpaper-engine-kde-plugin from CaptSilver release
-dnf5 install -y https://github.com/CaptSilver/wallpaper-engine-kde-plugin/releases/download/v1.2/wallpaper-engine-kde-plugin-qt6-1.2-1.fc43.x86_64.rpm
+WALLPAPER_ENGINE_VERSION="1.2"
+WALLPAPER_ENGINE_RPM="wallpaper-engine-kde-plugin-qt6-${WALLPAPER_ENGINE_VERSION}-1.fc43.x86_64.rpm"
+WALLPAPER_ENGINE_URL="https://github.com/CaptSilver/wallpaper-engine-kde-plugin/releases/download/v${WALLPAPER_ENGINE_VERSION}/${WALLPAPER_ENGINE_RPM}"
+WALLPAPER_ENGINE_SHA256="58791539861e146905a2961ceb7df0aa87f998e895c50888a94b32c50b047d7a"
+
+echo "Downloading ${WALLPAPER_ENGINE_RPM}..."
+if ! curl --fail-with-body --retry 3 -Lo "/tmp/${WALLPAPER_ENGINE_RPM}" "${WALLPAPER_ENGINE_URL}" || [ ! -s "/tmp/${WALLPAPER_ENGINE_RPM}" ]; then
+  echo "Failed to download ${WALLPAPER_ENGINE_RPM}" >&2
+  exit 1
+fi
+
+echo "Verifying checksum..."
+echo "${WALLPAPER_ENGINE_SHA256}  /tmp/${WALLPAPER_ENGINE_RPM}" | sha256sum -c -
+
+echo "Installing ${WALLPAPER_ENGINE_RPM}..."
+dnf5 install -y "/tmp/${WALLPAPER_ENGINE_RPM}"
+rm -f "/tmp/${WALLPAPER_ENGINE_RPM}"
 
 ### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
