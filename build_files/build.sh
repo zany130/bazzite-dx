@@ -25,7 +25,9 @@ beep \
 btfs \
 bsdtar \
 cockpit \
+cockpit-machines \
 cockpit-ostree \
+cockpit-sosreport \
 cockpit-ws-selinux \
 coolercontrol \
 google-authenticator \
