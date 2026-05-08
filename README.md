@@ -13,7 +13,7 @@ sudo systemctl reboot
 
 Base: `ghcr.io/ublue-os/bazzite-dx:latest`
 
-**System:** cockpit, cockpit-machines, cockpit-ostree, cockpit-sosreport, cockpit-file-sharing, cockpit-sudo-manager, coolercontrol  
+**System:** cockpit, cockpit-machines, cockpit-ostree, cockpit-file-sharing, coolercontrol  
 **Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners, wallpaper-engine-kde-plugin  
 **Hardware:** solaar, liquidctl, HeadsetControl, HeadsetControl-Qt  
 **Storage:** btfs, megasync, dolphin-megasync  

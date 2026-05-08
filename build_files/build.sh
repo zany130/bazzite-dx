@@ -27,7 +27,6 @@ bsdtar \
 cockpit \
 cockpit-machines \
 cockpit-ostree \
-cockpit-sosreport \
 cockpit-ws-selinux \
 coolercontrol \
 google-authenticator \
@@ -64,25 +63,6 @@ echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
 echo "Installing ${COCKPIT_FS_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
-
-# Download and verify Cockpit SUDO Manager with checksum
-COCKPIT_SUDO_MANAGER_VERSION="0.2.1"
-COCKPIT_SUDO_MANAGER_RPM="cockpit-sudo-manager-${COCKPIT_SUDO_MANAGER_VERSION}-1.noarch.rpm"
-COCKPIT_SUDO_MANAGER_URL="https://github.com/josephoaks/Cockpit-SUDO-Manager/releases/download/v${COCKPIT_SUDO_MANAGER_VERSION}/${COCKPIT_SUDO_MANAGER_RPM}"
-COCKPIT_SUDO_MANAGER_SHA256="1e8986b6066a535e8495977f188eb44908a7a02d6ef8d42147410944dde1d50b"
-
-echo "Downloading ${COCKPIT_SUDO_MANAGER_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_SUDO_MANAGER_RPM}" "${COCKPIT_SUDO_MANAGER_URL}" || [ ! -s "/tmp/${COCKPIT_SUDO_MANAGER_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_SUDO_MANAGER_RPM}" >&2
-  exit 1
-fi
-
-echo "Verifying checksum..."
-echo "${COCKPIT_SUDO_MANAGER_SHA256}  /tmp/${COCKPIT_SUDO_MANAGER_RPM}" | sha256sum -c -
-
-echo "Installing ${COCKPIT_SUDO_MANAGER_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_SUDO_MANAGER_RPM}"
-rm -f "/tmp/${COCKPIT_SUDO_MANAGER_RPM}"
 
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
