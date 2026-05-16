@@ -64,6 +64,25 @@ echo "Installing ${COCKPIT_FS_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
 
+# Download and verify cockpit-nspawn with checksum
+COCKPIT_NSPAWN_VERSION="1.0.0-50"
+COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION}.fc43.noarch.rpm"
+COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/v${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
+COCKPIT_NSPAWN_SHA256="cf6cc93ffab933ebbd9edfd9d3a5da3c07efff19932d5066982d9eca9b6d2fe9"
+
+echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
+if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
+  echo "Failed to download ${COCKPIT_NSPAWN_RPM}" >&2
+  exit 1
+fi
+
+echo "Verifying checksum..."
+echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
+
+echo "Installing ${COCKPIT_NSPAWN_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
+rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
+
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
