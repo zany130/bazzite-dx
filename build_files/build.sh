@@ -15,8 +15,9 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
+available_repos="$(dnf5 repolist --all | awk '{print $1}')"
 for repo in rpmfusion-nonfree rpmfusion-free; do
-    if dnf5 repolist --all | awk '{print $1}' | grep -Fxq "${repo}"; then
+    if grep -Fxq "${repo}" <<< "${available_repos}"; then
         dnf5 config-manager setopt "${repo}.enabled=1"
     else
         echo "Repo ${repo} not present in base image, skipping."
