@@ -45,11 +45,18 @@ enable_rpmfusion_repo_family() {
                 continue
                 ;;
         esac
-        dnf5 config-manager setopt "${repo_id}.enabled=1" || true
+        if ! dnf5 config-manager setopt "${repo_id}.enabled=1"; then
+            echo "WARNING: Failed to enable RPM Fusion repo '${repo_id}'." >&2
+        fi
     done <<< "${matching_repos}"
 }
 
 fedora_version="$(rpm -E %fedora)"
+if ! [[ "${fedora_version}" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: Unable to determine Fedora version for RPM Fusion bootstrap: '${fedora_version}'." >&2
+    exit 1
+fi
+
 ensure_rpmfusion_release_repo \
     rpmfusion-free \
     "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
