@@ -75,11 +75,11 @@ jobs:
           remove-codeql: true
 
       - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
 
       - name: Build disk images
         id: build
-        uses: osbuild/bootc-image-builder-action@3d4538fc2eb26f00fcbd9669454aa7dd2d774d75 # main
+        uses: osbuild/bootc-image-builder-action@bb61630814780d5187c406f0293a40aeabdf39ee # main
         with:
           builder-image: ${{ env.BIB_IMAGE }}
           config-file: ${{ matrix.disk-type == 'anaconda-iso' && './disk_config/iso.toml' || './disk_config/disk.toml' }}
@@ -90,7 +90,7 @@ jobs:
 
       - name: Upload disk images and Checksum to Job Artifacts
         if: inputs.upload-to-s3 != true && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@bbbca2ddaa5d8feaa63e36b76fdaad77386f024f # v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           path: ${{ steps.build.outputs.output-directory }}
           if-no-files-found: error

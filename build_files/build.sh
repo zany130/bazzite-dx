@@ -5,7 +5,7 @@ set -ouex pipefail
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
+# RPM Fusion repos may be provided by the base image, but bootstrap them if absent.
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
@@ -15,8 +15,74 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
-dnf5 config-manager setopt rpmfusion-nonfree.enabled=1
-dnf5 config-manager setopt rpmfusion-free.enabled=1
+get_available_repos() {
+    dnf5 repolist --all | awk 'NR > 1 && $1 != "" {print $1}'
+}
+
+repo_matches_family() {
+    local repo_id="${1}"
+    local repo_family="${2}"
+
+    case "${repo_id}" in
+        "${repo_family}"|"${repo_family}"-*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+ensure_rpmfusion_release_repo() {
+    local repo_family="${1}"
+    local repo_url="${2}"
+    local available_repos
+    available_repos="$(get_available_repos)"
+    while IFS= read -r repo_id; do
+        repo_matches_family "${repo_id}" "${repo_family}" || continue
+        case "${repo_id}" in
+            *-debuginfo|*-source)
+                continue
+                ;;
+        esac
+        return 0
+    done <<< "${available_repos}"
+    echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
+    dnf5 install -y "${repo_url}"
+}
+
+enable_rpmfusion_repo_family() {
+    local repo_family="${1}"
+    local repo_id
+
+    while IFS= read -r repo_id; do
+        repo_matches_family "${repo_id}" "${repo_family}" || continue
+        case "${repo_id}" in
+            *-debuginfo|*-source)
+                continue
+                ;;
+        esac
+        if ! dnf5 config-manager setopt "${repo_id}.enabled=1"; then
+            echo "WARNING: Failed to enable RPM Fusion repo '${repo_id}'. Check 'dnf5 repolist --all' and repo configuration." >&2
+        fi
+    done <<< "$(get_available_repos)"
+}
+
+fedora_version="$(rpm -E %fedora)"
+if ! [[ "${fedora_version}" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: Unable to determine Fedora version for RPM Fusion bootstrap: '${fedora_version}'. Verify the base image is Fedora and 'rpm -E %fedora' returns a numeric release." >&2
+    exit 1
+fi
+
+ensure_rpmfusion_release_repo \
+    rpmfusion-free \
+    "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
+ensure_rpmfusion_release_repo \
+    rpmfusion-nonfree \
+    "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
+
+enable_rpmfusion_repo_family rpmfusion-free
+enable_rpmfusion_repo_family rpmfusion-nonfree
+dnf5 --refresh makecache
 
 # this installs a package from Fedora repos
 dnf5 install -y \
@@ -25,6 +91,7 @@ beep \
 btfs \
 bsdtar \
 cockpit \
+cockpit-machines \
 cockpit-ostree \
 cockpit-ws-selinux \
 coolercontrol \
@@ -33,7 +100,9 @@ kvantum \
 liquidctl \
 megasync \
 dolphin-megasync \
+mpv \
 python3-pygame \
+qt6-qtgrpc \
 rEFInd \
 rEFInd-tools \
 sbctl \
@@ -62,20 +131,37 @@ echo "Installing ${COCKPIT_FS_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
 
+# Download and verify cockpit-nspawn with checksum
+COCKPIT_NSPAWN_VERSION="1.0.0-50"
+COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION}.fc43.noarch.rpm"
+COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/v${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
+COCKPIT_NSPAWN_SHA256="cf6cc93ffab933ebbd9edfd9d3a5da3c07efff19932d5066982d9eca9b6d2fe9"
+
+echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
+if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
+  echo "Failed to download ${COCKPIT_NSPAWN_RPM}" >&2
+  exit 1
+fi
+
+echo "Verifying checksum..."
+echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
+
+echo "Installing ${COCKPIT_NSPAWN_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
+rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
+
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPR'S
 dnf5 -y copr enable birkch/HeadsetControl
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-dnf5 -y copr enable kylegospo/wallpaper-engine-kde-plugin
 
 # install packages from copr
 dnf5 install -y \
 HeadsetControl \
 HeadsetControl-Qt \
-kwin-effect-roundcorners \
-wallpaper-engine-kde-plugin
+kwin-effect-roundcorners
 
 ### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
