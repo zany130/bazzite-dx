@@ -16,44 +16,54 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
 get_available_repos() {
-    dnf5 repolist --all | awk 'NR > 1 && NF {print $1}'
+    dnf5 repolist --all | awk 'NR > 1 && $1 != "" {print $1}'
+}
+
+repo_matches_family() {
+    local repo_id="${1}"
+    local repo_family="${2}"
+
+    case "${repo_id}" in
+        "${repo_family}"|"${repo_family}"-*)
+            return 0
+            ;;
+    esac
+
+    return 1
 }
 
 ensure_rpmfusion_release_repo() {
     local repo_family="${1}"
     local repo_url="${2}"
     local available_repos
-
     available_repos="$(get_available_repos)"
-    if grep -Eq "^${repo_family}($|-)" <<< "${available_repos}"; then
-        return 0
-    fi
-
+    while IFS= read -r repo_id; do
+        repo_matches_family "${repo_id}" "${repo_family}" && return 0
+    done <<< "${available_repos}"
     echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
     dnf5 install -y "${repo_url}"
 }
 
 enable_rpmfusion_repo_family() {
     local repo_family="${1}"
-    local matching_repos
+    local repo_id
 
-    matching_repos="$(get_available_repos | grep -E "^${repo_family}($|-)" || true)"
     while IFS= read -r repo_id; do
-        [ -n "${repo_id}" ] || continue
+        repo_matches_family "${repo_id}" "${repo_family}" || continue
         case "${repo_id}" in
             *-debuginfo|*-source)
                 continue
                 ;;
         esac
         if ! dnf5 config-manager setopt "${repo_id}.enabled=1"; then
-            echo "WARNING: Failed to enable RPM Fusion repo '${repo_id}'." >&2
+            echo "WARNING: Failed to enable RPM Fusion repo '${repo_id}'. Check 'dnf5 repolist --all' and repo configuration." >&2
         fi
-    done <<< "${matching_repos}"
+    done <<< "$(get_available_repos)"
 }
 
 fedora_version="$(rpm -E %fedora)"
 if ! [[ "${fedora_version}" =~ ^[0-9]+$ ]]; then
-    echo "ERROR: Unable to determine Fedora version for RPM Fusion bootstrap: '${fedora_version}'." >&2
+    echo "ERROR: Unable to determine Fedora version for RPM Fusion bootstrap: '${fedora_version}'. Verify the base image is Fedora and 'rpm -E %fedora' returns a numeric release." >&2
     exit 1
 fi
 
