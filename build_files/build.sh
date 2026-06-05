@@ -15,8 +15,26 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
-dnf5 config-manager setopt rpmfusion-nonfree.enabled=1
-dnf5 config-manager setopt rpmfusion-free.enabled=1
+available_repos="$(dnf5 repolist --all | awk 'NR > 1 {print $1}')"
+missing_repos=()
+
+for repo in rpmfusion-nonfree rpmfusion-free; do
+    if grep -Fxq "${repo}" <<< "${available_repos}"; then
+        dnf5 config-manager setopt "${repo}.enabled=1"
+    else
+        missing_repos+=("${repo}")
+    fi
+done
+
+if [ "${#missing_repos[@]}" -gt 0 ]; then
+    echo "ERROR: Missing required RPM Fusion repositories: ${missing_repos[*]}" >&2
+    echo "Ensure the base image includes these repo IDs before running this build." >&2
+    echo "Available repository IDs from 'dnf5 repolist --all':" >&2
+    while IFS= read -r repo_id; do
+        [ -n "${repo_id}" ] && echo "  ${repo_id}" >&2
+    done <<< "${available_repos}"
+    exit 1
+fi
 
 # this installs a package from Fedora repos
 dnf5 install -y \
