@@ -38,7 +38,13 @@ ensure_rpmfusion_release_repo() {
     local available_repos
     available_repos="$(get_available_repos)"
     while IFS= read -r repo_id; do
-        repo_matches_family "${repo_id}" "${repo_family}" && return 0
+        repo_matches_family "${repo_id}" "${repo_family}" || continue
+        case "${repo_id}" in
+            *-debuginfo|*-source)
+                continue
+                ;;
+        esac
+        return 0
     done <<< "${available_repos}"
     echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
     dnf5 install -y "${repo_url}"
