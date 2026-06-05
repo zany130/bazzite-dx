@@ -96,25 +96,6 @@ HeadsetControl \
 HeadsetControl-Qt \
 kwin-effect-roundcorners
 
-### Install wallpaper-engine-kde-plugin from CaptSilver release
-WALLPAPER_ENGINE_VERSION="1.3"
-WALLPAPER_ENGINE_RPM="wallpaper-engine-kde-plugin-qt6-${WALLPAPER_ENGINE_VERSION}-1.fc43.x86_64.rpm"
-WALLPAPER_ENGINE_URL="https://github.com/CaptSilver/wallpaper-engine-kde-plugin/releases/download/v${WALLPAPER_ENGINE_VERSION}/${WALLPAPER_ENGINE_RPM}"
-WALLPAPER_ENGINE_SHA256="8500d234a035b5b8119903c67fcbe3bef41e7d11ffaa2d9cd2b21e830bb14f58"
-
-echo "Downloading ${WALLPAPER_ENGINE_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${WALLPAPER_ENGINE_RPM}" "${WALLPAPER_ENGINE_URL}" || [ ! -s "/tmp/${WALLPAPER_ENGINE_RPM}" ]; then
-  echo "Failed to download ${WALLPAPER_ENGINE_RPM}" >&2
-  exit 1
-fi
-
-echo "Verifying checksum..."
-echo "${WALLPAPER_ENGINE_SHA256}  /tmp/${WALLPAPER_ENGINE_RPM}" | sha256sum -c -
-
-echo "Installing ${WALLPAPER_ENGINE_RPM}..."
-dnf5 install -y "/tmp/${WALLPAPER_ENGINE_RPM}"
-rm -f "/tmp/${WALLPAPER_ENGINE_RPM}"
-
 ### Renable -deck specfic changes
 curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
 curl --retry 3 -Lo /etc/sddm.conf.d/steamos.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf && \
