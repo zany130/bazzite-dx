@@ -5,7 +5,7 @@ set -ouex pipefail
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
-# RPMfusion repos are available by default in ublue main images
+# RPM Fusion repos may be provided by the base image, but bootstrap them if absent.
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
@@ -15,26 +15,74 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
-available_repos="$(dnf5 repolist --all | awk 'NR > 1 {print $1}')"
-missing_repos=()
+get_available_repos() {
+    dnf5 repolist --all | awk 'NR > 1 && $1 != "" {print $1}'
+}
 
-for repo in rpmfusion-nonfree rpmfusion-free; do
-    if grep -Fxq "${repo}" <<< "${available_repos}"; then
-        dnf5 config-manager setopt "${repo}.enabled=1"
-    else
-        missing_repos+=("${repo}")
-    fi
-done
+repo_matches_family() {
+    local repo_id="${1}"
+    local repo_family="${2}"
 
-if [ "${#missing_repos[@]}" -gt 0 ]; then
-    echo "ERROR: Missing required RPM Fusion repositories: ${missing_repos[*]}" >&2
-    echo "Ensure the base image includes these repo IDs before running this build." >&2
-    echo "Available repository IDs from 'dnf5 repolist --all':" >&2
+    case "${repo_id}" in
+        "${repo_family}"|"${repo_family}"-*)
+            return 0
+            ;;
+    esac
+
+    return 1
+}
+
+ensure_rpmfusion_release_repo() {
+    local repo_family="${1}"
+    local repo_url="${2}"
+    local available_repos
+    available_repos="$(get_available_repos)"
     while IFS= read -r repo_id; do
-        [ -n "${repo_id}" ] && echo "  ${repo_id}" >&2
+        repo_matches_family "${repo_id}" "${repo_family}" || continue
+        case "${repo_id}" in
+            *-debuginfo|*-source)
+                continue
+                ;;
+        esac
+        return 0
     done <<< "${available_repos}"
+    echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
+    dnf5 install -y "${repo_url}"
+}
+
+enable_rpmfusion_repo_family() {
+    local repo_family="${1}"
+    local repo_id
+
+    while IFS= read -r repo_id; do
+        repo_matches_family "${repo_id}" "${repo_family}" || continue
+        case "${repo_id}" in
+            *-debuginfo|*-source)
+                continue
+                ;;
+        esac
+        if ! dnf5 config-manager setopt "${repo_id}.enabled=1"; then
+            echo "WARNING: Failed to enable RPM Fusion repo '${repo_id}'. Check 'dnf5 repolist --all' and repo configuration." >&2
+        fi
+    done <<< "$(get_available_repos)"
+}
+
+fedora_version="$(rpm -E %fedora)"
+if ! [[ "${fedora_version}" =~ ^[0-9]+$ ]]; then
+    echo "ERROR: Unable to determine Fedora version for RPM Fusion bootstrap: '${fedora_version}'. Verify the base image is Fedora and 'rpm -E %fedora' returns a numeric release." >&2
     exit 1
 fi
+
+ensure_rpmfusion_release_repo \
+    rpmfusion-free \
+    "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
+ensure_rpmfusion_release_repo \
+    rpmfusion-nonfree \
+    "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
+
+enable_rpmfusion_repo_family rpmfusion-free
+enable_rpmfusion_repo_family rpmfusion-nonfree
+dnf5 --refresh makecache
 
 # this installs a package from Fedora repos
 dnf5 install -y \
