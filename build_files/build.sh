@@ -15,7 +15,7 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
-available_repos="$(dnf5 repolist --all | awk '{print $1}')"
+available_repos="$(dnf5 repolist --all | awk 'NR > 1 {print $1}')"
 missing_repos=()
 
 for repo in rpmfusion-nonfree rpmfusion-free; do
