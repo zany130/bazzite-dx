@@ -20,7 +20,15 @@ Base: `ghcr.io/ublue-os/bazzite-dx:latest`
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
 **Remote:** waypipe  
 **Media:** vlc (+ all plugins), python3-pygame  
-**Deck:** Steam Deck configs re-enabled, custom SDDM themes, auto-login
+**Deck:** Steam Deck bootstrap/session configs re-enabled, custom SDDM themes, auto-login
+
+Deck-specific behavior is intentionally restored on top of the DX base image in
+`build_files/build.sh` by re-adding `bootstrap_steam.tar.gz`, `steamos.conf`,
+and `virtualkbd.conf`, reinstalling `steamos-manager-powerstation`, removing the
+desktop-login replacements (`ds-inhibit`, `plasma-login-manager`), re-enabling
+`sddm.service`, and restoring the KDE restriction keys expected by the Deck
+session flow. Upstream Bazzite manages `zz-steamos-autologin.conf` dynamically
+at runtime, so it is not stored as a static file in this repo.
 
 ## Boot Chime
 
