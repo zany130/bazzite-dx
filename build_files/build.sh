@@ -178,6 +178,21 @@ for item in "${downloads[@]}"; do
     fi
 done
 
+cat > /etc/sddm.conf.d/steamos.conf <<'EOF'
+[General]
+DisplayServer=wayland
+
+[Autologin]
+Relogin=true
+Session=gamescope-session.desktop
+#User=
+
+[X11]
+# Janky workaround for wayland sessions not stopping in sddm, kills
+# all active sddm-helper sessions on teardown
+DisplayStopCommand=/usr/bin/gamescope-wayland-teardown-workaround
+EOF
+
 dnf5 install -y \
     sddm \
     steamos-manager-powerstation
