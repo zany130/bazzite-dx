@@ -10,7 +10,7 @@
       "customType": "regex",
       "fileMatch": ["^build_files/build\\.sh$"],
       "matchStrings": [
-        "COCKPIT_FS_VERSION=\"(?<currentValue>[^\"]+)\"\\nCOCKPIT_FS_RPM=\"[^\"]+\"\\nCOCKPIT_FS_URL=\"[^\"]+\"\\nCOCKPIT_FS_SHA256=\"(?<currentDigest>[a-f0-9]{64})\""
+        "COCKPIT_FS_VERSION=\"(?<currentValue>[^\"]+)\"\\s*COCKPIT_FS_RPM=\"[^\"]+\"\\s*COCKPIT_FS_URL=\"[^\"]+\"\\s*COCKPIT_FS_SHA256=\"(?<currentDigest>[a-f0-9]{64})\""
       ],
       "datasourceTemplate": "github-release-attachments",
       "depNameTemplate": "45Drives/cockpit-file-sharing",
@@ -20,7 +20,7 @@
       "customType": "regex",
       "fileMatch": ["^build_files/build\\.sh$"],
       "matchStrings": [
-        "COCKPIT_NSPAWN_VERSION=\"(?<currentValue>[^\"]+)\"\\nCOCKPIT_NSPAWN_RPM=\"[^\"]+\"\\nCOCKPIT_NSPAWN_URL=\"[^\"]+\"\\nCOCKPIT_NSPAWN_SHA256=\"(?<currentDigest>[a-f0-9]{64})\""
+        "COCKPIT_NSPAWN_VERSION=\"(?<currentValue>[^\"]+)\"\\s*COCKPIT_NSPAWN_RPM=\"[^\"]+\"\\s*COCKPIT_NSPAWN_URL=\"[^\"]+\"\\s*COCKPIT_NSPAWN_SHA256=\"(?<currentDigest>[a-f0-9]{64})\""
       ],
       "datasourceTemplate": "github-release-attachments",
       "depNameTemplate": "realmcuser/cockpit-nspawn",
