@@ -112,11 +112,10 @@ vlc-plugins-all \
 waypipe
 
 # Download and verify cockpit-file-sharing with checksum
-COCKPIT_FS_VERSION="4.5.4"
-COCKPIT_FS_RELEASE="8"
-COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION}-${COCKPIT_FS_RELEASE}.el9.noarch.rpm"
-COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/v${COCKPIT_FS_VERSION}-${COCKPIT_FS_RELEASE}/${COCKPIT_FS_RPM}"
-COCKPIT_FS_SHA256="c4b61fa167297c682b8895140919ec640cc7e6cf2bf7a7e963d0c3e59fb22b48"
+COCKPIT_FS_VERSION="v4.5.7-2"
+COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}.el9.noarch.rpm"
+COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
+COCKPIT_FS_SHA256="068018aa591b927e3d2999e8a0d079acb758f086a123a1ebaccc5c6dc2ab588a"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
 if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
@@ -132,10 +131,10 @@ dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
 
 # Download and verify cockpit-nspawn with checksum
-COCKPIT_NSPAWN_VERSION="1.0.0-50"
-COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION}.fc43.noarch.rpm"
-COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/v${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
-COCKPIT_NSPAWN_SHA256="cf6cc93ffab933ebbd9edfd9d3a5da3c07efff19932d5066982d9eca9b6d2fe9"
+COCKPIT_NSPAWN_VERSION="v1.0.0-56"
+COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
+COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
+COCKPIT_NSPAWN_SHA256="0205391bcb3f6801f2ea231ae0e58dbacfc093991245e75ed7be5f7ac3dd93d9"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
 if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then

@@ -5,6 +5,29 @@
   "platformAutomerge": true,
   "rebaseWhen": "never",
 
+  "customManagers": [
+    {
+      "customType": "regex",
+      "fileMatch": ["^build_files/build\\.sh$"],
+      "matchStrings": [
+        "COCKPIT_FS_VERSION=\"(?<currentValue>[^\"]+)\"\\s*COCKPIT_FS_RPM=\"[^\"]+\"\\s*COCKPIT_FS_URL=\"[^\"]+\"\\s*COCKPIT_FS_SHA256=\"(?<currentDigest>[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "github-release-attachments",
+      "depNameTemplate": "45Drives/cockpit-file-sharing",
+      "versioningTemplate": "loose"
+    },
+    {
+      "customType": "regex",
+      "fileMatch": ["^build_files/build\\.sh$"],
+      "matchStrings": [
+        "COCKPIT_NSPAWN_VERSION=\"(?<currentValue>[^\"]+)\"\\s*COCKPIT_NSPAWN_RPM=\"[^\"]+\"\\s*COCKPIT_NSPAWN_URL=\"[^\"]+\"\\s*COCKPIT_NSPAWN_SHA256=\"(?<currentDigest>[a-f0-9]{64})\""
+      ],
+      "datasourceTemplate": "github-release-attachments",
+      "depNameTemplate": "realmcuser/cockpit-nspawn",
+      "versioningTemplate": "loose"
+    }
+  ],
+
   "packageRules": [
     {
       "matchDatasources": ["docker"],
