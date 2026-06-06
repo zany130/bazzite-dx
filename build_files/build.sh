@@ -215,7 +215,7 @@ sed -i -E \
 
 services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service)
 for service in "${services_to_disable[@]}"; do
-    if systemctl list-unit-files "${service}" 2>/dev/null | grep -q "^${service} "; then
+    if systemctl list-unit-files "${service}" 2>/dev/null | grep -q "^${service}\\b"; then
         systemctl disable "${service}"
     fi
 done
