@@ -162,19 +162,84 @@ HeadsetControl \
 HeadsetControl-Qt \
 kwin-effect-roundcorners
 
-### Renable -deck specfic changes
-curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
-curl --retry 3 -Lo /etc/sddm.conf.d/steamos.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf && \
-curl --retry 3 -Lo /etc/sddm.conf.d/virtualkbd.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf
+### Re-enable Deck-specific changes on top of the DX base image.
+mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
+
+downloads=(
+    "https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz|/usr/share/gamescope-session-plus/bootstrap_steam.tar.gz"
+    "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf|/etc/sddm.conf.d/virtualkbd.conf"
+)
+
+for item in "${downloads[@]}"; do
+    IFS='|' read -r url dest <<<"${item}"
+    if ! curl --fail-with-body --retry 3 -Lo "${dest}" "${url}" || [ ! -s "${dest}" ]; then
+        echo "Failed to download ${dest}" >&2
+        exit 1
+    fi
+done
+
+dnf5 install -y \
+    sddm \
+    steamos-manager-powerstation
+
+packages_to_remove=(ds-inhibit plasma-login-manager)
+
+# Disable unit files before removing packages so enabled symlinks don't linger in /etc/systemd/system.
+services_to_disable_before_remove=(ds-inhibit.service plasmalogin.service)
+for service in "${services_to_disable_before_remove[@]}"; do
+    if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
+        systemctl disable "${service}"
+    fi
+done
+
+installed_packages_to_remove=()
+for package in "${packages_to_remove[@]}"; do
+    if rpm -q "${package}" >/dev/null 2>&1; then
+        installed_packages_to_remove+=("${package}")
+    fi
+done
+
+if ((${#installed_packages_to_remove[@]})); then
+    dnf5 remove -y "${installed_packages_to_remove[@]}"
+fi
+
+# Upstream's Steam Deck preset patch removes these KDE restriction blocks entirely,
+# so append the Deck defaults if the keys are missing before forcing them off.
+# KDE uses [$i] on these sections to mark the restrictions as immutable defaults.
+if ! grep -q '^action/switch_user=' /etc/xdg/kdeglobals || \
+   ! grep -q '^action/start_new_session=' /etc/xdg/kdeglobals || \
+   ! grep -q '^action/lock_screen=' /etc/xdg/kdeglobals || \
+   ! grep -q '^kcm_sddm\.desktop=' /etc/xdg/kdeglobals || \
+   ! grep -q '^kcm_plymouth\.desktop=' /etc/xdg/kdeglobals; then
+cat >> /etc/xdg/kdeglobals <<'EOF'
+
+[KDE Action Restrictions][$i]
+action/switch_user=false
+action/start_new_session=false
+action/lock_screen=false
+
+[KDE Control Module Restrictions][$i]
+kcm_sddm.desktop=false
+kcm_plymouth.desktop=false
+EOF
+fi
 
 sed -i -E \
-     -e 's/^(action\/switch_user)=true/\1=false/' \
-     -e 's/^(action\/start_new_session)=true/\1=false/' \
-     -e 's/^(action\/lock_screen)=true/\1=false/' \
-     -e 's/^(kcm_sddm\.desktop)=true/\1=false/' \
-     -e 's/^(kcm_plymouth\.desktop)=true/\1=false/' \
+     -e 's/^(action\/switch_user)=.*/\1=false/' \
+     -e 's/^(action\/start_new_session)=.*/\1=false/' \
+     -e 's/^(action\/lock_screen)=.*/\1=false/' \
+     -e 's/^(kcm_sddm\.desktop)=.*/\1=false/' \
+     -e 's/^(kcm_plymouth\.desktop)=.*/\1=false/' \
      /etc/xdg/kdeglobals
 
+services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service)
+for service in "${services_to_disable[@]}"; do
+    if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
+        systemctl disable "${service}"
+    fi
+done
+
+systemctl enable sddm.service
 systemctl enable bazzite-autologin.service
 systemctl enable beep-startup.service
 systemctl disable uupd.timer
