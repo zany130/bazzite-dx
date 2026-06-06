@@ -172,19 +172,21 @@ dnf5 install -y \
     sddm \
     steamos-manager-powerstation
 
-packages_to_remove=()
-for package in ds-inhibit plasma-login-manager; do
+packages_to_remove=(ds-inhibit plasma-login-manager)
+installed_packages_to_remove=()
+for package in "${packages_to_remove[@]}"; do
     if rpm -q "${package}" >/dev/null 2>&1; then
-        packages_to_remove+=("${package}")
+        installed_packages_to_remove+=("${package}")
     fi
 done
 
-if ((${#packages_to_remove[@]})); then
-    dnf5 remove -y "${packages_to_remove[@]}"
+if ((${#installed_packages_to_remove[@]})); then
+    dnf5 remove -y "${installed_packages_to_remove[@]}"
 fi
 
 # Upstream's Steam Deck preset patch removes these KDE restriction blocks entirely,
 # so append the Deck defaults if the keys are missing before forcing them off.
+# KDE uses [$i] on these sections to mark the restrictions as immutable defaults.
 if ! grep -q '^action/switch_user=' /etc/xdg/kdeglobals || \
    ! grep -q '^action/start_new_session=' /etc/xdg/kdeglobals || \
    ! grep -q '^action/lock_screen=' /etc/xdg/kdeglobals || \
@@ -211,7 +213,13 @@ sed -i -E \
      -e 's/^(kcm_plymouth\.desktop)=.*/\1=false/' \
      /etc/xdg/kdeglobals
 
-systemctl disable gdm.service plasmalogin.service ds-inhibit.service || true
+services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service)
+for service in "${services_to_disable[@]}"; do
+    if systemctl list-unit-files "${service}" >/dev/null 2>&1; then
+        systemctl disable "${service}"
+    fi
+done
+
 systemctl enable sddm.service
 systemctl enable bazzite-autologin.service
 systemctl enable beep-startup.service
