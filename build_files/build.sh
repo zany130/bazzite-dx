@@ -167,7 +167,6 @@ mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
 
 downloads=(
     "https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz|/usr/share/gamescope-session-plus/bootstrap_steam.tar.gz"
-    "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf|/etc/sddm.conf.d/steamos.conf"
     "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf|/etc/sddm.conf.d/virtualkbd.conf"
 )
 
