@@ -184,6 +184,15 @@ dnf5 install -y \
     steamos-manager-powerstation
 
 packages_to_remove=(ds-inhibit plasma-login-manager)
+
+# Disable unit files before removing packages so enabled symlinks don't linger in /etc/systemd/system.
+services_to_disable_before_remove=(ds-inhibit.service plasmalogin.service)
+for service in "${services_to_disable_before_remove[@]}"; do
+    if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
+        systemctl disable "${service}"
+    fi
+done
+
 installed_packages_to_remove=()
 for package in "${packages_to_remove[@]}"; do
     if rpm -q "${package}" >/dev/null 2>&1; then
