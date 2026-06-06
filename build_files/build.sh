@@ -163,10 +163,21 @@ HeadsetControl-Qt \
 kwin-effect-roundcorners
 
 ### Re-enable Deck-specific changes on top of the DX base image.
-mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d && \
-curl --retry 3 -Lo /usr/share/gamescope-session-plus/bootstrap_steam.tar.gz https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz && \
-curl --retry 3 -Lo /etc/sddm.conf.d/steamos.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf && \
-curl --retry 3 -Lo /etc/sddm.conf.d/virtualkbd.conf https://raw.githubusercontent.com/ublue-os/bazzite/refs/heads/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf
+mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
+
+downloads=(
+    "https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz|/usr/share/gamescope-session-plus/bootstrap_steam.tar.gz"
+    "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/steamos.conf|/etc/sddm.conf.d/steamos.conf"
+    "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf|/etc/sddm.conf.d/virtualkbd.conf"
+)
+
+for item in "${downloads[@]}"; do
+    IFS='|' read -r url dest <<<"${item}"
+    if ! curl --fail-with-body --retry 3 -Lo "${dest}" "${url}" || [ ! -s "${dest}" ]; then
+        echo "Failed to download ${dest}" >&2
+        exit 1
+    fi
+done
 
 dnf5 install -y \
     sddm \
