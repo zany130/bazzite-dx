@@ -1,11 +1,11 @@
 [misc]
 only = [
-    "app_man", "brew_cask", "brew_formula", "bun_packages", "cargo", 
-    "chezmoi", "containers", "cursor", "custom_commands", "distrobox", 
-    "dotnet", "firmware", "flatpak", "flutter", "fossil", "gearlever", 
-    "gem", "git_repos", "github_cli_extensions", "go", "micro", "nix", 
-    "nix_helper", "node", "pearl", "pip3", "pipx", "pnpm", "protonplus", 
-    "ruby_gems", "rustup", "spicetify", "system", "tldr", "vagrant", 
+    "app_man", "brew_cask", "brew_formula", "bun_packages", "cargo",
+    "chezmoi", "containers", "cursor", "custom_commands", "distrobox",
+    "dotnet", "firmware", "flatpak", "flutter", "fossil", "gearlever",
+    "gem", "git_repos", "github_cli_extensions", "go", "micro", "nix",
+    "nix_helper", "node", "pearl", "pip3", "pipx", "pnpm", "protonplus",
+    "ruby_gems", "rustup", "spicetify", "system", "tldr", "vagrant",
     "vcpkg", "vscode", "waydroid", "yarn"
 ]
 [commands]
