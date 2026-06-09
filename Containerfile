@@ -52,7 +52,7 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod +x /usr/local/sbin/reset-video-port && \
     # Gamescope apps (systemd units approach - activated via drop-in)
     chmod 0644 /usr/lib/systemd/user/gamescopeApps.service && \
-    chmod 0644 /usr/lib/systemd/user/gamescope-session-plus@steam.service.d/10-apps.conf && \
+    chmod 0644 /usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf && \
     chmod 0644 /etc/gamescope-apps.conf && \
     chmod 0755 /usr/libexec/startGamescopeApps.sh && \
     \

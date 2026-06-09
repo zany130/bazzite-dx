@@ -91,7 +91,7 @@ Then restart the service.
 /usr/lib/systemd/user/gamescopeApps.service
   ↳ Systemd service that manages the apps
 
-/usr/lib/systemd/user/gamescope-session-plus@.service.d/10-apps.conf
+/usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf
   ↳ Drop-in that adds dependency (doesn't modify upstream!)
 
 /usr/lib/systemd/user-preset/90-bazzite-dx.preset

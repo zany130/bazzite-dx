@@ -54,7 +54,7 @@ For a personal image where minimizing long-term maintenance is the priority, sys
 /usr/lib/systemd/user/gamescopeApps.service
   ↳ Main service unit that launches apps
 
-/usr/lib/systemd/user/gamescope-session-plus@.service.d/10-apps.conf
+/usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf
   ↳ Drop-in that adds "Wants=gamescopeApps.service"
   ↳ Doesn't modify upstream, just adds dependency
 
@@ -68,7 +68,7 @@ For a personal image where minimizing long-term maintenance is the priority, sys
 ### How It Works
 
 1. User logs into Gamescope/Steam session
-2. `gamescope-session-plus@steam.service` starts
+2. `gamescope-session-plus@ogui-steam.service` starts
 3. Drop-in (`10-apps.conf`) pulls in `gamescopeApps.service` via `Wants=`
 4. Service checks for `~/.config/gamescope/disable-apps` flag
 5. Script launches apps via xvfb-run
@@ -221,7 +221,7 @@ If you were using the old approach (steam session file override):
 
 **New files** (added):
 - ✅ `/usr/lib/systemd/user/gamescopeApps.service`
-- ✅ `/usr/lib/systemd/user/gamescope-session-plus@.service.d/10-apps.conf`
+- ✅ `/usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf`
 - ✅ `/usr/lib/systemd/user-preset/90-bazzite-dx.preset`
 
 **No user action required** - the new approach is enabled by default.
