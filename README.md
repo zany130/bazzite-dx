@@ -15,7 +15,7 @@ Base: `ghcr.io/ublue-os/bazzite-dx:latest`
 
 **System:** cockpit, cockpit-machines, cockpit-ostree, cockpit-file-sharing, cockpit-nspawn, coolercontrol  
 **Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners  
-**Hardware:** solaar, liquidctl, HeadsetControl, HeadsetControl-Qt  
+**Hardware:** solaar, liquidctl, arctis-sound-manager  
 **Storage:** btfs, megasync, dolphin-megasync  
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
 **Remote:** waypipe  
