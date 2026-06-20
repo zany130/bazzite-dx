@@ -152,14 +152,13 @@ rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
-# Enable COPR'S
-dnf5 -y copr enable birkch/HeadsetControl
+# Enable COPR's
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
+dnf5 -y copr enable loteran/arctis-sound-manager
 
 # install packages from copr
 dnf5 install -y \
-HeadsetControl \
-HeadsetControl-Qt \
+arctis-sound-manager
 kwin-effect-roundcorners
 
 ### Re-enable Deck-specific changes on top of the DX base image.
