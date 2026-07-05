@@ -113,11 +113,11 @@ waypipe
 
 # Download and verify cockpit-file-sharing with checksum
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
-COCKPIT_FS_VERSION="v4.5.7-2"
-COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}.el9.noarch.rpm"
+COCKPIT_FS_VERSION="v4.6.0"
+COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}-1.el9.noarch.rpm"
 COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_FS_VERSION changes.
-COCKPIT_FS_SHA256="068018aa591b927e3d2999e8a0d079acb758f086a123a1ebaccc5c6dc2ab588a"
+COCKPIT_FS_SHA256="c6b388f5adcdc92912f163b1b23452e2006e3c713a01c719a6202a8c585a07f6"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
 if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
