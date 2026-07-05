@@ -112,9 +112,11 @@ vlc-plugins-all \
 waypipe
 
 # Download and verify cockpit-file-sharing with checksum
+# renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
 COCKPIT_FS_VERSION="v4.5.7-2"
 COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}.el9.noarch.rpm"
 COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_FS_VERSION changes.
 COCKPIT_FS_SHA256="068018aa591b927e3d2999e8a0d079acb758f086a123a1ebaccc5c6dc2ab588a"
 
 echo "Downloading ${COCKPIT_FS_RPM}..."
@@ -131,9 +133,11 @@ dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
 
 # Download and verify cockpit-nspawn with checksum
+# renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
 COCKPIT_NSPAWN_VERSION="v1.0.0-65"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
 COCKPIT_NSPAWN_SHA256="e0979d3c2701bb09bcffef9d19648640ceb21af434d87b7499bba786b5a62c09"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."

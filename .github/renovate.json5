@@ -7,27 +7,20 @@
   rebaseWhen: 'never',
   customManagers: [
     {
+      // Matches inline `# renovate: datasource=... depName=...` annotations in build.sh.
+      // Uses github-releases (not github-release-attachments) because the RPM asset filenames
+      // embed the version, making digest computation impossible for github-release-attachments.
+      // SHA256 variables in the script must be updated manually when the version changes.
+      // The generic [A-Z_]+_VERSION pattern is intentional: only lines immediately preceded
+      // by a valid `# renovate:` annotation comment will be matched, so false positives
+      // are not possible; it also makes this manager reusable for future annotated packages.
       customType: 'regex',
       managerFilePatterns: [
         '/^build_files/build\\.sh$/',
       ],
       matchStrings: [
-        'COCKPIT_FS_VERSION="(?<currentValue>[^"]+)"\\s*COCKPIT_FS_RPM="[^"]+"\\s*COCKPIT_FS_URL="[^"]+"\\s*COCKPIT_FS_SHA256="(?<currentDigest>[a-f0-9]{64})"',
+        '# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)[^\\n]*\\n[A-Z_]+_VERSION="(?<currentValue>[^"]+)"',
       ],
-      datasourceTemplate: 'github-release-attachments',
-      depNameTemplate: '45Drives/cockpit-file-sharing',
-      versioningTemplate: 'loose',
-    },
-    {
-      customType: 'regex',
-      managerFilePatterns: [
-        '/^build_files/build\\.sh$/',
-      ],
-      matchStrings: [
-        'COCKPIT_NSPAWN_VERSION="(?<currentValue>[^"]+)"\\s*COCKPIT_NSPAWN_RPM="[^"]+"\\s*COCKPIT_NSPAWN_URL="[^"]+"\\s*COCKPIT_NSPAWN_SHA256="(?<currentDigest>[a-f0-9]{64})"',
-      ],
-      datasourceTemplate: 'github-release-attachments',
-      depNameTemplate: 'realmcuser/cockpit-nspawn',
       versioningTemplate: 'loose',
     },
   ],
