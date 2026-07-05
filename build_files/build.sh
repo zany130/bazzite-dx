@@ -131,10 +131,10 @@ dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
 rm -f "/tmp/${COCKPIT_FS_RPM}"
 
 # Download and verify cockpit-nspawn with checksum
-COCKPIT_NSPAWN_VERSION="v1.0.0-64"
+COCKPIT_NSPAWN_VERSION="v1.0.0-65"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
-COCKPIT_NSPAWN_SHA256="14e7c72d2e23ef3a916a0f39f23592ef5779dea85448a75add64bacf36994b5e"
+COCKPIT_NSPAWN_SHA256="e0979d3c2701bb09bcffef9d19648640ceb21af434d87b7499bba786b5a62c09"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
 if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
