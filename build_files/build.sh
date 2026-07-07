@@ -162,7 +162,7 @@ dnf5 -y copr enable loteran/arctis-sound-manager
 
 # install packages from copr
 dnf5 install -y \
-    arctis-sound-manager \
+   # arctis-sound-manager \
     kwin-effect-roundcorners
 
 ### Re-enable Deck-specific changes on top of the DX base image.
