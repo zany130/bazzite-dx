@@ -111,6 +111,7 @@ waypipe
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPRs
+dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 dnf5 -y copr enable loteran/arctis-sound-manager
 
 ### Re-enable Deck-specific changes on top of the DX base image.
