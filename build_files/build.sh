@@ -82,6 +82,7 @@ ensure_rpmfusion_release_repo \
 
 enable_rpmfusion_repo_family rpmfusion-free
 enable_rpmfusion_repo_family rpmfusion-nonfree
+
 dnf5 --refresh makecache
 
 # this installs a package from Fedora repos
@@ -184,7 +185,7 @@ dnf5 install -y \
     sddm \
     steamos-manager-powerstation
 
-packages_to_remove=(ds-inhibit plasma-login-manager)
+packages_to_remove=(ds-inhibit plasma-login-manager steamdeck-kde-presets-desktop)
 
 # Disable unit files before removing packages so enabled symlinks don't linger in /etc/systemd/system.
 services_to_disable_before_remove=(ds-inhibit.service plasmalogin.service)
@@ -205,41 +206,20 @@ if ((${#installed_packages_to_remove[@]})); then
     dnf5 remove -y "${installed_packages_to_remove[@]}"
 fi
 
-# Upstream's Steam Deck preset patch removes these KDE restriction blocks entirely,
-# so append the Deck defaults if the keys are missing before forcing them off.
-# KDE uses [$i] on these sections to mark the restrictions as immutable defaults.
-if ! grep -q '^action/switch_user=' /etc/xdg/kdeglobals || \
-   ! grep -q '^action/start_new_session=' /etc/xdg/kdeglobals || \
-   ! grep -q '^action/lock_screen=' /etc/xdg/kdeglobals || \
-   ! grep -q '^kcm_sddm\.desktop=' /etc/xdg/kdeglobals || \
-   ! grep -q '^kcm_plymouth\.desktop=' /etc/xdg/kdeglobals; then
-cat >> /etc/xdg/kdeglobals <<'EOF'
+# Re-enable bazzite-multilib COPR (disabled in base image, needed for steamdeck-kde-presets)
+dnf5 -y copr enable ublue-os/bazzite-multilib
+dnf5 install -y steamdeck-kde-presets
+dnf5 -y copr disable ublue-os/bazzite-multilib
 
-[KDE Action Restrictions][$i]
-action/switch_user=false
-action/start_new_session=false
-action/lock_screen=false
-
-[KDE Control Module Restrictions][$i]
-kcm_sddm.desktop=false
-kcm_plymouth.desktop=false
-EOF
-fi
-
-sed -i -E \
-     -e 's/^(action\/switch_user)=.*/\1=false/' \
-     -e 's/^(action\/start_new_session)=.*/\1=false/' \
-     -e 's/^(action\/lock_screen)=.*/\1=false/' \
-     -e 's/^(kcm_sddm\.desktop)=.*/\1=false/' \
-     -e 's/^(kcm_plymouth\.desktop)=.*/\1=false/' \
-     /etc/xdg/kdeglobals
-
-services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service)
+services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service input-remapper.service)
 for service in "${services_to_disable[@]}"; do
     if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
         systemctl disable "${service}"
     fi
 done
+
+# Hide input-remapper UI (deck behavior; bazzite-dx unhides it)
+sed -i 's@^NoDisplay=false@NoDisplay=true@' /usr/share/applications/input-remapper-gtk.desktop
 
 systemctl enable sddm.service
 systemctl enable bazzite-autologin.service
