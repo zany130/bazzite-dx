@@ -210,12 +210,15 @@ fi
 dnf5 -y copr enable ublue-os/bazzite-multilib
 dnf5 install -y steamdeck-kde-presets
 
-services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service)
+services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service input-remapper.service)
 for service in "${services_to_disable[@]}"; do
     if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
         systemctl disable "${service}"
     fi
 done
+
+# Hide input-remapper UI (deck behavior; bazzite-dx unhides it)
+sed -i 's@^NoDisplay=false@NoDisplay=true@' /usr/share/applications/input-remapper-gtk.desktop
 
 systemctl enable sddm.service
 systemctl enable bazzite-autologin.service
