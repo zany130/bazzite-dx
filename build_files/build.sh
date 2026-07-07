@@ -87,7 +87,6 @@ dnf5 --refresh makecache
 
 # this installs a package from Fedora repos
 dnf5 install -y \
-autofs \
 beep \
 btfs \
 bsdtar \
