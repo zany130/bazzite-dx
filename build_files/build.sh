@@ -83,9 +83,6 @@ ensure_rpmfusion_release_repo \
 enable_rpmfusion_repo_family rpmfusion-free
 enable_rpmfusion_repo_family rpmfusion-nonfree
 
-# Re-enable bazzite-multilib COPR (disabled in base image, needed for steamdeck-kde-presets)
-dnf5 -y copr enable ublue-os/bazzite-multilib
-
 dnf5 --refresh makecache
 
 # this installs a package from Fedora repos
@@ -209,6 +206,8 @@ if ((${#installed_packages_to_remove[@]})); then
     dnf5 remove -y "${installed_packages_to_remove[@]}"
 fi
 
+# Re-enable bazzite-multilib COPR (disabled in base image, needed for steamdeck-kde-presets)
+dnf5 -y copr enable ublue-os/bazzite-multilib
 dnf5 install -y steamdeck-kde-presets
 
 services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service)
