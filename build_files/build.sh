@@ -91,13 +91,8 @@ autofs \
 beep \
 btfs \
 bsdtar \
-cockpit \
-cockpit-machines \
-cockpit-ostree \
-cockpit-ws-selinux \
 coolercontrol \
 google-authenticator \
-kvantum \
 liquidctl \
 megasync \
 dolphin-megasync \
@@ -112,58 +107,11 @@ vlc \
 vlc-plugins-all \
 waypipe
 
-# Download and verify cockpit-file-sharing with checksum
-# renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
-COCKPIT_FS_VERSION="v4.6.0"
-COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}-1.el9.noarch.rpm"
-COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
-# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_FS_VERSION changes.
-COCKPIT_FS_SHA256="c6b388f5adcdc92912f163b1b23452e2006e3c713a01c719a6202a8c585a07f6"
-
-echo "Downloading ${COCKPIT_FS_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_FS_RPM}" >&2
-  exit 1
-fi
-
-echo "Verifying checksum..."
-echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
-
-echo "Installing ${COCKPIT_FS_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
-rm -f "/tmp/${COCKPIT_FS_RPM}"
-
-# Download and verify cockpit-nspawn with checksum
-# renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
-COCKPIT_NSPAWN_VERSION="v1.0.0-65"
-COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
-COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
-# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
-COCKPIT_NSPAWN_SHA256="e0979d3c2701bb09bcffef9d19648640ceb21af434d87b7499bba786b5a62c09"
-
-echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_NSPAWN_RPM}" >&2
-  exit 1
-fi
-
-echo "Verifying checksum..."
-echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
-
-echo "Installing ${COCKPIT_NSPAWN_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
-rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
-
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPRs
-dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 dnf5 -y copr enable loteran/arctis-sound-manager
-
-# install packages from copr
-dnf5 install -y \
-    kwin-effect-roundcorners
 
 ### Re-enable Deck-specific changes on top of the DX base image.
 mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
