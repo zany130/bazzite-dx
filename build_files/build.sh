@@ -209,6 +209,7 @@ fi
 # Re-enable bazzite-multilib COPR (disabled in base image, needed for steamdeck-kde-presets)
 dnf5 -y copr enable ublue-os/bazzite-multilib
 dnf5 install -y steamdeck-kde-presets
+dnf5 -y copr disable ublue-os/bazzite-multilib
 
 services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service input-remapper.service)
 for service in "${services_to_disable[@]}"; do
