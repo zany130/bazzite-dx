@@ -138,7 +138,7 @@ COCKPIT_NSPAWN_VERSION="v1.0.0-65"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
-COCKPIT_NSPAWN_SHA256="e0979d3c2701bb09bcffef9d19648640ceb21af434d87b7499bba786b5a62c09"
+COCKPIT_NSPAWN_SHA256="bb83a996bb55c49a3409d1db023351b4d4e356805b5f23666b1dd9438f10e0e3"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
 if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
