@@ -113,7 +113,7 @@ waypipe
 
 # Download and verify cockpit-file-sharing with checksum
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
-COCKPIT_FS_VERSION="v4.6.0"
+COCKPIT_FS_VERSION="v4.6.1"
 COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}-1.el9.noarch.rpm"
 COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_FS_VERSION changes.
