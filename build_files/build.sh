@@ -157,12 +157,13 @@ rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPRs
+dnf5 -y copr enable agundur/KCast
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 dnf5 -y copr enable loteran/arctis-sound-manager
-
 # install packages from copr
 dnf5 install -y \
     arctis-sound-manager \
+    kcast \
     kwin-effect-roundcorners
 
 ### Re-enable Deck-specific changes on top of the DX base image.
