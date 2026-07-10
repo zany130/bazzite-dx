@@ -159,65 +159,74 @@ vlc-plugins-all
 
 ### DX Packages
 # Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
-dnf5 install -y \
-# Debugging and profiling
-android-tools \
-bcc \
-bpftop \
-bpftrace \
-ccache \
-nicstat \
-numactl \
-sysprof \
-tiptop \
-\
-# Editors and build tooling
-code \
-flatpak-builder \
-git-subtree \
-ramalama \
-\
-# Cockpit and workstation management
-cockpit \
-cockpit-machines \
-cockpit-ostree \
-cockpit-ws-selinux \
-guestfs-tools \
-ublue-setup-services \
-\
-# Container tooling
-containerd.io \
-docker-buildx-plugin \
-docker-ce \
-docker-ce-cli \
-docker-compose-plugin \
-podman-machine \
-podman-tui \
-\
-# Virtualization
-libvirt \
-python3-libvirt \
-qemu \
-qemu-kvm \
-qemu-system-x86 \
-qemu-user-static-aarch64 \
-swtpm \
-virt-manager \
-virtiofsd \
-virtualbox-guest-additions \
-\
-# Backup, sync, and remote workflows
-rclone \
-restic \
-waypipe \
-zsh \
-\
-# Hardware acceleration and media
-openh264 \
-rocm-clinfo \
-rocm-hip \
-rocm-opencl \
+dx_debug_packages=(
+android-tools
+bcc
+bpftop
+bpftrace
+ccache
+nicstat
+numactl
+sysprof
+tiptop
+)
+dx_editor_packages=(
+code
+flatpak-builder
+git-subtree
+ramalama
+)
+dx_workstation_packages=(
+cockpit
+cockpit-machines
+cockpit-ostree
+cockpit-ws-selinux
+guestfs-tools
+ublue-setup-services
+)
+dx_container_packages=(
+containerd.io
+docker-buildx-plugin
+docker-ce
+docker-ce-cli
+docker-compose-plugin
+podman-machine
+podman-tui
+)
+dx_virtualization_packages=(
+libvirt
+python3-libvirt
+qemu
+qemu-kvm
+qemu-system-x86
+qemu-user-static-aarch64
+swtpm
+virt-manager
+virtiofsd
+virtualbox-guest-additions
+)
+dx_remote_packages=(
+rclone
+restic
+waypipe
+zsh
+)
+dx_acceleration_packages=(
+openh264
+rocm-clinfo
+rocm-hip
+rocm-opencl
 rocm-smi
+)
+
+dnf5 install -y \
+"${dx_debug_packages[@]}" \
+"${dx_editor_packages[@]}" \
+"${dx_workstation_packages[@]}" \
+"${dx_container_packages[@]}" \
+"${dx_virtualization_packages[@]}" \
+"${dx_remote_packages[@]}" \
+"${dx_acceleration_packages[@]}"
 
 # Download and verify cockpit-file-sharing with checksum
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
