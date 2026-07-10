@@ -85,6 +85,7 @@ enable_rpmfusion_repo_family rpmfusion-nonfree
 
 # Enable DX repositories
 echo 'Enabling DX repositories.'
+# SHA256 verified from https://download.docker.com/linux/fedora/gpg on 2026-07-10.
 DOCKER_GPG_SHA256="e6c650e0700b1bf4868b693b30761b926844befc8a0acb7ac0dd9b1faf1b7423"
 curl --fail-with-body --retry 3 -Lo /tmp/docker-gpg https://download.docker.com/linux/fedora/gpg
 echo "${DOCKER_GPG_SHA256}  /tmp/docker-gpg" | sha256sum -c -
@@ -120,6 +121,7 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 EOF
 
+# SHA256 verified from https://packages.microsoft.com/keys/microsoft.asc on 2026-07-10.
 MICROSOFT_GPG_SHA256="2fa9c05d591a1582a9aba276272478c262e95ad00acf60eaee1644d93941e3c6"
 curl --fail-with-body --retry 3 -Lo /tmp/microsoft.asc https://packages.microsoft.com/keys/microsoft.asc
 echo "${MICROSOFT_GPG_SHA256}  /tmp/microsoft.asc" | sha256sum -c -
@@ -297,8 +299,7 @@ systemctl enable \
     virtsecretd.socket \
     virtstoraged.socket
 
-# Temporary Deck-related modifications
-# Disabled - now provided by deck:testing
+# Deck customizations (commented out - now provided by deck:testing base image)
 # mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
 #
 # downloads=(
@@ -353,6 +354,7 @@ systemctl enable \
 #
 # systemctl enable sddm.service
 # systemctl enable bazzite-autologin.service
+# deck:testing already ships this disabled; keep the old override commented for easy rollback.
 # systemctl disable uupd.timer
 # End disabled Deck block
 
