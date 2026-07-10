@@ -157,7 +157,7 @@ solaar \
 vlc \
 vlc-plugins-all
 
-### DX Packages
+# DX Packages
 # Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
 dx_debug_packages=(
 android-tools
@@ -281,7 +281,7 @@ dnf5 install -y \
     arctis-sound-manager \
     kwin-effect-roundcorners
 
-### DX Services
+# DX Services
 systemctl enable docker.socket
 systemctl enable podman.socket
 systemctl enable ublue-system-setup.service
@@ -297,7 +297,7 @@ systemctl enable \
     virtsecretd.socket \
     virtstoraged.socket
 
-### Temporary Deck-related modifications
+# Temporary Deck-related modifications
 # Disabled - now provided by deck:testing
 # mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
 #
@@ -354,7 +354,9 @@ systemctl enable \
 # systemctl enable sddm.service
 # systemctl enable bazzite-autologin.service
 # systemctl disable uupd.timer
+# End disabled Deck block
 
+# Custom non-Deck service restore
 systemctl enable beep-startup.service
 
 # this uninstalls a package
