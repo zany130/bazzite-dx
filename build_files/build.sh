@@ -85,7 +85,9 @@ enable_rpmfusion_repo_family rpmfusion-nonfree
 
 # Enable DX repositories
 echo 'Enabling DX repositories.'
+DOCKER_GPG_SHA256="e6c650e0700b1bf4868b693b30761b926844befc8a0acb7ac0dd9b1faf1b7423"
 curl --fail-with-body --retry 3 -Lo /tmp/docker-gpg https://download.docker.com/linux/fedora/gpg
+echo "${DOCKER_GPG_SHA256}  /tmp/docker-gpg" | sha256sum -c -
 rpm --import /tmp/docker-gpg
 rm -f /tmp/docker-gpg
 cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
@@ -118,7 +120,9 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 EOF
 
+MICROSOFT_GPG_SHA256="2fa9c05d591a1582a9aba276272478c262e95ad00acf60eaee1644d93941e3c6"
 curl --fail-with-body --retry 3 -Lo /tmp/microsoft.asc https://packages.microsoft.com/keys/microsoft.asc
+echo "${MICROSOFT_GPG_SHA256}  /tmp/microsoft.asc" | sha256sum -c -
 rpm --import /tmp/microsoft.asc
 rm -f /tmp/microsoft.asc
 cat > /etc/yum.repos.d/vscode.repo <<'EOF'
@@ -156,51 +160,64 @@ vlc-plugins-all
 ### DX Packages
 # Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
 dnf5 install -y \
+# Debugging and profiling
 android-tools \
 bcc \
 bpftop \
 bpftrace \
 ccache \
+nicstat \
+numactl \
+sysprof \
+tiptop \
+\
+# Editors and build tooling
 code \
+flatpak-builder \
+git-subtree \
+ramalama \
+\
+# Cockpit and workstation management
 cockpit \
 cockpit-machines \
 cockpit-ostree \
 cockpit-ws-selinux \
+guestfs-tools \
+ublue-setup-services \
+\
+# Container tooling
 containerd.io \
 docker-buildx-plugin \
 docker-ce \
 docker-ce-cli \
 docker-compose-plugin \
-flatpak-builder \
-guestfs-tools \
-git-subtree \
-libvirt \
-nicstat \
-numactl \
-openh264 \
 podman-machine \
 podman-tui \
+\
+# Virtualization
+libvirt \
 python3-libvirt \
 qemu \
 qemu-kvm \
 qemu-system-x86 \
 qemu-user-static-aarch64 \
-ramalama \
-rclone \
-restic \
-rocm-clinfo \
-rocm-hip \
-rocm-opencl \
-rocm-smi \
 swtpm \
-sysprof \
-tiptop \
-ublue-setup-services \
 virt-manager \
 virtiofsd \
 virtualbox-guest-additions \
+\
+# Backup, sync, and remote workflows
+rclone \
+restic \
 waypipe \
-zsh
+zsh \
+\
+# Hardware acceleration and media
+openh264 \
+rocm-clinfo \
+rocm-hip \
+rocm-opencl \
+rocm-smi
 
 # Download and verify cockpit-file-sharing with checksum
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
