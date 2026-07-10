@@ -83,6 +83,11 @@ ensure_rpmfusion_release_repo \
 enable_rpmfusion_repo_family rpmfusion-free
 enable_rpmfusion_repo_family rpmfusion-nonfree
 
+# Enable DX repositories
+echo 'Enabling DX repositories.'
+dnf5 config-manager addrepo --overwrite --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
+dnf5 config-manager addrepo --overwrite --from-repofile=https://packages.microsoft.com/yumrepos/vscode/config.repo
+
 dnf5 --refresh makecache
 
 # this installs a package from Fedora repos
@@ -90,10 +95,6 @@ dnf5 install -y \
 beep \
 btfs \
 bsdtar \
-cockpit \
-cockpit-machines \
-cockpit-ostree \
-cockpit-ws-selinux \
 coolercontrol \
 google-authenticator \
 kvantum \
@@ -108,8 +109,55 @@ rEFInd-tools \
 sbctl \
 solaar \
 vlc \
-vlc-plugins-all \
-waypipe
+vlc-plugins-all
+
+### DX Packages
+# Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
+dnf5 install -y \
+android-tools \
+bcc \
+bpftop \
+bpftrace \
+ccache \
+code \
+cockpit \
+cockpit-machines \
+cockpit-ostree \
+cockpit-ws-selinux \
+containerd.io \
+docker-buildx-plugin \
+docker-ce \
+docker-ce-cli \
+docker-compose-plugin \
+flatpak-builder \
+guestfs-tools \
+libvirt \
+nicstat \
+numactl \
+openh264 \
+podman-machine \
+podman-tui \
+python3-libvirt \
+qemu \
+qemu-kvm \
+qemu-system-x86 \
+qemu-user-static-aarch64 \
+ramalama \
+rclone \
+restic \
+rocm-clinfo \
+rocm-hip \
+rocm-opencl \
+rocm-smi \
+swtpm \
+sysprof \
+tiptop \
+ublue-setup-services \
+virt-manager \
+virtiofsd \
+virtualbox-guest-additions \
+waypipe \
+zsh
 
 # Download and verify cockpit-file-sharing with checksum
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
@@ -165,66 +213,70 @@ dnf5 install -y \
     arctis-sound-manager \
     kwin-effect-roundcorners
 
-### Re-enable Deck-specific changes on top of the DX base image.
-mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
+### DX Services
+systemctl enable docker.socket
+systemctl enable podman.socket
+systemctl enable ublue-system-setup.service
 
-downloads=(
-    "https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz|/usr/share/gamescope-session-plus/bootstrap_steam.tar.gz"
-    "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf|/etc/sddm.conf.d/virtualkbd.conf"
-)
+### Temporary Deck-related modifications
+# Disabled - now provided by deck:testing
+# mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
+#
+# downloads=(
+#     "https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz|/usr/share/gamescope-session-plus/bootstrap_steam.tar.gz"
+#     "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf|/etc/sddm.conf.d/virtualkbd.conf"
+# )
+#
+# for item in "${downloads[@]}"; do
+#     IFS='|' read -r url dest <<<"${item}"
+#     if ! curl --fail-with-body --retry 3 -Lo "${dest}" "${url}" || [ ! -s "${dest}" ]; then
+#         echo "Failed to download ${dest}" >&2
+#         exit 1
+#     fi
+# done
+#
+# dnf5 install -y \
+#     sddm \
+#     steamos-manager-powerstation
+#
+# packages_to_remove=(ds-inhibit plasma-login-manager steamdeck-kde-presets-desktop)
+#
+# services_to_disable_before_remove=(ds-inhibit.service plasmalogin.service)
+# for service in "${services_to_disable_before_remove[@]}"; do
+#     if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
+#         systemctl disable "${service}"
+#     fi
+# done
+#
+# installed_packages_to_remove=()
+# for package in "${packages_to_remove[@]}"; do
+#     if rpm -q "${package}" >/dev/null 2>&1; then
+#         installed_packages_to_remove+=("${package}")
+#     fi
+# done
+#
+# if ((${#installed_packages_to_remove[@]})); then
+#     dnf5 remove -y "${installed_packages_to_remove[@]}"
+# fi
+#
+# dnf5 -y copr enable ublue-os/bazzite-multilib
+# dnf5 install -y steamdeck-kde-presets
+# dnf5 -y copr disable ublue-os/bazzite-multilib
+#
+# services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service input-remapper.service)
+# for service in "${services_to_disable[@]}"; do
+#     if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
+#         systemctl disable "${service}"
+#     fi
+# done
+#
+# sed -i 's@^NoDisplay=false@NoDisplay=true@' /usr/share/applications/input-remapper-gtk.desktop
+#
+# systemctl enable sddm.service
+# systemctl enable bazzite-autologin.service
+# systemctl disable uupd.timer
 
-for item in "${downloads[@]}"; do
-    IFS='|' read -r url dest <<<"${item}"
-    if ! curl --fail-with-body --retry 3 -Lo "${dest}" "${url}" || [ ! -s "${dest}" ]; then
-        echo "Failed to download ${dest}" >&2
-        exit 1
-    fi
-done
-
-dnf5 install -y \
-    sddm \
-    steamos-manager-powerstation
-
-packages_to_remove=(ds-inhibit plasma-login-manager steamdeck-kde-presets-desktop)
-
-# Disable unit files before removing packages so enabled symlinks don't linger in /etc/systemd/system.
-services_to_disable_before_remove=(ds-inhibit.service plasmalogin.service)
-for service in "${services_to_disable_before_remove[@]}"; do
-    if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
-        systemctl disable "${service}"
-    fi
-done
-
-installed_packages_to_remove=()
-for package in "${packages_to_remove[@]}"; do
-    if rpm -q "${package}" >/dev/null 2>&1; then
-        installed_packages_to_remove+=("${package}")
-    fi
-done
-
-if ((${#installed_packages_to_remove[@]})); then
-    dnf5 remove -y "${installed_packages_to_remove[@]}"
-fi
-
-# Re-enable bazzite-multilib COPR (disabled in base image, needed for steamdeck-kde-presets)
-dnf5 -y copr enable ublue-os/bazzite-multilib
-dnf5 install -y steamdeck-kde-presets
-dnf5 -y copr disable ublue-os/bazzite-multilib
-
-services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service input-remapper.service)
-for service in "${services_to_disable[@]}"; do
-    if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
-        systemctl disable "${service}"
-    fi
-done
-
-# Hide input-remapper UI (deck behavior; bazzite-dx unhides it)
-sed -i 's@^NoDisplay=false@NoDisplay=true@' /usr/share/applications/input-remapper-gtk.desktop
-
-systemctl enable sddm.service
-systemctl enable bazzite-autologin.service
 systemctl enable beep-startup.service
-systemctl disable uupd.timer
 
 # this uninstalls a package
 dnf5 remove -y \
