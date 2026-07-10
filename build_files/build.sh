@@ -85,8 +85,50 @@ enable_rpmfusion_repo_family rpmfusion-nonfree
 
 # Enable DX repositories
 echo 'Enabling DX repositories.'
-dnf5 config-manager addrepo --overwrite --from-repofile=https://download.docker.com/linux/fedora/docker-ce.repo
-dnf5 config-manager addrepo --overwrite --from-repofile=https://packages.microsoft.com/yumrepos/vscode/config.repo
+curl --fail-with-body --retry 3 -Lo /tmp/docker-gpg https://download.docker.com/linux/fedora/gpg
+rpm --import /tmp/docker-gpg
+rm -f /tmp/docker-gpg
+cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
+[docker-ce-stable]
+name=Docker CE Stable - $basearch
+baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/stable
+enabled=1
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/fedora/gpg
+
+[docker-ce-stable-source]
+name=Docker CE Stable - Sources
+baseurl=https://download.docker.com/linux/fedora/$releasever/source/stable
+enabled=0
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/fedora/gpg
+
+[docker-ce-test]
+name=Docker CE Test - $basearch
+baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/test
+enabled=0
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/fedora/gpg
+
+[docker-ce-test-source]
+name=Docker CE Test - Sources
+baseurl=https://download.docker.com/linux/fedora/$releasever/source/test
+enabled=0
+gpgcheck=1
+gpgkey=https://download.docker.com/linux/fedora/gpg
+EOF
+
+curl --fail-with-body --retry 3 -Lo /tmp/microsoft.asc https://packages.microsoft.com/keys/microsoft.asc
+rpm --import /tmp/microsoft.asc
+rm -f /tmp/microsoft.asc
+cat > /etc/yum.repos.d/vscode.repo <<'EOF'
+[code]
+name=Visual Studio Code
+baseurl=https://packages.microsoft.com/yumrepos/vscode
+enabled=1
+gpgcheck=1
+gpgkey=https://packages.microsoft.com/keys/microsoft.asc
+EOF
 
 dnf5 --refresh makecache
 
@@ -131,6 +173,7 @@ docker-ce-cli \
 docker-compose-plugin \
 flatpak-builder \
 guestfs-tools \
+git-subtree \
 libvirt \
 nicstat \
 numactl \
@@ -217,6 +260,17 @@ dnf5 install -y \
 systemctl enable docker.socket
 systemctl enable podman.socket
 systemctl enable ublue-system-setup.service
+systemctl enable \
+    virtinterfaced.socket \
+    virtlockd.socket \
+    virtlogd.socket \
+    virtnetworkd.socket \
+    virtnodedevd.socket \
+    virtnwfilterd.socket \
+    virtproxyd.socket \
+    virtqemud.socket \
+    virtsecretd.socket \
+    virtstoraged.socket
 
 ### Temporary Deck-related modifications
 # Disabled - now provided by deck:testing

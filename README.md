@@ -20,7 +20,7 @@ Base: `ghcr.io/ublue-os/bazzite-deck:testing`
 **Storage:** btfs, megasync, dolphin-megasync  
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
 **Media:** vlc (+ all plugins), python3-pygame  
-**Deck:** inherited from `deck:testing`; legacy re-enable blocks remain commented in `build_files/build.sh` for easy rollback once Deck 44 stabilizes
+**Deck:** inherited from `deck:testing`; legacy re-enable blocks remain commented in `build_files/build.sh` for easy rollback once the upstream DX image catches up to the Fedora 44 `deck:testing` transition
 
 Deck functionality now comes directly from `deck:testing`. The previous local
 Deck restoration block is intentionally kept in `build_files/build.sh` as
