@@ -286,8 +286,12 @@ dnf5 install -y \
 # DX Services
 systemctl enable docker.socket
 systemctl enable podman.socket
-systemctl enable ublue-system-setup.service
-systemctl --global enable ublue-user-setup.service
+if systemctl list-unit-files ublue-system-setup.service 2>/dev/null | grep -q ublue-system-setup.service; then
+    systemctl enable ublue-system-setup.service
+fi
+if systemctl list-unit-files --global ublue-user-setup.service 2>/dev/null | grep -q ublue-user-setup.service; then
+    systemctl --global enable ublue-user-setup.service
+fi
 systemctl enable \
     virtinterfaced.socket \
     virtlockd.socket \
