@@ -3,7 +3,7 @@ FROM scratch AS ctx
 COPY build_files /
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-dx:latest@sha256:9d141b2cc931e2c09c457c538932d217c2199d0c4be76f6b25951a01363861b3
+FROM ghcr.io/ublue-os/bazzite-deck:testing@sha256:4f94e0b94976542aad45ec34f84c660d974e441cf6123c77aa7f7b3845602136
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
@@ -61,4 +61,3 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
 ### LINTING
 ## Verify final image and contents are correct.
 RUN bootc container lint
-

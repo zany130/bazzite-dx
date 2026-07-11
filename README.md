@@ -11,27 +11,26 @@ sudo systemctl reboot
 
 ## Additional Packages
 
-Base: `ghcr.io/ublue-os/bazzite-dx:latest`
+Base: `ghcr.io/ublue-os/bazzite-deck:testing`
 
-**System:** cockpit, cockpit-machines, cockpit-ostree, cockpit-file-sharing, cockpit-nspawn, coolercontrol  
+**System:** coolercontrol  
+**DX:** android-tools, bcc/bpftrace/bpftop, ccache, code, cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-nspawn, containerd, Docker CE (+ buildx/compose), flatpak-builder, guestfs-tools, libvirt, podman-machine, podman-tui, QEMU/KVM, ramalama, rclone, restic, ROCm CLI tooling, sysprof, tiptop, usbmuxd, virt-manager, virtiofsd, VirtualBox guest additions, waypipe, zsh (plus supporting tools like git-subtree, nicstat, numactl, python3-libvirt, qemu-user-static-aarch64, swtpm)  
 **Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners  
 **Hardware:** solaar, liquidctl, arctis-sound-manager, kcast  
 **Storage:** btfs, megasync, dolphin-megasync  
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
-**Remote:** waypipe  
 **Media:** vlc (+ all plugins), python3-pygame  
-**Deck:** Steam Deck bootstrap/session configs re-enabled, custom SDDM themes, auto-login
+**Deck:** inherited from `deck:testing`; legacy re-enable blocks remain commented in `build_files/build.sh` for easy rollback once the upstream DX image catches up to the Fedora 44 `deck:testing` transition
 
 COPR repos enabled for additional packages: `agundur/KCast` (for `kcast`), `matinlotfali/KDE-Rounded-Corners`, `loteran/arctis-sound-manager`.
 
-Deck-specific behavior is intentionally restored on top of the DX base image in
-`build_files/build.sh` by re-adding `bootstrap_steam.tar.gz` and
-`virtualkbd.conf`, reinstalling `steamos-manager-powerstation`, removing the
-desktop-login replacements (`ds-inhibit`, `plasma-login-manager`), re-enabling
-`sddm.service`, and restoring the KDE restriction keys expected by the Deck
-session flow. Upstream Bazzite no longer keeps `steamos.conf` as a static repo
-file; it is now provided by the Deck session stack, while
-`zz-steamos-autologin.conf` is still managed dynamically at runtime.
+Deck functionality now comes directly from `deck:testing`. The previous local
+Deck restoration block is intentionally kept in `build_files/build.sh` as
+commented-out code marked `Disabled - now provided by deck:testing` so the
+temporary workaround can be reverted quickly once the upstream DX image catches
+up. Upstream Bazzite no longer keeps `steamos.conf` as a static repo file; it
+is now provided by the Deck session stack, while `zz-steamos-autologin.conf` is
+still managed dynamically at runtime.
 
 ## Boot Chime
 
