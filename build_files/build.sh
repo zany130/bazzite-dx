@@ -210,6 +210,7 @@ virtualbox-guest-additions
 dx_remote_packages=(
 rclone
 restic
+usbmuxd
 waypipe
 zsh
 )
@@ -288,6 +289,7 @@ dnf5 install -y \
 systemctl enable docker.socket
 systemctl enable podman.socket
 systemctl enable ublue-system-setup.service
+systemctl --global enable ublue-user-setup.service
 systemctl enable \
     virtinterfaced.socket \
     virtlockd.socket \
