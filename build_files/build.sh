@@ -310,6 +310,7 @@ systemctl enable \
     virtstoraged.socket
 
 # Deck customizations (commented out - now provided by deck:testing base image)
+# See README "Additional Packages" -> "Deck" for why this block is kept for rollback.
 # mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
 #
 # downloads=(
