@@ -218,6 +218,7 @@ zsh
 )
 dx_acceleration_packages=(
 openh264
+openh264.i686
 rocm-clinfo
 rocm-hip
 rocm-opencl
