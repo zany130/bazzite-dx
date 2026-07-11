@@ -221,13 +221,14 @@ rocm-opencl
 rocm-smi
 )
 
-dnf5 install -y "${dx_debug_packages[@]}"
-dnf5 install -y "${dx_editor_packages[@]}"
-dnf5 install -y "${dx_workstation_packages[@]}"
-dnf5 install -y "${dx_container_packages[@]}"
-dnf5 install -y "${dx_virtualization_packages[@]}"
-dnf5 install -y "${dx_remote_packages[@]}"
-dnf5 install -y "${dx_acceleration_packages[@]}"
+dnf5 install -y \
+    "${dx_debug_packages[@]}" \
+    "${dx_editor_packages[@]}" \
+    "${dx_workstation_packages[@]}" \
+    "${dx_container_packages[@]}" \
+    "${dx_virtualization_packages[@]}" \
+    "${dx_remote_packages[@]}" \
+    "${dx_acceleration_packages[@]}"
 
 # Download and verify cockpit-file-sharing with checksum
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
