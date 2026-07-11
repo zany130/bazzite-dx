@@ -14,7 +14,7 @@ sudo systemctl reboot
 Base: `ghcr.io/ublue-os/bazzite-deck:testing`
 
 **System:** coolercontrol  
-**DX:** android-tools, bcc/bpftrace/bpftop, ccache, code, cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-nspawn, containerd, Docker CE (+ buildx/compose), flatpak-builder, guestfs-tools, libvirt, podman-machine, podman-tui, QEMU/KVM, ramalama, rclone, restic, ROCm CLI tooling, sysprof, tiptop, usbmuxd, virt-manager, virtiofsd, VirtualBox guest additions, waypipe, zsh (plus supporting tools like git-subtree, nicstat, numactl, openh264, python3-libvirt, qemu-user-static-aarch64, swtpm)  
+**DX:** android-tools, bcc/bpftrace/bpftop, ccache, code, cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-nspawn, containerd, Docker CE (+ buildx/compose), flatpak-builder, guestfs-tools, libvirt, podman-machine, podman-tui, QEMU/KVM, ramalama, rclone, restic, ROCm CLI tooling, sysprof, tiptop, usbmuxd, virt-manager, virtiofsd, VirtualBox guest additions, waypipe, zsh (plus supporting tools like git-subtree, nicstat, numactl, openh264 when available, python3-libvirt, qemu-user-static-aarch64, swtpm)  
 **Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners  
 **Hardware:** solaar, liquidctl, arctis-sound-manager  
 **Storage:** btfs, megasync, dolphin-megasync  

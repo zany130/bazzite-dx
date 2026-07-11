@@ -217,13 +217,17 @@ waypipe
 zsh
 )
 dx_acceleration_packages=(
-openh264
-openh264.i686
 rocm-clinfo
 rocm-hip
 rocm-opencl
 rocm-smi
 )
+
+if dnf5 repoquery --available openh264 >/dev/null 2>&1 && dnf5 repoquery --available openh264.i686 >/dev/null 2>&1; then
+    dx_acceleration_packages+=(openh264 openh264.i686)
+else
+    echo "Skipping openh264 packages: openh264 and/or openh264.i686 unavailable in enabled repos."
+fi
 
 dnf5 install -y \
     "${dx_debug_packages[@]}" \
