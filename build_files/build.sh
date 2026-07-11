@@ -136,9 +136,6 @@ gpgcheck=1
 gpgkey=https://packages.microsoft.com/keys/microsoft.asc
 EOF
 
-# Enable Fedora Cisco OpenH264 repo (provides openh264 package under Cisco patent license)
-dnf5 config-manager setopt fedora-cisco-openh264.enabled=1
-
 dnf5 --refresh makecache
 
 # Non-DX custom packages
@@ -217,8 +214,6 @@ waypipe
 zsh
 )
 dx_acceleration_packages=(
-openh264
-openh264.i686
 rocm-clinfo
 rocm-hip
 rocm-opencl
