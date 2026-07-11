@@ -226,7 +226,7 @@ rocm-smi
 if dnf5 repoquery --available openh264 >/dev/null 2>&1 && dnf5 repoquery --available openh264.i686 >/dev/null 2>&1; then
     dx_acceleration_packages+=(openh264 openh264.i686)
 else
-    echo "Skipping openh264 packages: openh264 and/or openh264.i686 unavailable in enabled repos."
+    echo "Skipping openh264 packages: openh264 and/or openh264.i686 unavailable in enabled repositories."
 fi
 
 dnf5 install -y \
