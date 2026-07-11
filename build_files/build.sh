@@ -83,7 +83,7 @@ ensure_rpmfusion_release_repo \
 enable_rpmfusion_repo_family rpmfusion-free
 enable_rpmfusion_repo_family rpmfusion-nonfree
 
-# Enable DX repositories
+# Enable Docker and VS Code repositories
 echo 'Enabling DX repositories.'
 # SHA256 verified from https://download.docker.com/linux/fedora/gpg on 2026-07-10.
 DOCKER_GPG_SHA256="e6c650e0700b1bf4868b693b30761b926844befc8a0acb7ac0dd9b1faf1b7423"
