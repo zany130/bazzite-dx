@@ -85,7 +85,7 @@ enable_rpmfusion_repo_family rpmfusion-nonfree
 
 dnf5 --refresh makecache
 
-# this installs a package from Fedora repos
+# Install packages from all enabled repositories (Fedora + Terra/RPM Fusion/COPR where applicable)
 dnf5 install -y \
 beep \
 btfs \
