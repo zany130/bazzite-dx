@@ -1,233 +1,57 @@
-# Gamescope Headless Apps - Implementation Approach
+# Gamescope background apps - implementation
 
 ## Overview
 
-This implementation launches background applications (cloud sync, chat, RGB control) alongside Gamescope/Steam sessions using **systemd user units** instead of overriding upstream session configuration files.
+Background applications run as independent systemd user-service instances during the Gamescope/Steam session. The implementation deliberately uses systemd as the only service manager; the launcher is responsible only for resolving an app config and executing it under Xvfb.
 
-## Design Decision: Systemd Units (Low Maintenance)
+## Components
 
-For a personal image where minimizing long-term maintenance is the priority, systemd units are the better choice.
-
-### Why Systemd Units?
-
-✅ **No Upstream Overrides**
-- Doesn't replace `/usr/share/gamescope-session-plus/sessions.d/steam`
-- Drop-in only adds a dependency, doesn't modify upstream
-- Independent of ChimeraOS steam session changes
-- Zero maintenance when upstream updates
-
-✅ **Better Reliability**
-- Automatic restart on crash (`Restart=on-failure`)
-- Rate limiting prevents restart loops
-- Systemd process supervision
-- Clean shutdown via control groups
-
-✅ **Better Management**
-- Dedicated unit logs: `journalctl --user -u gamescopeApps.service`
-- Status at a glance: `systemctl --user status gamescopeApps.service`
-- Easy to enable/disable: `systemctl --user mask/unmask`
-- Better debugging experience
-
-✅ **Session Isolation**
-- Explicit conflict with Plasma (`Conflicts=plasma-workspace.target`)
-- Bound to gamescope session lifecycle (`BindsTo=`)
-- Automatic cleanup when switching sessions
-
-### Why NOT Session Hooks?
-
-❌ **High Maintenance**
-- Must copy entire upstream steam session file (148 lines)
-- Must sync whenever ChimeraOS updates their session
-- Risk of divergence if we don't keep up
-- Only 4 lines are ours, but we maintain everything
-
-❌ **No Process Management**
-- No automatic restart on crash
-- No systemd supervision
-- Manual intervention if something fails
-
-## Implementation
-
-### Files in Image
-
-```
-/usr/lib/systemd/user/gamescopeApps.service
-  ↳ Main service unit that launches apps
-
-/usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf
-  ↳ Drop-in that adds "Wants=gamescopeApps.service"
-  ↳ Doesn't modify upstream, just adds dependency
-
-/usr/lib/systemd/user-preset/90-bazzite-dx.preset
-  ↳ Enables service by default for all users
-
-/usr/libexec/startGamescopeApps.sh
-  ↳ Script that launches individual apps
+```text
+gamescope-session-plus@ogui-steam.service
+└── gamescope-apps.target
+    ├── gamescope-app@megasync.service
+    ├── gamescope-app@discord.service
+    └── gamescope-app@USER-APP.service
 ```
 
-### How It Works
+- `/usr/lib/systemd/user/gamescope-apps.target` binds the app group to the Gamescope session and pulls in packaged defaults.
+- `/usr/lib/systemd/user/gamescope-app@.service` supervises one application per instance.
+- `/usr/libexec/gamescope-xvfb-launch` selects the user or system config and uses `exec xvfb-run`.
+- `/etc/gamescope/apps.d/*.conf` contains packaged application definitions.
+- `~/.config/gamescope/apps.d/*.conf` contains user applications and per-name overrides.
+- The Gamescope session drop-in adds only `Wants=gamescope-apps.target`; upstream session files are not replaced.
 
-1. User logs into Gamescope/Steam session
-2. `gamescope-session-plus@ogui-steam.service` starts
-3. Drop-in (`10-apps.conf`) pulls in `gamescopeApps.service` via `Wants=`
-4. Service checks for `~/.config/gamescope/disable-apps` flag
-5. Script launches apps via xvfb-run
-6. Apps run in systemd cgroup, supervised by systemd
-7. On crash, systemd automatically restarts (up to 3 times per minute)
-8. When session ends, service stops automatically
+## Lifecycle and failure behavior
 
-### User Control
+Each application has its own service state, cgroup, logs, exit status, restart policy, and rate limit. `ExitType=cgroup` keeps systemd aware of applications that fork or replace their initial process. `KillMode=control-group` cleans up the complete app process tree when the session ends.
+
+`Restart=always` restarts an app that exits while its service remains wanted. A crash in Discord does not restart MegaSync or the target. App failures also do not break the Gamescope session because the session uses a weak `Wants=` dependency.
+
+The target uses `BindsTo=` and `After=` for the Gamescope session, so ending the session stops all participating app services. There is no explicit conflict with Plasma; lifecycle is determined by the session dependency instead of assumptions about desktop targets.
+
+## Configuration model
+
+The service instance is named after the application, for example:
+
+```text
+gamescope-app@discord.service
+gamescope-app@megasync.service
+gamescope-app@openrgb.service
+```
+
+A matching config must define a Bash `COMMAND` array:
 
 ```bash
-# Disable (two methods)
-touch ~/.config/gamescope/disable-apps              # Simple flag
-systemctl --user mask gamescopeApps.service        # Systemd way
-
-# Enable
-rm ~/.config/gamescope/disable-apps
-systemctl --user unmask gamescopeApps.service
-
-# Manage
-systemctl --user status gamescopeApps.service      # Check status
-systemctl --user restart gamescopeApps.service     # Restart
-journalctl --user -u gamescopeApps.service -f      # View logs
+COMMAND=(
+    flatpak
+    run
+    com.discordapp.Discord
+    --start-minimized
+)
 ```
 
-## Comparison with Session Hooks
+Arrays preserve argument boundaries and avoid invoking `bash -lc` for ordinary commands. `XVFB_SCREEN` may optionally override the default `1024x768x24` virtual display.
 
-| Aspect | Systemd Units (This) | Session Hooks |
-|--------|---------------------|---------------|
-| **Maintenance** | ✅ Zero (no upstream sync) | ❌ High (sync on updates) |
-| **Upstream Changes** | ✅ Independent | ❌ Must track and merge |
-| **Reliability** | ✅ Auto-restart on crash | ❌ No restart |
-| **Process Management** | ✅ Systemd supervision | ❌ Basic fork/exec |
-| **Logging** | ✅ Dedicated unit logs | ❌ Shared session logs |
-| **Session Isolation** | ✅ Explicit conflicts | ✅ Natural (process tree) |
-| **User Control** | ✅ Full systemd commands | ❌ Only flag file |
-| **Complexity** | ⚠️ 4 files | ✅ 2 files |
-| **Timing** | ⚠️ systemd scheduling | ✅ Guaranteed (hook) |
+User configs take priority over packaged configs with the same instance name. Users add an app without modifying the image by creating `~/.config/gamescope/apps.d/APP.conf` and enabling `gamescope-app@APP.service`.
 
-## For Personal Image Use
-
-This implementation is optimized for:
-
-✅ **Personal image** (not distribution)
-- Enabled by default via preset
-- Part of immutable image
-
-✅ **Low maintenance priority**
-- No upstream file overrides
-- Independent of ChimeraOS changes
-- Set and forget
-
-✅ **Better reliability**
-- Automatic restart on crash
-- Systemd process management
-
-## Adding Custom Apps
-
-Apps are configured via config files, not by editing `/usr/libexec/startGamescopeApps.sh` directly.
-
-The service reads its app list from configuration files in this order:
-
-1. **System-wide defaults** (packaged, read-only): `/etc/gamescope-apps.conf`
-2. **Optional per-user overrides**: `~/.config/gamescope/apps.conf`
-
-### To add or remove apps:
-
-1. **View the system defaults:**
-   ```bash
-   cat /etc/gamescope-apps.conf
-   ```
-
-2. **Create your user config** (if it doesn't exist):
-   ```bash
-   mkdir -p ~/.config/gamescope
-   cp /etc/gamescope-apps.conf ~/.config/gamescope/apps.conf
-   ```
-
-3. **Edit your config:**
-   ```bash
-   nano ~/.config/gamescope/apps.conf
-   ```
-
-4. **Add/remove apps** - one command per line:
-   ```bash
-   # Native app
-   myapp --args
-   
-   # Flatpak app
-   flatpak run com.example.MyApp --startup-flags
-   
-   # Comment out to disable
-   # pcloud
-   ```
-
-5. **Apply changes:**
-   ```bash
-   systemctl --user restart gamescopeApps.service
-   ```
-
-This keeps the packaged script unmodified and makes future updates low-maintenance, while allowing both system-wide and per-user customization through configuration.
-
-## Troubleshooting
-
-### Service won't start
-
-```bash
-# Check status
-systemctl --user status gamescopeApps.service
-
-# Check if disabled
-systemctl --user is-enabled gamescopeApps.service
-
-# Check for disable flag
-ls -la ~/.config/gamescope/disable-apps
-
-# View full logs
-journalctl --user -u gamescopeApps.service --since today
-```
-
-### Apps not launching
-
-```bash
-# Check what the script is doing
-journalctl --user -u gamescopeApps.service -f
-
-# Test script manually (from Gamescope session)
-/usr/libexec/startGamescopeApps.sh
-
-# Check if xvfb-run exists
-command -v xvfb-run
-```
-
-### Service keeps restarting
-
-Check logs for errors:
-```bash
-journalctl --user -u gamescopeApps.service -n 50
-```
-
-The service has rate limiting:
-- Max 3 restarts per 60 seconds
-- After that, it stops trying
-
-## Migration from Session Hooks
-
-If you were using the old approach (steam session file override):
-
-**Old files** (removed):
-- ❌ `/usr/share/gamescope-session-plus/sessions.d/steam`
-
-**New files** (added):
-- ✅ `/usr/lib/systemd/user/gamescopeApps.service`
-- ✅ `/usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf`
-- ✅ `/usr/lib/systemd/user-preset/90-bazzite-dx.preset`
-
-**No user action required** - the new approach is enabled by default.
-
-## References
-
-- [systemd.service(5)](https://www.freedesktop.org/software/systemd/man/systemd.service.html)
-- [systemd.unit(5)](https://www.freedesktop.org/software/systemd/man/systemd.unit.html)
-- [ChimeraOS gamescope-session](https://github.com/ChimeraOS/gamescope-session)
+See `GAMESCOPE_APPS.md` for user instructions and migration details.
