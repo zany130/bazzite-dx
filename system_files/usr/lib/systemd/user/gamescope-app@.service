@@ -1,0 +1,27 @@
+[Unit]
+Description=Gamescope background application: %i
+Documentation=man:systemd.service(5)
+PartOf=gamescope-apps.target
+After=gamescope-session-plus@ogui-steam.service
+
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=exec
+ExitType=cgroup
+ExecStart=/usr/libexec/gamescope-xvfb-launch %i
+
+Restart=always
+RestartSec=5
+
+TimeoutStartSec=30
+TimeoutStopSec=15
+KillMode=control-group
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gamescope-app-%i
+
+[Install]
+WantedBy=gamescope-apps.target
