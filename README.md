@@ -40,33 +40,42 @@ sudo systemctl disable beep-startup.service
 
 ## Gamescope Background Apps
 
-Config-driven auto-launch for apps in Gamescope/Steam session. Runs via xvfb-run (invisible background).
+Background applications run invisibly under Xvfb during the Gamescope/Steam session. Each application is independently supervised by systemd through `gamescope-app@.service`, while `gamescope-apps.target` groups their lifecycle with the Gamescope session.
 
-**Config files** (user override takes precedence):
-- `/etc/gamescope-apps.conf` (system default)
-- `~/.config/gamescope/apps.conf` (user override)
+Packaged app definitions live in `/etc/gamescope/apps.d/`. A user definition with the same app name in `~/.config/gamescope/apps.d/` takes precedence.
 
-**Format:** One command per line, `#` for comments
+Example user app:
+
 ```bash
-megasync
-flatpak run com.discordapp.Discord --start-minimized
-# pcloud
-# openrgb --startminimized
+mkdir -p ~/.config/gamescope/apps.d
+cat > ~/.config/gamescope/apps.d/openrgb.conf <<'EOF'
+COMMAND=(
+    openrgb
+    --startminimized
+)
+EOF
+
+systemctl --user enable gamescope-app@openrgb.service
 ```
 
-**Management:**
+The instance name deliberately matches the app, making its status and logs immediately identifiable:
+
 ```bash
-# Status/logs
-systemctl --user status gamescopeApps.service
-journalctl --user -u gamescopeApps.service -f
+systemctl --user status gamescope-app@discord.service
+journalctl --user -u gamescope-app@discord.service -f
+systemctl --user restart gamescope-app@discord.service
+systemctl --user disable --now gamescope-app@discord.service
+```
 
-# Restart after config changes
-systemctl --user restart gamescopeApps.service
+Packaged defaults are `gamescope-app@megasync.service` and `gamescope-app@discord.service`. Either can be disabled independently with `systemctl --user mask gamescope-app@APP.service`.
 
-# Disable
+To disable every Gamescope background app:
+
+```bash
 touch ~/.config/gamescope/disable-apps
-# or: systemctl --user mask gamescopeApps.service
 ```
+
+Remove the flag and restart the Gamescope session to enable the target again. See [`GAMESCOPE_APPS.md`](GAMESCOPE_APPS.md) for configuration, migration, and debugging details.
 
 ## LG Buddy
 
