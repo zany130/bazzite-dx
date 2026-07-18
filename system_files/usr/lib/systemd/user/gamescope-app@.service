@@ -1,6 +1,7 @@
 [Unit]
 Description=Gamescope background application: %i
 Documentation=man:systemd.service(5)
+ConditionPathExists=!%h/.config/gamescope/disable-apps
 PartOf=gamescope-apps.target
 After=gamescope-session-plus@ogui-steam.service
 
