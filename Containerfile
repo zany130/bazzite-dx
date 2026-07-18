@@ -50,11 +50,12 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod +x /usr/libexec/LG_Buddy_Startup && \
     chmod +x /usr/libexec/LG_Buddy_Shutdown && \
     chmod +x /usr/local/sbin/reset-video-port && \
-    # Gamescope apps (systemd units approach - activated via drop-in)
-    chmod 0644 /usr/lib/systemd/user/gamescopeApps.service && \
+    # Gamescope apps (one systemd service per application)
+    chmod 0644 /usr/lib/systemd/user/gamescope-apps.target && \
+    chmod 0644 /usr/lib/systemd/user/gamescope-app@.service && \
     chmod 0644 /usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf && \
-    chmod 0644 /etc/gamescope-apps.conf && \
-    chmod 0755 /usr/libexec/startGamescopeApps.sh && \
+    chmod 0644 /etc/gamescope/apps.d/*.conf && \
+    chmod 0755 /usr/libexec/gamescope-xvfb-launch && \
     \
     ostree container commit
 
