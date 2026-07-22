@@ -1,0 +1,18 @@
+# Groups independently supervised background applications for the Gamescope session.
+
+[Unit]
+Description=Background applications for Gamescope session
+Documentation=man:systemd.target(5)
+
+ConditionPathExists=!%h/.config/gamescope/disable-apps
+
+BindsTo=gamescope-session-plus@ogui-steam.service
+After=gamescope-session-plus@ogui-steam.service
+
+# Never keep headless Gamescope apps running after Desktop Mode starts.
+Conflicts=plasma-workspace.target
+Before=plasma-workspace.target
+
+# Packaged defaults. Users may mask either instance independently.
+Wants=gamescope-app@megasync.service
+Wants=gamescope-app@discord.service
