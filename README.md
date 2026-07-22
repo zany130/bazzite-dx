@@ -15,12 +15,14 @@ Base: `ghcr.io/ublue-os/bazzite-dx:latest`
 
 **System:** cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-nspawn, coolercontrol  
 **Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners  
-**Hardware:** solaar, liquidctl, arctis-sound-manager  
+**Hardware:** solaar, liquidctl, arctis-sound-manager, kcast  
 **Storage:** btfs, megasync, dolphin-megasync  
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
 **Remote:** waypipe  
 **Media:** vlc (+ all plugins), python3-pygame  
 **Deck:** Steam Deck bootstrap/session configs re-enabled, custom SDDM themes, auto-login
+
+COPR repos enabled for additional packages: `agundur/KCast` (for `kcast`), `matinlotfali/KDE-Rounded-Corners`, `loteran/arctis-sound-manager`.
 
 Deck-specific behavior is intentionally restored on top of the DX base image in
 `build_files/build.sh` by re-adding `bootstrap_steam.tar.gz` and
