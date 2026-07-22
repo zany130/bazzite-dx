@@ -27,6 +27,17 @@
   packageRules: [
     {
       matchDatasources: [
+        'github-releases',
+      ],
+      matchPackageNames: [
+        'realmcuser/cockpit-nspawn',
+      ],
+      // Upstream started publishing tags like `cockpit-nspawn-v1.0.0-70`;
+      // normalize both prefixed and plain tags to keep updates flowing.
+      extractVersion: '^(?:cockpit-nspawn-)?(?<version>v\\d+\\.\\d+\\.\\d+-\\d+)$',
+    },
+    {
+      matchDatasources: [
         'docker',
       ],
       matchPackageNames: [
