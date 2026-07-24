@@ -134,14 +134,24 @@ rm -f "/tmp/${COCKPIT_FS_RPM}"
 
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
-COCKPIT_NSPAWN_VERSION="v1.0.0-65"
+COCKPIT_NSPAWN_VERSION="v1.0.0-70"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
-COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${COCKPIT_NSPAWN_VERSION}/${COCKPIT_NSPAWN_RPM}"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
-COCKPIT_NSPAWN_SHA256="e0979d3c2701bb09bcffef9d19648640ceb21af434d87b7499bba786b5a62c09"
+COCKPIT_NSPAWN_SHA256="1c08bffc29f5fc0a4a1fe9bdd10d9592f7aa4e5c35c7b83e4fcf9d744635daa1"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" || [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
+COCKPIT_NSPAWN_RELEASE_TAGS=(
+  "cockpit-nspawn-${COCKPIT_NSPAWN_VERSION}"
+  "${COCKPIT_NSPAWN_VERSION}"
+)
+for cockpit_nspawn_release_tag in "${COCKPIT_NSPAWN_RELEASE_TAGS[@]}"; do
+  COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${cockpit_nspawn_release_tag}/${COCKPIT_NSPAWN_RPM}"
+  if curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" && [ -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
+    break
+  fi
+  rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
+done
+if [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
   echo "Failed to download ${COCKPIT_NSPAWN_RPM}" >&2
   exit 1
 fi
