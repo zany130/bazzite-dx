@@ -149,8 +149,8 @@ The active configuration lives at [`system_files/etc/ublue-os/topgrade.toml`](sy
 
 **Usage:**
 ```bash
-ujust update      # run via the ujust alias
-topgrade          # run directly
+ujust update                                                        # run via the ujust alias
+topgrade --config /etc/ublue-os/topgrade.toml --keep               # run directly
 ```
 
 ## Config Changes
