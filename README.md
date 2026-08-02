@@ -133,10 +133,29 @@ waypipe --compress none ssh user@host app  # faster network
 
 Requires waypipe on both systems. Debug with: `waypipe -d ssh user@host app`
 
+## Updates with Topgrade
+
+This image ships [topgrade](https://github.com/topgrade-rs/topgrade) and restores the `ujust update` recipe that upstream Bazzite removed in favour of `bazzite-updater`. Running `ujust update` (or simply `topgrade`) performs a single-command update across:
+
+- **System packages** (rpm-ostree/bootc layer)
+- **Flatpak** applications
+- **Distrobox** containers
+- **Homebrew** formulae and casks
+- **Cargo**, **pip**, **npm/pnpm/yarn**, **rustup**, and other language package managers
+- **VS Code** extensions, **Plasmoids**, and other tools
+
+The active configuration lives at [`system_files/etc/ublue-os/topgrade.toml`](system_files/etc/ublue-os/topgrade.toml) and is installed to `/etc/ublue-os/topgrade.toml`. It restricts topgrade to a curated set of updaters (see the `only` list in that file) and adds custom commands for Plasmoids and Mozilla/CSS Loader themes.
+
+**Usage:**
+```bash
+ujust update                                                        # run via the ujust alias
+topgrade --config /etc/ublue-os/topgrade.toml --keep               # run directly
+```
+
 ## Config Changes
 
 - Custom SSH, Polkit, sudoers rules
-- Custom Topgrade config
+- Custom Topgrade config (`/etc/ublue-os/topgrade.toml`)
 
 ---
 

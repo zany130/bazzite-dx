@@ -142,6 +142,7 @@ dnf5 --refresh makecache
 dnf5 install -y \
 beep \
 btfs \
+topgrade \
 bsdtar \
 coolercontrol \
 google-authenticator \
