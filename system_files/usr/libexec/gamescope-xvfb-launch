@@ -1,0 +1,35 @@
+#!/bin/bash
+set -euo pipefail
+
+instance="${1:?missing application instance name}"
+user_config="${XDG_CONFIG_HOME:-$HOME/.config}/gamescope/apps.d/${instance}.conf"
+system_config="/etc/gamescope/apps.d/${instance}.conf"
+
+if [[ -r "$user_config" ]]; then
+    config="$user_config"
+elif [[ -r "$system_config" ]]; then
+    config="$system_config"
+else
+    echo "[gamescope-app:${instance}] no config found at $user_config or $system_config" >&2
+    exit 1
+fi
+
+# Config files are trusted shell fragments owned by the user or image administrator.
+# They must define COMMAND as a Bash array. XVFB_SCREEN is optional.
+# shellcheck source=/dev/null
+source "$config"
+
+if ! declare -p COMMAND 2>/dev/null | grep -q 'declare -a'; then
+    echo "[gamescope-app:${instance}] $config must define COMMAND as a Bash array" >&2
+    exit 1
+fi
+
+if [[ ${#COMMAND[@]} -eq 0 ]]; then
+    echo "[gamescope-app:${instance}] COMMAND is empty in $config" >&2
+    exit 1
+fi
+
+screen="${XVFB_SCREEN:-1024x768x24}"
+echo "[gamescope-app:${instance}] launching from $config: ${COMMAND[*]}" >&2
+
+exec /usr/bin/xvfb-run -a -s "-screen 0 $screen" "${COMMAND[@]}"
