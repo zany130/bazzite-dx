@@ -30,7 +30,7 @@
         'docker',
       ],
       matchPackageNames: [
-        'ghcr.io/ublue-os/bazzite-dx',
+        'ghcr.io/ublue-os/bazzite-deck',
       ],
       automerge: true,
     },
