@@ -121,7 +121,12 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 EOF
 
-dnf5 config-manager addrepo --from-repofile="https://packages.microsoft.com/yumrepos/vscode/config.repo"
+# SHA256 verified from https://packages.microsoft.com/yumrepos/vscode/config.repo on 2026-08-12.
+VSCODE_REPOFILE_SHA256="b1b364bde5b37fb95cace740f5aa347dceafd5cb6cc67aa61af4d1c5cbb14570"
+curl --fail-with-body --retry 3 -Lo /tmp/vscode-config.repo https://packages.microsoft.com/yumrepos/vscode/config.repo
+echo "${VSCODE_REPOFILE_SHA256}  /tmp/vscode-config.repo" | sha256sum -c -
+dnf5 config-manager addrepo --from-repofile="/tmp/vscode-config.repo"
+rm -f /tmp/vscode-config.repo
 
 dnf5 --refresh makecache
 
