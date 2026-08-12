@@ -121,20 +121,7 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 EOF
 
-# SHA256 verified from https://packages.microsoft.com/keys/microsoft.asc on 2026-07-10.
-MICROSOFT_GPG_SHA256="2fa9c05d591a1582a9aba276272478c262e95ad00acf60eaee1644d93941e3c6"
-curl --fail-with-body --retry 3 -Lo /tmp/microsoft.asc https://packages.microsoft.com/keys/microsoft.asc
-echo "${MICROSOFT_GPG_SHA256}  /tmp/microsoft.asc" | sha256sum -c -
-rpm --import /tmp/microsoft.asc
-rm -f /tmp/microsoft.asc
-cat > /etc/yum.repos.d/vscode.repo <<'EOF'
-[code]
-name=Visual Studio Code
-baseurl=https://packages.microsoft.com/yumrepos/vscode
-enabled=1
-gpgcheck=1
-gpgkey=https://packages.microsoft.com/keys/microsoft.asc
-EOF
+dnf5 config-manager addrepo --from-repofile="https://packages.microsoft.com/yumrepos/vscode/config.repo"
 
 dnf5 --refresh makecache
 
