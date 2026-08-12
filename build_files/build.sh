@@ -177,6 +177,7 @@ dx_editor_packages=(
 code
 flatpak-builder
 git-subtree
+google-noto-sans-fonts
 ramalama
 )
 dx_workstation_packages=(
