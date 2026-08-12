@@ -106,19 +106,6 @@ enabled=0
 gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 
-[docker-ce-test]
-name=Docker CE Test - $basearch
-baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/test
-enabled=0
-gpgcheck=1
-gpgkey=https://download.docker.com/linux/fedora/gpg
-
-[docker-ce-test-source]
-name=Docker CE Test - Sources
-baseurl=https://download.docker.com/linux/fedora/$releasever/source/test
-enabled=0
-gpgcheck=1
-gpgkey=https://download.docker.com/linux/fedora/gpg
 EOF
 
 # SHA256 verified from https://packages.microsoft.com/yumrepos/vscode/config.repo on 2026-08-12.
