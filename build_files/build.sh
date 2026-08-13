@@ -218,7 +218,11 @@ rm -f /tmp/45drives.repo
 dnf5 --refresh makecache
 
 fortyfive_repo_id="$(dnf5 repolist --all | awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}')"
-dnf5 --disablerepo='*' --enablerepo="${fortyfive_repo_id}" install -y \
+if [[ -z "${fortyfive_repo_id}" ]]; then
+    echo "ERROR: Could not find 45Drives repository ID after adding repo." >&2
+    exit 1
+fi
+dnf5 --enablerepo="${fortyfive_repo_id}" install -y \
     cockpit-file-sharing \
     cockpit-navigator \
     cockpit-benchmark
