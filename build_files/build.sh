@@ -210,7 +210,14 @@ dnf5 install -y \
     "${dx_remote_packages[@]}" \
     "${dx_acceleration_packages[@]}"
 
-# Download and verify cockpit-file-sharing with checksum
+# Install 45Drives Cockpit packages from 45Drives repo only when all required
+# packages are available; otherwise fall back to pinned GitHub release RPMs.
+fortyfive_cockpit_packages=(
+    cockpit-file-sharing
+    cockpit-navigator
+    cockpit-benchmark
+)
+
 # renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
 COCKPIT_FS_VERSION="v4.6.1"
 COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}-1.el9.noarch.rpm"
@@ -218,18 +225,106 @@ COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/downlo
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_FS_VERSION changes.
 COCKPIT_FS_SHA256="bb83a996bb55c49a3409d1db023351b4d4e356805b5f23666b1dd9438f10e0e3"
 
-echo "Downloading ${COCKPIT_FS_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_FS_RPM}" >&2
-  exit 1
+# renovate: datasource=github-releases depName=45Drives/cockpit-navigator versioning=loose
+COCKPIT_NAVIGATOR_VERSION="v0.6.1"
+COCKPIT_NAVIGATOR_RPM="cockpit-navigator-${COCKPIT_NAVIGATOR_VERSION#v}-1.el9.noarch.rpm"
+COCKPIT_NAVIGATOR_URL="https://github.com/45Drives/cockpit-navigator/releases/download/${COCKPIT_NAVIGATOR_VERSION}/${COCKPIT_NAVIGATOR_RPM}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NAVIGATOR_VERSION changes.
+COCKPIT_NAVIGATOR_SHA256="dcaaf543b87f7d7815ff73a93b58afabec309412c345d68de9847a91f3e4148a"
+
+# renovate: datasource=github-releases depName=45Drives/cockpit-benchmark versioning=loose
+COCKPIT_BENCHMARK_VERSION="v2.1.3"
+COCKPIT_BENCHMARK_RPM="cockpit-benchmark-${COCKPIT_BENCHMARK_VERSION#v}-1.el9.noarch.rpm"
+COCKPIT_BENCHMARK_URL="https://github.com/45Drives/cockpit-benchmark/releases/download/${COCKPIT_BENCHMARK_VERSION}/${COCKPIT_BENCHMARK_RPM}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_BENCHMARK_VERSION changes.
+COCKPIT_BENCHMARK_SHA256="f343c1c816265ccb9523a2301a7e8955d9bb7cedaf5be7e2367cc69f75a48829"
+
+find_45drives_repo_id() {
+    dnf5 repolist --all | awk 'NR > 1 && $1 ~ /45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}'
+}
+
+install_45drives_from_repo() {
+    local repo_id package repofile=/tmp/45drives.repo
+
+    repo_id="$(find_45drives_repo_id)"
+    if [ -z "${repo_id}" ]; then
+        echo "Adding 45Drives repository..."
+        if ! curl --fail-with-body --retry 3 -Lo "${repofile}" "https://repo.45drives.com/lists/45drives.repo" || [ ! -s "${repofile}" ]; then
+            echo "Failed to download 45Drives repo file." >&2
+            return 1
+        fi
+        if ! dnf5 config-manager addrepo --from-repofile="${repofile}"; then
+            rm -f "${repofile}"
+            echo "Failed to add 45Drives repository." >&2
+            return 1
+        fi
+        rm -f "${repofile}"
+        dnf5 --refresh makecache
+        repo_id="$(find_45drives_repo_id)"
+    fi
+
+    if [ -z "${repo_id}" ]; then
+        echo "45Drives repository not detected after setup." >&2
+        return 1
+    fi
+
+    for package in "${fortyfive_cockpit_packages[@]}"; do
+        if ! dnf5 --disablerepo='*' --enablerepo="${repo_id}" list --available "${package}" >/dev/null 2>&1; then
+            echo "Package '${package}' not available in '${repo_id}'." >&2
+            return 1
+        fi
+    done
+
+    echo "Installing 45Drives Cockpit packages from '${repo_id}'..."
+    dnf5 install -y "${fortyfive_cockpit_packages[@]}"
+}
+
+install_45drives_from_github_releases() {
+    echo "Falling back to pinned GitHub release RPMs for 45Drives Cockpit packages."
+
+    echo "Downloading ${COCKPIT_FS_RPM}..."
+    if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
+      echo "Failed to download ${COCKPIT_FS_RPM}" >&2
+      exit 1
+    fi
+
+    echo "Verifying checksum..."
+    echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
+
+    echo "Installing ${COCKPIT_FS_RPM}..."
+    dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
+    rm -f "/tmp/${COCKPIT_FS_RPM}"
+
+    echo "Downloading ${COCKPIT_NAVIGATOR_RPM}..."
+    if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NAVIGATOR_RPM}" "${COCKPIT_NAVIGATOR_URL}" || [ ! -s "/tmp/${COCKPIT_NAVIGATOR_RPM}" ]; then
+      echo "Failed to download ${COCKPIT_NAVIGATOR_RPM}" >&2
+      exit 1
+    fi
+
+    echo "Verifying checksum..."
+    echo "${COCKPIT_NAVIGATOR_SHA256}  /tmp/${COCKPIT_NAVIGATOR_RPM}" | sha256sum -c -
+
+    echo "Installing ${COCKPIT_NAVIGATOR_RPM}..."
+    dnf5 install -y "/tmp/${COCKPIT_NAVIGATOR_RPM}"
+    rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
+
+    echo "Downloading ${COCKPIT_BENCHMARK_RPM}..."
+    if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_BENCHMARK_RPM}" "${COCKPIT_BENCHMARK_URL}" || [ ! -s "/tmp/${COCKPIT_BENCHMARK_RPM}" ]; then
+      echo "Failed to download ${COCKPIT_BENCHMARK_RPM}" >&2
+      exit 1
+    fi
+
+    echo "Verifying checksum..."
+    echo "${COCKPIT_BENCHMARK_SHA256}  /tmp/${COCKPIT_BENCHMARK_RPM}" | sha256sum -c -
+
+    echo "Installing ${COCKPIT_BENCHMARK_RPM}..."
+    dnf5 install -y "/tmp/${COCKPIT_BENCHMARK_RPM}"
+    rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
+}
+
+if ! install_45drives_from_repo; then
+    install_45drives_from_github_releases
 fi
-
-echo "Verifying checksum..."
-echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
-
-echo "Installing ${COCKPIT_FS_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
-rm -f "/tmp/${COCKPIT_FS_RPM}"
 
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
@@ -261,48 +356,6 @@ echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
 echo "Installing ${COCKPIT_NSPAWN_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
-
-# Download and verify cockpit-navigator with checksum
-# renovate: datasource=github-releases depName=45Drives/cockpit-navigator versioning=loose
-COCKPIT_NAVIGATOR_VERSION="v0.6.1"
-COCKPIT_NAVIGATOR_RPM="cockpit-navigator-${COCKPIT_NAVIGATOR_VERSION#v}-1.el9.noarch.rpm"
-COCKPIT_NAVIGATOR_URL="https://github.com/45Drives/cockpit-navigator/releases/download/${COCKPIT_NAVIGATOR_VERSION}/${COCKPIT_NAVIGATOR_RPM}"
-# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NAVIGATOR_VERSION changes.
-COCKPIT_NAVIGATOR_SHA256="dcaaf543b87f7d7815ff73a93b58afabec309412c345d68de9847a91f3e4148a"
-
-echo "Downloading ${COCKPIT_NAVIGATOR_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NAVIGATOR_RPM}" "${COCKPIT_NAVIGATOR_URL}" || [ ! -s "/tmp/${COCKPIT_NAVIGATOR_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_NAVIGATOR_RPM}" >&2
-  exit 1
-fi
-
-echo "Verifying checksum..."
-echo "${COCKPIT_NAVIGATOR_SHA256}  /tmp/${COCKPIT_NAVIGATOR_RPM}" | sha256sum -c -
-
-echo "Installing ${COCKPIT_NAVIGATOR_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_NAVIGATOR_RPM}"
-rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
-
-# Download and verify cockpit-benchmark with checksum
-# renovate: datasource=github-releases depName=45Drives/cockpit-benchmark versioning=loose
-COCKPIT_BENCHMARK_VERSION="v2.1.3"
-COCKPIT_BENCHMARK_RPM="cockpit-benchmark-${COCKPIT_BENCHMARK_VERSION#v}-1.el9.noarch.rpm"
-COCKPIT_BENCHMARK_URL="https://github.com/45Drives/cockpit-benchmark/releases/download/${COCKPIT_BENCHMARK_VERSION}/${COCKPIT_BENCHMARK_RPM}"
-# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_BENCHMARK_VERSION changes.
-COCKPIT_BENCHMARK_SHA256="f343c1c816265ccb9523a2301a7e8955d9bb7cedaf5be7e2367cc69f75a48829"
-
-echo "Downloading ${COCKPIT_BENCHMARK_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_BENCHMARK_RPM}" "${COCKPIT_BENCHMARK_URL}" || [ ! -s "/tmp/${COCKPIT_BENCHMARK_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_BENCHMARK_RPM}" >&2
-  exit 1
-fi
-
-echo "Verifying checksum..."
-echo "${COCKPIT_BENCHMARK_SHA256}  /tmp/${COCKPIT_BENCHMARK_RPM}" | sha256sum -c -
-
-echo "Installing ${COCKPIT_BENCHMARK_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_BENCHMARK_RPM}"
-rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
 
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
