@@ -262,6 +262,48 @@ echo "Installing ${COCKPIT_NSPAWN_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 
+# Download and verify cockpit-navigator with checksum
+# renovate: datasource=github-releases depName=45Drives/cockpit-navigator versioning=loose
+COCKPIT_NAVIGATOR_VERSION="v0.6.1"
+COCKPIT_NAVIGATOR_RPM="cockpit-navigator-${COCKPIT_NAVIGATOR_VERSION#v}-1.el9.noarch.rpm"
+COCKPIT_NAVIGATOR_URL="https://github.com/45Drives/cockpit-navigator/releases/download/${COCKPIT_NAVIGATOR_VERSION}/${COCKPIT_NAVIGATOR_RPM}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NAVIGATOR_VERSION changes.
+COCKPIT_NAVIGATOR_SHA256="dcaaf543b87f7d7815ff73a93b58afabec309412c345d68de9847a91f3e4148a"
+
+echo "Downloading ${COCKPIT_NAVIGATOR_RPM}..."
+if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NAVIGATOR_RPM}" "${COCKPIT_NAVIGATOR_URL}" || [ ! -s "/tmp/${COCKPIT_NAVIGATOR_RPM}" ]; then
+  echo "Failed to download ${COCKPIT_NAVIGATOR_RPM}" >&2
+  exit 1
+fi
+
+echo "Verifying checksum..."
+echo "${COCKPIT_NAVIGATOR_SHA256}  /tmp/${COCKPIT_NAVIGATOR_RPM}" | sha256sum -c -
+
+echo "Installing ${COCKPIT_NAVIGATOR_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_NAVIGATOR_RPM}"
+rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
+
+# Download and verify cockpit-benchmark with checksum
+# renovate: datasource=github-releases depName=45Drives/cockpit-benchmark versioning=loose
+COCKPIT_BENCHMARK_VERSION="v2.1.3"
+COCKPIT_BENCHMARK_RPM="cockpit-benchmark-${COCKPIT_BENCHMARK_VERSION#v}-1.el9.noarch.rpm"
+COCKPIT_BENCHMARK_URL="https://github.com/45Drives/cockpit-benchmark/releases/download/${COCKPIT_BENCHMARK_VERSION}/${COCKPIT_BENCHMARK_RPM}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_BENCHMARK_VERSION changes.
+COCKPIT_BENCHMARK_SHA256="f343c1c816265ccb9523a2301a7e8955d9bb7cedaf5be7e2367cc69f75a48829"
+
+echo "Downloading ${COCKPIT_BENCHMARK_RPM}..."
+if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_BENCHMARK_RPM}" "${COCKPIT_BENCHMARK_URL}" || [ ! -s "/tmp/${COCKPIT_BENCHMARK_RPM}" ]; then
+  echo "Failed to download ${COCKPIT_BENCHMARK_RPM}" >&2
+  exit 1
+fi
+
+echo "Verifying checksum..."
+echo "${COCKPIT_BENCHMARK_SHA256}  /tmp/${COCKPIT_BENCHMARK_RPM}" | sha256sum -c -
+
+echo "Installing ${COCKPIT_BENCHMARK_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_BENCHMARK_RPM}"
+rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
+
 # install only necessary plasma-discover packages for plasmoids
 dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
