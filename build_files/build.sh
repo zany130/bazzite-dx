@@ -240,7 +240,7 @@ COCKPIT_BENCHMARK_URL="https://github.com/45Drives/cockpit-benchmark/releases/do
 COCKPIT_BENCHMARK_SHA256="f343c1c816265ccb9523a2301a7e8955d9bb7cedaf5be7e2367cc69f75a48829"
 
 find_45drives_repo_id() {
-    dnf5 repolist --all | awk 'NR > 1 && $1 ~ /45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}'
+    dnf5 repolist --all | awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}'
 }
 
 install_45drives_from_repo() {
@@ -291,18 +291,21 @@ install_45drives_from_github_releases() {
     echo "Downloading ${COCKPIT_FS_RPM}..."
     if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
       echo "Failed to download ${COCKPIT_FS_RPM}" >&2
+      rm -f "/tmp/${COCKPIT_FS_RPM}"
       return 1
     fi
 
     echo "Verifying checksum..."
     if ! echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -; then
       echo "Checksum verification failed for ${COCKPIT_FS_RPM}." >&2
+      rm -f "/tmp/${COCKPIT_FS_RPM}"
       return 1
     fi
 
     echo "Installing ${COCKPIT_FS_RPM}..."
     if ! dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"; then
       echo "Failed to install ${COCKPIT_FS_RPM}." >&2
+      rm -f "/tmp/${COCKPIT_FS_RPM}"
       return 1
     fi
     rm -f "/tmp/${COCKPIT_FS_RPM}"
@@ -310,18 +313,21 @@ install_45drives_from_github_releases() {
     echo "Downloading ${COCKPIT_NAVIGATOR_RPM}..."
     if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NAVIGATOR_RPM}" "${COCKPIT_NAVIGATOR_URL}" || [ ! -s "/tmp/${COCKPIT_NAVIGATOR_RPM}" ]; then
       echo "Failed to download ${COCKPIT_NAVIGATOR_RPM}" >&2
+      rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
       return 1
     fi
 
     echo "Verifying checksum..."
     if ! echo "${COCKPIT_NAVIGATOR_SHA256}  /tmp/${COCKPIT_NAVIGATOR_RPM}" | sha256sum -c -; then
       echo "Checksum verification failed for ${COCKPIT_NAVIGATOR_RPM}." >&2
+      rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
       return 1
     fi
 
     echo "Installing ${COCKPIT_NAVIGATOR_RPM}..."
     if ! dnf5 install -y "/tmp/${COCKPIT_NAVIGATOR_RPM}"; then
       echo "Failed to install ${COCKPIT_NAVIGATOR_RPM}." >&2
+      rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
       return 1
     fi
     rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
@@ -329,18 +335,21 @@ install_45drives_from_github_releases() {
     echo "Downloading ${COCKPIT_BENCHMARK_RPM}..."
     if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_BENCHMARK_RPM}" "${COCKPIT_BENCHMARK_URL}" || [ ! -s "/tmp/${COCKPIT_BENCHMARK_RPM}" ]; then
       echo "Failed to download ${COCKPIT_BENCHMARK_RPM}" >&2
+      rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
       return 1
     fi
 
     echo "Verifying checksum..."
     if ! echo "${COCKPIT_BENCHMARK_SHA256}  /tmp/${COCKPIT_BENCHMARK_RPM}" | sha256sum -c -; then
       echo "Checksum verification failed for ${COCKPIT_BENCHMARK_RPM}." >&2
+      rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
       return 1
     fi
 
     echo "Installing ${COCKPIT_BENCHMARK_RPM}..."
     if ! dnf5 install -y "/tmp/${COCKPIT_BENCHMARK_RPM}"; then
       echo "Failed to install ${COCKPIT_BENCHMARK_RPM}." >&2
+      rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
       return 1
     fi
     rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
