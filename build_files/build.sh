@@ -276,7 +276,7 @@ install_45drives_from_repo() {
     done
 
     echo "Installing 45Drives Cockpit packages from '${repo_id}'..."
-    dnf5 install -y "${fortyfive_cockpit_packages[@]}"
+    dnf5 --disablerepo='*' --enablerepo="${repo_id}" install -y "${fortyfive_cockpit_packages[@]}"
 }
 
 install_45drives_from_github_releases() {
