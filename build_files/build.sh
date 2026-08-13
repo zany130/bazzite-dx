@@ -259,7 +259,10 @@ install_45drives_from_repo() {
             return 1
         fi
         rm -f "${repofile}"
-        dnf5 --refresh makecache
+        if ! dnf5 --refresh makecache; then
+            echo "Failed to refresh package metadata after adding 45Drives repository." >&2
+            return 1
+        fi
         repo_id="$(find_45drives_repo_id)"
     fi
 
@@ -276,7 +279,10 @@ install_45drives_from_repo() {
     done
 
     echo "Installing 45Drives Cockpit packages from '${repo_id}'..."
-    dnf5 --disablerepo='*' --enablerepo="${repo_id}" install -y "${fortyfive_cockpit_packages[@]}"
+    if ! dnf5 --disablerepo='*' --enablerepo="${repo_id}" install -y "${fortyfive_cockpit_packages[@]}"; then
+        echo "Failed to install all 45Drives Cockpit packages from '${repo_id}'." >&2
+        return 1
+    fi
 }
 
 install_45drives_from_github_releases() {
