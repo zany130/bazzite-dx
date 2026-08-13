@@ -14,13 +14,14 @@ sudo systemctl reboot
 Base: `ghcr.io/ublue-os/bazzite-deck:testing`
 
 **System:** coolercontrol
-**DX:** android-tools, bcc/bpftrace/bpftop, ccache, code, cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-nspawn, containerd, Docker CE (+ buildx/compose), flatpak-builder, google-noto-sans-fonts, guestfs-tools, libvirt, podman-machine, podman-tui, QEMU/KVM, ramalama, rclone, restic, ROCm CLI tooling, sysprof, tiptop, usbmuxd, virt-manager, virtiofsd, VirtualBox guest additions, waypipe, zsh (plus supporting tools like git-subtree, nicstat, numactl, python3-libvirt, qemu-user-static-aarch64, swtpm)
+**DX:** android-tools, bcc/bpftrace/bpftop, ccache, code, cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-nspawn, cockpit-navigator, cockpit-benchmark, containerd, Docker CE (+ buildx/compose), flatpak-builder, google-noto-sans-fonts, guestfs-tools, libvirt, podman-machine, podman-tui, QEMU/KVM, ramalama, rclone, restic, ROCm CLI tooling, sysprof, tiptop, usbmuxd, virt-manager, virtiofsd, VirtualBox guest additions, waypipe, zsh (plus supporting tools like git-subtree, nicstat, numactl, python3-libvirt, qemu-user-static-aarch64, swtpm)
 **Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners
 **Hardware:** solaar, liquidctl, arctis-sound-manager  
 **Storage:** btfs, megasync, dolphin-megasync  
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
 **Media:** vlc (+ all plugins), python3-pygame  
 **Deck:** inherited from `deck:testing`; legacy re-enable blocks remain commented in `build_files/build.sh` for easy rollback once the upstream DX image catches up to the Fedora 44 `deck:testing` transition
+
 
 Deck functionality now comes directly from `deck:testing`. The previous local
 Deck restoration block is intentionally kept in `build_files/build.sh` as
