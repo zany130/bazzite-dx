@@ -119,25 +119,25 @@ dnf5 --refresh makecache
 
 # Non-DX custom packages
 dnf5 install -y \
-beep \
-btfs \
-topgrade \
-bsdtar \
-coolercontrol \
-google-authenticator \
-kvantum \
-liquidctl \
-megasync \
-dolphin-megasync \
-mpv \
-python3-pygame \
-qt6-qtgrpc \
-rEFInd \
-rEFInd-tools \
-sbctl \
-solaar \
-vlc \
-vlc-plugins-all
+    beep \
+    btfs \
+    topgrade \
+    bsdtar \
+    coolercontrol \
+    google-authenticator \
+    kvantum \
+    liquidctl \
+    megasync \
+    dolphin-megasync \
+    mpv \
+    python3-pygame \
+    qt6-qtgrpc \
+    rEFInd \
+    rEFInd-tools \
+    sbctl \
+    solaar \
+    vlc \
+    vlc-plugins-all
 
 # DX Packages
 # Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
@@ -210,26 +210,34 @@ dnf5 install -y \
     "${dx_remote_packages[@]}" \
     "${dx_acceleration_packages[@]}"
 
-# Download and verify cockpit-file-sharing with checksum
-# renovate: datasource=github-releases depName=45Drives/cockpit-file-sharing versioning=loose
-COCKPIT_FS_VERSION="v4.6.1"
-COCKPIT_FS_RPM="cockpit-file-sharing-${COCKPIT_FS_VERSION#v}-1.el9.noarch.rpm"
-COCKPIT_FS_URL="https://github.com/45Drives/cockpit-file-sharing/releases/download/${COCKPIT_FS_VERSION}/${COCKPIT_FS_RPM}"
-# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_FS_VERSION changes.
-COCKPIT_FS_SHA256="bb83a996bb55c49a3409d1db023351b4d4e356805b5f23666b1dd9438f10e0e3"
+# Install 45Drives Cockpit packages
+echo "Adding 45Drives repository..."
+curl --fail-with-body --retry 3 -Lo /tmp/45drives.repo https://repo.45drives.com/lists/45drives.repo
+curl --fail-with-body --retry 3 -Lo /tmp/45drives-gpg.asc https://repo.45drives.com/key/gpg.asc
 
-echo "Downloading ${COCKPIT_FS_RPM}..."
-if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_FS_RPM}" >&2
-  exit 1
+# Force EL9 repo usage, since this image is Fedora 44 based and EL8 repo metadata
+# is not compatible with the build environment.
+sed -i 's@repo/45drives/el8@repo/45drives/el9@g; s@EL8@EL9@g' /tmp/45drives.repo
+if ! grep -q '^gpgkey=' /tmp/45drives.repo; then
+    printf '\ngpgkey=https://repo.45drives.com/key/gpg.asc\n' >> /tmp/45drives.repo
 fi
 
-echo "Verifying checksum..."
-echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
+rpm --import /tmp/45drives-gpg.asc
+dnf5 config-manager addrepo --from-repofile=/tmp/45drives.repo
+rm -f /tmp/45drives.repo /tmp/45drives-gpg.asc
+dnf5 --refresh makecache
 
-echo "Installing ${COCKPIT_FS_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
-rm -f "/tmp/${COCKPIT_FS_RPM}"
+fortyfive_repo_id="$(dnf5 repolist --all | awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}')"
+if [[ -z "${fortyfive_repo_id}" ]]; then
+    echo "ERROR: Could not find 45Drives repository ID after adding repo." >&2
+    exit 1
+fi
+dnf5 --enablerepo="${fortyfive_repo_id}" install -y \
+    cockpit-file-sharing \
+    cockpit-navigator \
+    cockpit-benchmark
+
+dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"
 
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
@@ -354,6 +362,6 @@ systemctl enable beep-startup.service
 
 # this uninstalls a package
 dnf5 remove -y \
-kate \
-kwrite \
-kfind
+    kate \
+    kwrite \
+    kfind
