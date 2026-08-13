@@ -214,7 +214,9 @@ dnf5 install -y \
 echo "Adding 45Drives repository..."
 curl --fail-with-body --retry 3 -Lo /tmp/45drives.repo https://repo.45drives.com/lists/45drives.repo
 dnf5 config-manager addrepo --from-repofile=/tmp/45drives.repo
-rm -f /tmp/45drives.repo
+curl --fail-with-body --retry 3 -Lo /tmp/45drives-gpg.asc https://repo.45drives.com/key/gpg.asc
+rpm --import /tmp/45drives-gpg.asc
+rm -f /tmp/45drives.repo /tmp/45drives-gpg.asc
 dnf5 --refresh makecache
 
 fortyfive_repo_id="$(dnf5 repolist --all | awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}')"
