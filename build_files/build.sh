@@ -291,45 +291,66 @@ install_45drives_from_github_releases() {
     echo "Downloading ${COCKPIT_FS_RPM}..."
     if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_FS_RPM}" "${COCKPIT_FS_URL}" || [ ! -s "/tmp/${COCKPIT_FS_RPM}" ]; then
       echo "Failed to download ${COCKPIT_FS_RPM}" >&2
-      exit 1
+      return 1
     fi
 
     echo "Verifying checksum..."
-    echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -
+    if ! echo "${COCKPIT_FS_SHA256}  /tmp/${COCKPIT_FS_RPM}" | sha256sum -c -; then
+      echo "Checksum verification failed for ${COCKPIT_FS_RPM}." >&2
+      return 1
+    fi
 
     echo "Installing ${COCKPIT_FS_RPM}..."
-    dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"
+    if ! dnf5 install -y "/tmp/${COCKPIT_FS_RPM}"; then
+      echo "Failed to install ${COCKPIT_FS_RPM}." >&2
+      return 1
+    fi
     rm -f "/tmp/${COCKPIT_FS_RPM}"
 
     echo "Downloading ${COCKPIT_NAVIGATOR_RPM}..."
     if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NAVIGATOR_RPM}" "${COCKPIT_NAVIGATOR_URL}" || [ ! -s "/tmp/${COCKPIT_NAVIGATOR_RPM}" ]; then
       echo "Failed to download ${COCKPIT_NAVIGATOR_RPM}" >&2
-      exit 1
+      return 1
     fi
 
     echo "Verifying checksum..."
-    echo "${COCKPIT_NAVIGATOR_SHA256}  /tmp/${COCKPIT_NAVIGATOR_RPM}" | sha256sum -c -
+    if ! echo "${COCKPIT_NAVIGATOR_SHA256}  /tmp/${COCKPIT_NAVIGATOR_RPM}" | sha256sum -c -; then
+      echo "Checksum verification failed for ${COCKPIT_NAVIGATOR_RPM}." >&2
+      return 1
+    fi
 
     echo "Installing ${COCKPIT_NAVIGATOR_RPM}..."
-    dnf5 install -y "/tmp/${COCKPIT_NAVIGATOR_RPM}"
+    if ! dnf5 install -y "/tmp/${COCKPIT_NAVIGATOR_RPM}"; then
+      echo "Failed to install ${COCKPIT_NAVIGATOR_RPM}." >&2
+      return 1
+    fi
     rm -f "/tmp/${COCKPIT_NAVIGATOR_RPM}"
 
     echo "Downloading ${COCKPIT_BENCHMARK_RPM}..."
     if ! curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_BENCHMARK_RPM}" "${COCKPIT_BENCHMARK_URL}" || [ ! -s "/tmp/${COCKPIT_BENCHMARK_RPM}" ]; then
       echo "Failed to download ${COCKPIT_BENCHMARK_RPM}" >&2
-      exit 1
+      return 1
     fi
 
     echo "Verifying checksum..."
-    echo "${COCKPIT_BENCHMARK_SHA256}  /tmp/${COCKPIT_BENCHMARK_RPM}" | sha256sum -c -
+    if ! echo "${COCKPIT_BENCHMARK_SHA256}  /tmp/${COCKPIT_BENCHMARK_RPM}" | sha256sum -c -; then
+      echo "Checksum verification failed for ${COCKPIT_BENCHMARK_RPM}." >&2
+      return 1
+    fi
 
     echo "Installing ${COCKPIT_BENCHMARK_RPM}..."
-    dnf5 install -y "/tmp/${COCKPIT_BENCHMARK_RPM}"
+    if ! dnf5 install -y "/tmp/${COCKPIT_BENCHMARK_RPM}"; then
+      echo "Failed to install ${COCKPIT_BENCHMARK_RPM}." >&2
+      return 1
+    fi
     rm -f "/tmp/${COCKPIT_BENCHMARK_RPM}"
 }
 
 if ! install_45drives_from_repo; then
-    install_45drives_from_github_releases
+    if ! install_45drives_from_github_releases; then
+        echo "Failed to install 45Drives Cockpit packages from both repo and pinned GitHub releases." >&2
+        exit 1
+    fi
 fi
 
 # Download and verify cockpit-nspawn with checksum
