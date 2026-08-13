@@ -219,7 +219,8 @@ rpm --import /tmp/45drives-gpg.asc
 rm -f /tmp/45drives.repo /tmp/45drives-gpg.asc
 dnf5 --refresh makecache
 
-fortyfive_repo_id="$(dnf5 repolist --all | awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}')"
+fortyfive_repolist="$(dnf5 repolist --all)"
+fortyfive_repo_id="$(awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}' <<< "${fortyfive_repolist}")"
 if [[ -z "${fortyfive_repo_id}" ]]; then
     echo "ERROR: Could not find 45Drives repository ID after adding repo." >&2
     exit 1
