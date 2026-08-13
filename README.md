@@ -22,7 +22,6 @@ Base: `ghcr.io/ublue-os/bazzite-deck:testing`
 **Media:** vlc (+ all plugins), python3-pygame  
 **Deck:** inherited from `deck:testing`; legacy re-enable blocks remain commented in `build_files/build.sh` for easy rollback once the upstream DX image catches up to the Fedora 44 `deck:testing` transition
 
-45Drives Cockpit packages are installed from `repo.45drives.com` only when all required packages are available there; otherwise the build falls back to pinned GitHub release RPMs with checksum verification.
 
 Deck functionality now comes directly from `deck:testing`. The previous local
 Deck restoration block is intentionally kept in `build_files/build.sh` as
