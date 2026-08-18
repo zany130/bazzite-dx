@@ -223,11 +223,11 @@ tag-images $target_image=image_name $tag=default_tag tags="":
 
     # Get Image, and untag
     IMAGE=$(podman inspect ${target_image}:${tag} | jq -r .[].Id)
-    podman untag ${IMAGE}
+    podman untag "${IMAGE}"
 
     # Tag Image
     for tag in {{ tags }}; do
-        podman tag $IMAGE "${target_image}:${tag}"
+        podman tag "${IMAGE}" "${target_image}:${tag}"
     done
 
     # Show Images
