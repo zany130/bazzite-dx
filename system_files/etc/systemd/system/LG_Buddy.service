@@ -16,6 +16,8 @@ Restart=on-failure
 RestartSec=15
 StartLimitIntervalSec=120
 StartLimitBurst=3
+# Hard cap: give up after 60 s so boot is never blocked indefinitely
+TimeoutStartSec=60
 
 [Install]
 WantedBy=multi-user.target
