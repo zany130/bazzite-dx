@@ -13,11 +13,22 @@ TV_INPUT="HDMI_1"  # Change to your PC's input (e.g., HDMI_1, HDMI_2, HDMI_3, HD
 # Validate that alga executable exists and is executable
 if [[ ! -x "$ALGA_PATH" ]]; then
     echo "Error: alga executable not found or not executable at $ALGA_PATH"
-    exit 1
+    exit 0
 fi
 
-# Get the current power state of the TV
-power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
+# Retry up to 5 times to get a response from the TV (it may take time at boot)
+power_state=""
+for i in {1..5}; do
+    power_state=$("$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
+    [[ -n "$power_state" ]] && break
+    echo "Attempt $i: TV not responding, retrying in 5s..."
+    sleep 5
+done
+
+if [[ -z "$power_state" ]]; then
+    echo "TV did not respond after retries, giving up"
+    exit 0
+fi
 
 if [[ "$power_state" != "Active" ]]; then
     echo "Turning on TV and switching to $TV_INPUT"
