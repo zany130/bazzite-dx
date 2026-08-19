@@ -2,6 +2,8 @@
 Description=Controls LG WebOS TV at Startup and Shutdown
 After=network-online.target
 Wants=network-online.target
+StartLimitIntervalSec=120
+StartLimitBurst=3
 
 [Service]
 Type=oneshot
@@ -14,10 +16,8 @@ StandardOutput=journal
 StandardError=journal
 Restart=on-failure
 RestartSec=15
-StartLimitIntervalSec=120
-StartLimitBurst=3
-# Hard cap: give up after 60 s so boot is never blocked indefinitely
-TimeoutStartSec=60
+# Hard cap: give up after 180 s to cover worst-case startup (retries + power-on delay + input switch)
+TimeoutStartSec=180
 
 [Install]
 WantedBy=multi-user.target
