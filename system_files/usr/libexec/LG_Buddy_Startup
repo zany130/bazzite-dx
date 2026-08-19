@@ -27,8 +27,8 @@ for i in {1..3}; do
 done
 
 if [[ -z "$power_state" ]]; then
-    echo "TV did not respond after retries, giving up"
-    exit 0
+    echo "TV did not respond after retries; exiting non-zero so systemd can retry"
+    exit 1
 fi
 
 if [[ "$power_state" != "Active" ]]; then
