@@ -1,23 +1,21 @@
 [Unit]
 Description=Controls LG WebOS TV at Startup and Shutdown
-After=network-online.target
 Wants=network-online.target
-StartLimitIntervalSec=120
-StartLimitBurst=3
+After=network-online.target NetworkManager-wait-online.service
 
 [Service]
 Type=oneshot
-RemainAfterExit=true
+RemainAfterExit=yes
 User=zany130
 Group=zany130
 ExecStart=/usr/libexec/LG_Buddy_Startup
 ExecStop=/usr/libexec/LG_Buddy_Shutdown
 StandardOutput=journal
 StandardError=journal
-Restart=on-failure
-RestartSec=15
-# Hard cap: give up after 180 s to cover worst-case startup (retries + power-on delay + input switch)
-TimeoutStartSec=180
+# Script handles all retries internally; no systemd restart loop for oneshot
+Restart=no
+# Hard cap: covers full script retry budget (~25 s) + power-on delay + input switch
+TimeoutStartSec=90
 
 [Install]
 WantedBy=multi-user.target
