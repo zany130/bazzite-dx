@@ -16,32 +16,67 @@ if [[ ! -x "$ALGA_PATH" ]]; then
     exit 0
 fi
 
-# Retry up to 5 times (~25 s worst-case) to get a response from the TV.
-# TV may take extra time to become reachable right after boot even when the
-# host network is up (wait-online only guarantees host connectivity).
-# Each attempt: 3 s timeout + 2 s sleep = 5 s/attempt × 5 = 25 s max.
-power_state=""
-MAX_ATTEMPTS=5
-for i in $(seq 1 $MAX_ATTEMPTS); do
-    power_state=$(timeout 3 "$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
-    if [[ -n "$power_state" ]]; then
+# Temporary workaround for upstream alga bug where `power screen-state` can
+# crash with JSONDecodeError when the TV is off/unresponsive:
+# https://github.com/Tenzer/alga/issues/353
+#
+# Instead of probing screen-state, directly attempt the intended actions with
+# bounded retries and explicit command error logging.
+MAX_ATTEMPTS=30
+RETRY_DELAY=3
+RETRY_BUDGET_SECONDS=90
+ALGA_TIMEOUT=3
+START_TIME=$(date +%s)
+ATTEMPTS_MADE=0
+
+run_alga() {
+    local attempt="$1"
+    shift
+
+    local output rc cmd_display
+    output=$(timeout "$ALGA_TIMEOUT" "$ALGA_PATH" "$@" 2>&1)
+    rc=$?
+    cmd_display=$(printf '%q ' "$ALGA_PATH" "$@")
+    cmd_display=${cmd_display% }
+
+    if [[ $rc -ne 0 ]]; then
+        if [[ -z "$output" ]]; then
+            output="(no output)"
+        fi
+        echo "Attempt ${attempt}/${MAX_ATTEMPTS}: '${cmd_display}' failed (exit=${rc}): ${output}"
+        return $rc
+    fi
+
+    return 0
+}
+
+for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
+    elapsed=$(( $(date +%s) - START_TIME ))
+    if (( elapsed >= RETRY_BUDGET_SECONDS )); then
+        ATTEMPTS_MADE=$((attempt - 1))
+        echo "Retry budget (${RETRY_BUDGET_SECONDS}s) exhausted before attempt ${attempt}/${MAX_ATTEMPTS}"
         break
     fi
-    echo "Attempt $i/$MAX_ATTEMPTS: TV not responding, retrying in 2s..."
-    sleep 2
+
+    ATTEMPTS_MADE=$attempt
+
+    if run_alga "$attempt" power on && run_alga "$attempt" input set "$TV_INPUT"; then
+        echo "TV command sequence succeeded on attempt ${attempt}/${MAX_ATTEMPTS}"
+        exit 0
+    fi
+
+    elapsed=$(( $(date +%s) - START_TIME ))
+    if (( attempt < MAX_ATTEMPTS && elapsed + RETRY_DELAY < RETRY_BUDGET_SECONDS )); then
+        echo "Attempt ${attempt}/${MAX_ATTEMPTS}: TV not ready yet, retrying in ${RETRY_DELAY}s..."
+        sleep "$RETRY_DELAY"
+    else
+        if (( attempt < MAX_ATTEMPTS )); then
+            echo "Retry budget nearly exhausted after attempt ${attempt}/${MAX_ATTEMPTS}; stopping retries"
+        fi
+        break
+    fi
 done
 
-if [[ -z "$power_state" ]]; then
-    echo "TV did not respond after $MAX_ATTEMPTS attempts; giving up"
-    exit 1
-fi
-
-if [[ "$power_state" != "Active" ]]; then
-    echo "Turning on TV and switching to $TV_INPUT"
-    timeout 15 "$ALGA_PATH" power on
-    sleep 7
-    timeout 10 "$ALGA_PATH" input set "$TV_INPUT"
-else
-    echo "TV already on, switching to $TV_INPUT"
-    timeout 10 "$ALGA_PATH" input set "$TV_INPUT"
-fi
+elapsed=$(( $(date +%s) - START_TIME ))
+echo "TV did not accept startup commands after ${ATTEMPTS_MADE} attempt(s) in ${elapsed}s (budget ${RETRY_BUDGET_SECONDS}s); giving up"
+exit 1
