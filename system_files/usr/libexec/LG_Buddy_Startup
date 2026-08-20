@@ -16,19 +16,19 @@ if [[ ! -x "$ALGA_PATH" ]]; then
     exit 0
 fi
 
-# Retry up to 30 times (~90 s budget) to get a response from the TV.
+# Retry up to 5 times (~25 s worst-case) to get a response from the TV.
 # TV may take extra time to become reachable right after boot even when the
 # host network is up (wait-online only guarantees host connectivity).
-# Each attempt uses a 10 s timeout so a stalled network call cannot block boot.
+# Each attempt: 3 s timeout + 2 s sleep = 5 s/attempt × 5 = 25 s max.
 power_state=""
-MAX_ATTEMPTS=30
+MAX_ATTEMPTS=5
 for i in $(seq 1 $MAX_ATTEMPTS); do
-    power_state=$(timeout 10 "$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
+    power_state=$(timeout 3 "$ALGA_PATH" power screen-state 2>/dev/null | cut -d':' -f2 | xargs)
     if [[ -n "$power_state" ]]; then
         break
     fi
-    echo "Attempt $i/$MAX_ATTEMPTS: TV not responding, retrying in 3s..."
-    sleep 3
+    echo "Attempt $i/$MAX_ATTEMPTS: TV not responding, retrying in 2s..."
+    sleep 2
 done
 
 if [[ -z "$power_state" ]]; then
