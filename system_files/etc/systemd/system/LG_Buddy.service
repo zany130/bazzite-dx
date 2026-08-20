@@ -10,7 +10,6 @@ User=zany130
 Group=zany130
 ExecStart=/usr/libexec/LG_Buddy_Startup
 ExecStop=/usr/libexec/LG_Buddy_Shutdown
-Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 StandardOutput=journal
 StandardError=journal
 # Script handles all retries internally; no systemd restart loop for oneshot
