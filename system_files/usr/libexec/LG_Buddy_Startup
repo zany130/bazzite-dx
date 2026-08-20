@@ -52,7 +52,8 @@ run_alga() {
 
 for attempt in $(seq 1 "$MAX_ATTEMPTS"); do
     elapsed=$(( $(date +%s) - START_TIME ))
-    if (( elapsed >= RETRY_BUDGET_SECONDS )); then
+    remaining=$(( RETRY_BUDGET_SECONDS - elapsed ))
+    if (( remaining <= 0 || remaining < (ALGA_TIMEOUT * 2) )); then
         ATTEMPTS_MADE=$((attempt - 1))
         echo "Retry budget (${RETRY_BUDGET_SECONDS}s) exhausted before attempt ${attempt}/${MAX_ATTEMPTS}"
         break
