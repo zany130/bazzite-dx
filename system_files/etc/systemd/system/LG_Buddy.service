@@ -14,8 +14,8 @@ StandardOutput=journal
 StandardError=journal
 # Script handles all retries internally; no systemd restart loop for oneshot
 Restart=no
-# Hard cap: covers full script retry budget (~25 s) + power-on delay + input switch
-TimeoutStartSec=90
+# Hard cap: covers startup script's 90 s bounded retry budget plus command overhead
+TimeoutStartSec=120
 
 [Install]
 WantedBy=multi-user.target
