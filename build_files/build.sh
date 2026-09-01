@@ -262,7 +262,8 @@ echo "Verifying checksum..."
 echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
 
 echo "Installing ${COCKPIT_NSPAWN_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
+mkdir -p /var/usrlocal
+rpm2cpio "/tmp/${COCKPIT_NSPAWN_RPM}" | (cd / && cpio -idm --quiet)
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 
 # install only necessary plasma-discover packages for plasmoids
