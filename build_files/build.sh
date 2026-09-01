@@ -137,7 +137,13 @@ rEFInd-tools \
 sbctl \
 solaar \
 vlc \
-vlc-plugins-all
+vlc-plugins-all \
+tesseract \
+tesseract-langpack-eng \
+tesseract-langpack-spa \
+tesseract-libs \
+mosh \
+nmap
 
 # DX Packages
 # Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
