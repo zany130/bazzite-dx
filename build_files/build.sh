@@ -100,8 +100,8 @@ if ((${#rpmfusion_repo_args[@]} == 0)); then
     exit 1
 fi
 
-# Enable Docker and VS Code repositories
-echo 'Enabling DX repositories.'
+# Configure the Docker repository for scoped package installs.
+echo 'Configuring Docker repository.'
 # SHA256 verified from https://download.docker.com/linux/fedora/gpg on 2026-07-10.
 DOCKER_GPG_SHA256="e6c650e0700b1bf4868b693b30761b926844befc8a0acb7ac0dd9b1faf1b7423"
 curl --fail-with-body --retry 3 -Lo /tmp/docker-gpg https://download.docker.com/linux/fedora/gpg
@@ -124,14 +124,6 @@ gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 
 EOF
-
-# SHA256 verified from https://packages.microsoft.com/yumrepos/vscode/config.repo on 2026-08-12.
-VSCODE_REPOFILE_SHA256="b1b364bde5b37fb95cace740f5aa347dceafd5cb6cc67aa61af4d1c5cbb14570"
-curl --fail-with-body --retry 3 -Lo /tmp/vscode-config.repo https://packages.microsoft.com/yumrepos/vscode/config.repo
-echo "${VSCODE_REPOFILE_SHA256}  /tmp/vscode-config.repo" | sha256sum -c -
-dnf5 config-manager addrepo --from-repofile="/tmp/vscode-config.repo"
-rm -f /tmp/vscode-config.repo
-dnf5 config-manager setopt vscode-yum.enabled=0
 
 dnf5 --refresh makecache
 
@@ -164,8 +156,6 @@ dnf5 --refresh --enable-repo=terra install -y \
 dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \
     dolphin-megasync \
     megasync
-
-dnf5 --refresh --enable-repo=vscode-yum install -y code
 
 docker_packages=(
 containerd.io
