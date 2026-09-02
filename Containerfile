@@ -1,9 +1,12 @@
 # Allow build scripts to be referenced without being copied into the final image
 FROM scratch AS ctx
 COPY build_files /
+COPY system_files /system_files
 
 # Base Image
 FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:404c04a5cac3276607c72dc1901438c1e7335376f3a30d8bbe76eb8796f8fd69
+
+COPY --from=ctx /system_files /
 
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
@@ -28,8 +31,6 @@ FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:404c04a5cac3276607c72dc1901438c
 ### MODIFICATIONS
 ## make modifications desired in your image and install packages by modifying the build.sh script
 ## the following RUN directive does all the things required to run "build.sh" as recommended.
-
-COPY system_files/ /
 
 RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     --mount=type=cache,dst=/var/cache \

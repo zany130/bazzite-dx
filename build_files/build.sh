@@ -2,6 +2,8 @@
 
 set -ouex pipefail
 
+# system_files/ is copied into / by the Containerfile (COPY system_files/ /)
+
 ### Install packages
 
 # Packages can be installed from any enabled yum repo on the image.
@@ -266,7 +268,10 @@ echo "Verifying checksum..."
 echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
 
 echo "Installing ${COCKPIT_NSPAWN_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_NSPAWN_RPM}"
+mkdir -p /var/usrlocal
+rpm2cpio "/tmp/${COCKPIT_NSPAWN_RPM}" | (cd / && cpio -idm --quiet --no-absolute-filenames \
+    './usr/local/lib/nspawn-pull*' \
+    './usr/share/cockpit/nspawn*')
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 
 # install only necessary plasma-discover packages for plasmoids
