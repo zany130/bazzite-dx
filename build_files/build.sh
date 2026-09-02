@@ -11,9 +11,9 @@ set -ouex pipefail
 # List of rpmfusion packages can be found here:
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
-# Enable Terra Repository
-echo 'Enabling Terra Repository.'
-sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
+# Keep Terra disabled except for transactions that explicitly need it.
+echo 'Configuring Terra Repository.'
+dnf5 config-manager setopt terra.enabled=0
 
 # Exclude core Qt/KDE/fcitx Qt packages from Terra to avoid pulling in
 # mismatched Qt private ABI versions that break plasmoids at runtime.
@@ -23,8 +23,8 @@ else
     echo 'excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*' >> /etc/yum.repos.d/terra.repo
 fi
 
-# Enable RPM Fusion Repository
-echo 'Enabling RPM Fusion Repository.'
+# Keep RPM Fusion disabled except for transactions that explicitly need it.
+echo 'Configuring RPM Fusion Repository.'
 get_available_repos() {
     dnf5 repolist --all | awk 'NR > 1 && $1 != "" {print $1}'
 }
@@ -60,7 +60,7 @@ ensure_rpmfusion_release_repo() {
     dnf5 install -y "${repo_url}"
 }
 
-enable_rpmfusion_repo_family() {
+scope_rpmfusion_repo_family() {
     local repo_family="${1}"
     local repo_id
 
@@ -71,9 +71,11 @@ enable_rpmfusion_repo_family() {
                 continue
                 ;;
         esac
-        if ! dnf5 config-manager setopt "${repo_id}.enabled=1"; then
-            echo "WARNING: Failed to enable RPM Fusion repo '${repo_id}'. Check 'dnf5 repolist --all' and repo configuration." >&2
+        if ! dnf5 config-manager setopt "${repo_id}.enabled=0"; then
+            echo "ERROR: Failed to disable RPM Fusion repo '${repo_id}'." >&2
+            exit 1
         fi
+        rpmfusion_repo_args+=("--enable-repo=${repo_id}")
     done <<< "$(get_available_repos)"
 }
 
@@ -90,8 +92,13 @@ ensure_rpmfusion_release_repo \
     rpmfusion-nonfree \
     "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
 
-enable_rpmfusion_repo_family rpmfusion-free
-enable_rpmfusion_repo_family rpmfusion-nonfree
+rpmfusion_repo_args=()
+scope_rpmfusion_repo_family rpmfusion-free
+scope_rpmfusion_repo_family rpmfusion-nonfree
+if ((${#rpmfusion_repo_args[@]} == 0)); then
+    echo "ERROR: No RPM Fusion repositories are available for scoped installs." >&2
+    exit 1
+fi
 
 # Enable Docker and VS Code repositories
 echo 'Enabling DX repositories.'
@@ -105,7 +112,7 @@ cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
 [docker-ce-stable]
 name=Docker CE Stable - $basearch
 baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/stable
-enabled=1
+enabled=0
 gpgcheck=1
 gpgkey=https://download.docker.com/linux/fedora/gpg
 
@@ -124,6 +131,7 @@ curl --fail-with-body --retry 3 -Lo /tmp/vscode-config.repo https://packages.mic
 echo "${VSCODE_REPOFILE_SHA256}  /tmp/vscode-config.repo" | sha256sum -c -
 dnf5 config-manager addrepo --from-repofile="/tmp/vscode-config.repo"
 rm -f /tmp/vscode-config.repo
+dnf5 config-manager setopt vscode-yum.enabled=0
 
 dnf5 --refresh makecache
 
@@ -131,19 +139,14 @@ dnf5 --refresh makecache
 dnf5 install -y \
 beep \
 btfs \
-topgrade \
 bsdtar \
-coolercontrol \
 google-authenticator \
 kvantum \
 liquidctl \
-megasync \
-dolphin-megasync \
 mpv \
 python3-pygame \
 rEFInd \
 rEFInd-tools \
-sbctl \
 solaar \
 tesseract \
 tesseract-langpack-eng \
@@ -151,6 +154,29 @@ tesseract-langpack-spa \
 tesseract-libs \
 mosh \
 nmap
+
+# Install third-party packages only while their owning repository is enabled.
+dnf5 --refresh --enable-repo=terra install -y \
+    coolercontrol \
+    sbctl \
+    topgrade
+
+dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \
+    dolphin-megasync \
+    megasync
+
+dnf5 --refresh --enable-repo=vscode-yum install -y code
+
+docker_packages=(
+containerd.io
+docker-buildx-plugin
+docker-ce
+docker-ce-cli
+docker-compose-plugin
+)
+
+dnf5 --refresh --enable-repo=docker-ce-stable install -y \
+    "${docker_packages[@]}"
 
 # DX Packages
 # Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
@@ -166,7 +192,6 @@ sysprof
 tiptop
 )
 dx_editor_packages=(
-code
 flatpak-builder
 git-subtree
 google-noto-sans-fonts
@@ -180,11 +205,6 @@ cockpit-ws-selinux
 guestfs-tools
 )
 dx_container_packages=(
-containerd.io
-docker-buildx-plugin
-docker-ce
-docker-ce-cli
-docker-compose-plugin
 podman-machine
 podman-tui
 )
@@ -238,12 +258,11 @@ if [[ -z "${fortyfive_repo_id}" ]]; then
     echo "ERROR: Could not find 45Drives repository ID after adding repo." >&2
     exit 1
 fi
-dnf5 --enablerepo="${fortyfive_repo_id}" install -y \
+dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"
+dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \
     cockpit-file-sharing \
     cockpit-navigator \
     cockpit-benchmark
-
-dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"
 
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
@@ -279,14 +298,14 @@ rpm2cpio "/tmp/${COCKPIT_NSPAWN_RPM}" | (cd / && cpio -idm --quiet --no-absolute
     './usr/share/cockpit/nspawn*')
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 
-# Enable COPRs
+# Install each COPR package, then disable its repository immediately.
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-dnf5 -y copr enable loteran/arctis-sound-manager
+dnf5 install -y kwin-effect-roundcorners
+dnf5 -y copr disable matinlotfali/KDE-Rounded-Corners
 
-# install packages from copr
-dnf5 install -y \
-    arctis-sound-manager \
-    kwin-effect-roundcorners
+dnf5 -y copr enable loteran/arctis-sound-manager
+dnf5 install -y arctis-sound-manager
+dnf5 -y copr disable loteran/arctis-sound-manager
 
 # DX Services
 systemctl enable docker.socket
