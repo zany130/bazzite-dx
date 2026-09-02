@@ -15,6 +15,14 @@ set -ouex pipefail
 echo 'Enabling Terra Repository.'
 sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 
+# Exclude core Qt/KDE/fcitx Qt packages from Terra to avoid pulling in
+# mismatched Qt private ABI versions that break plasmoids at runtime.
+if grep -q '^excludepkgs=' /etc/yum.repos.d/terra.repo; then
+    sed -i 's@^excludepkgs=.*@excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*@' /etc/yum.repos.d/terra.repo
+else
+    echo 'excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*' >> /etc/yum.repos.d/terra.repo
+fi
+
 # Enable RPM Fusion Repository
 echo 'Enabling RPM Fusion Repository.'
 get_available_repos() {
@@ -133,13 +141,10 @@ megasync \
 dolphin-megasync \
 mpv \
 python3-pygame \
-qt6-qtgrpc \
 rEFInd \
 rEFInd-tools \
 sbctl \
 solaar \
-vlc \
-vlc-plugins-all \
 tesseract \
 tesseract-langpack-eng \
 tesseract-langpack-spa \
@@ -273,9 +278,6 @@ rpm2cpio "/tmp/${COCKPIT_NSPAWN_RPM}" | (cd / && cpio -idm --quiet --no-absolute
     './usr/local/lib/nspawn-pull*' \
     './usr/share/cockpit/nspawn*')
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
-
-# install only necessary plasma-discover packages for plasmoids
-dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
 
 # Enable COPRs
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
