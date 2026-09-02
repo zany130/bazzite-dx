@@ -141,13 +141,10 @@ megasync \
 dolphin-megasync \
 mpv \
 python3-pygame \
-qt6-qtgrpc \
 rEFInd \
 rEFInd-tools \
 sbctl \
 solaar \
-vlc \
-vlc-plugins-all \
 tesseract \
 tesseract-langpack-eng \
 tesseract-langpack-spa \
@@ -282,9 +279,6 @@ rpm2cpio "/tmp/${COCKPIT_NSPAWN_RPM}" | (cd / && cpio -idm --quiet --no-absolute
     './usr/share/cockpit/nspawn*')
 rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
 
-# install only necessary plasma-discover packages for plasmoids
-dnf5 install -y --setopt=install_weak_deps=False plasma-discover plasma-discover-kns
-
 # Enable COPRs
 dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
 dnf5 -y copr enable loteran/arctis-sound-manager
@@ -293,11 +287,6 @@ dnf5 -y copr enable loteran/arctis-sound-manager
 dnf5 install -y \
     arctis-sound-manager \
     kwin-effect-roundcorners
-
-# Normalize package versions across all enabled repos to avoid Qt private
-# API symbol mismatches (e.g. QUntypedPropertyBinding) caused by partial
-# upgrades from Terra/COPR pulling in newer Qt/KDE builds than the base image.
-dnf5 --refresh distro-sync -y
 
 # DX Services
 systemctl enable docker.socket
