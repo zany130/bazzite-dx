@@ -18,9 +18,9 @@ sed -i 's@enabled=0@enabled=1@g' /etc/yum.repos.d/terra.repo
 # Exclude core Qt/KDE/fcitx Qt packages from Terra to avoid pulling in
 # mismatched Qt private ABI versions that break plasmoids at runtime.
 if grep -q '^excludepkgs=' /etc/yum.repos.d/terra.repo; then
-    sed -i 's@^excludepkgs=.*@excludepkgs=qt6-* kf6-* plasma-* fcitx5-qt*@' /etc/yum.repos.d/terra.repo
+    sed -i 's@^excludepkgs=.*@excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*@' /etc/yum.repos.d/terra.repo
 else
-    echo 'excludepkgs=qt6-* kf6-* plasma-* fcitx5-qt*' >> /etc/yum.repos.d/terra.repo
+    echo 'excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*' >> /etc/yum.repos.d/terra.repo
 fi
 
 # Enable RPM Fusion Repository
