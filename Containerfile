@@ -6,6 +6,8 @@ COPY system_files /system_files
 # Base Image
 FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:404c04a5cac3276607c72dc1901438c1e7335376f3a30d8bbe76eb8796f8fd69
 
+COPY --from=ctx /system_files /
+
 ## Other possible base images include:
 # FROM ghcr.io/ublue-os/bazzite:latest
 # FROM ghcr.io/ublue-os/bluefin-nvidia:stable
