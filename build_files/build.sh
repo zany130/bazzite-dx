@@ -2,6 +2,9 @@
 
 set -ouex pipefail
 
+#Version locking so we dont ever accidently partialy update any qt or plasma packages
+dnf5 versionlock add 'qt6-*' 'plasma-*'
+
 # system_files/ is copied into / by the Containerfile (COPY system_files/ /)
 
 ### Install packages
