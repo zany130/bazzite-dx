@@ -262,7 +262,7 @@ dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \
 COCKPIT_NSPAWN_VERSION="v1.0.0-75"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
-COCKPIT_NSPAWN_SHA256="0ced2aa9f493b9d144779c9be0a7d90318e1ad9ebadd366c7162a2a124e6b458"
+COCKPIT_NSPAWN_SHA256="9482eb1e5835bcaf3cd5bc850fecb636d94473f85dd826711dd373af28ca7df7"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
 COCKPIT_NSPAWN_RELEASE_TAGS=(
