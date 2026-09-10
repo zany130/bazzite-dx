@@ -259,7 +259,7 @@ dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \
 
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
-COCKPIT_NSPAWN_VERSION="v1.0.0-75"
+COCKPIT_NSPAWN_VERSION="v1.0.0-76"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
 COCKPIT_NSPAWN_SHA256="9482eb1e5835bcaf3cd5bc850fecb636d94473f85dd826711dd373af28ca7df7"
