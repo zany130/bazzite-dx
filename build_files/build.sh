@@ -297,6 +297,89 @@ echo "Installing ${COCKPIT_DIAGNOSTICS_RPM}..."
 dnf5 install -y "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
 rm -f "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
 
+# Download and verify cockpit-sensors with checksum
+# renovate: datasource=github-releases depName=ocristopfer/cockpit-sensors versioning=loose
+COCKPIT_SENSORS_VERSION="1.1"
+COCKPIT_SENSORS_ARCHIVE="cockpit-sensors.tar.xz"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_SENSORS_VERSION changes.
+COCKPIT_SENSORS_SHA256="ab72abca8f279e2dac8da65b0d2d5dc6a5de2e48cb09cbda87e3f536a9de677e"
+
+echo "Downloading ${COCKPIT_SENSORS_ARCHIVE}..."
+COCKPIT_SENSORS_URL="https://github.com/ocristopfer/cockpit-sensors/releases/download/${COCKPIT_SENSORS_VERSION}/${COCKPIT_SENSORS_ARCHIVE}"
+curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_SENSORS_ARCHIVE}" "${COCKPIT_SENSORS_URL}"
+echo "Verifying checksum..."
+echo "${COCKPIT_SENSORS_SHA256}  /tmp/${COCKPIT_SENSORS_ARCHIVE}" | sha256sum -c -
+echo "Installing cockpit-sensors..."
+rm -rf /tmp/cockpit-sensors /usr/share/cockpit/sensors
+mkdir -p /tmp/cockpit-sensors /usr/share/cockpit/sensors
+tar -xf "/tmp/${COCKPIT_SENSORS_ARCHIVE}" -C /tmp/cockpit-sensors cockpit-sensors/dist
+cp -r /tmp/cockpit-sensors/cockpit-sensors/dist/. /usr/share/cockpit/sensors/
+rm -rf /tmp/cockpit-sensors "/tmp/${COCKPIT_SENSORS_ARCHIVE}"
+
+# Download and verify explorer with checksum
+# renovate: datasource=github-releases depName=ismetozalp/explorer versioning=loose
+EXPLORER_VERSION="v4.1.0"
+EXPLORER_RELEASE_VERSION="${EXPLORER_VERSION#v}"
+EXPLORER_ARCHIVE="explorer-${EXPLORER_RELEASE_VERSION}.zip"
+# SHA256 is NOT auto-updated by Renovate; update manually when EXPLORER_VERSION changes.
+EXPLORER_SHA256="509dd7a9e3f3601f117221331489c2b07dcee1df188490066a655d3b987a40b0"
+
+echo "Downloading ${EXPLORER_ARCHIVE}..."
+EXPLORER_URL="https://github.com/ismetozalp/explorer/releases/download/${EXPLORER_VERSION}/${EXPLORER_ARCHIVE}"
+curl --fail-with-body --retry 3 -Lo "/tmp/${EXPLORER_ARCHIVE}" "${EXPLORER_URL}"
+echo "Verifying checksum..."
+echo "${EXPLORER_SHA256}  /tmp/${EXPLORER_ARCHIVE}" | sha256sum -c -
+echo "Installing explorer..."
+rm -rf /tmp/explorer /usr/share/cockpit/explorer
+mkdir -p /usr/share/cockpit/explorer
+bsdtar -xf "/tmp/${EXPLORER_ARCHIVE}" -C /tmp
+cp -r /tmp/explorer/. /usr/share/cockpit/explorer/
+rm -rf /tmp/explorer "/tmp/${EXPLORER_ARCHIVE}"
+
+# Download and verify cockpit-tailscale source with checksum, then build the plugin bundle.
+# renovate: datasource=github-tags depName=Nicolazroyale/cockpit-tailscaled versioning=loose
+COCKPIT_TAILSCALE_VERSION="v1.00"
+COCKPIT_TAILSCALE_RELEASE_VERSION="${COCKPIT_TAILSCALE_VERSION#v}"
+COCKPIT_TAILSCALE_ARCHIVE="cockpit-tailscaled-${COCKPIT_TAILSCALE_VERSION}.tar.gz"
+COCKPIT_TAILSCALE_SOURCE_DIR="cockpit-tailscaled-${COCKPIT_TAILSCALE_RELEASE_VERSION}"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_TAILSCALE_VERSION changes.
+COCKPIT_TAILSCALE_SHA256="b8a0ed7bfcd2078606d4fb94c0c0795d3506069fab7b76c800bbdca6ab4e863a"
+
+echo "Downloading ${COCKPIT_TAILSCALE_ARCHIVE}..."
+COCKPIT_TAILSCALE_URL="https://github.com/Nicolazroyale/cockpit-tailscaled/archive/refs/tags/${COCKPIT_TAILSCALE_VERSION}.tar.gz"
+curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_TAILSCALE_ARCHIVE}" "${COCKPIT_TAILSCALE_URL}"
+echo "Verifying checksum..."
+echo "${COCKPIT_TAILSCALE_SHA256}  /tmp/${COCKPIT_TAILSCALE_ARCHIVE}" | sha256sum -c -
+echo "Building and installing cockpit-tailscale..."
+nodejs_was_installed=0
+npm_was_installed=0
+if rpm -q nodejs >/dev/null 2>&1; then
+    nodejs_was_installed=1
+fi
+if rpm -q npm >/dev/null 2>&1; then
+    npm_was_installed=1
+fi
+dnf5 install -y nodejs npm
+rm -rf /tmp/cockpit-tailscale-src /usr/share/cockpit/tailscale
+mkdir -p /tmp/cockpit-tailscale-src /usr/share/cockpit/tailscale
+tar -xf "/tmp/${COCKPIT_TAILSCALE_ARCHIVE}" -C /tmp/cockpit-tailscale-src
+pushd "/tmp/cockpit-tailscale-src/${COCKPIT_TAILSCALE_SOURCE_DIR}"
+npm ci
+NODE_ENV=production npm run build
+cp -r dist/. /usr/share/cockpit/tailscale/
+popd
+rm -rf /tmp/cockpit-tailscale-src "/tmp/${COCKPIT_TAILSCALE_ARCHIVE}"
+build_dep_packages_to_remove=()
+if [[ "${nodejs_was_installed}" -eq 0 ]]; then
+    build_dep_packages_to_remove+=(nodejs)
+fi
+if [[ "${npm_was_installed}" -eq 0 ]]; then
+    build_dep_packages_to_remove+=(npm)
+fi
+if ((${#build_dep_packages_to_remove[@]})); then
+    dnf5 remove -y "${build_dep_packages_to_remove[@]}"
+fi
+
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
 COCKPIT_NSPAWN_VERSION="v1.0.0-76"

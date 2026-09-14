@@ -30,8 +30,19 @@
         'github-releases',
       ],
       matchPackageNames: [
+        'ocristopfer/cockpit-sensors',
+        'ismetozalp/explorer',
         'zany130/cockpit-probe',
         'zany130/cockpit-diagnostics',
+      ],
+      extractVersion: '^[Vv]?(?<version>\\d+\\.\\d+(?:\\.\\d+)?)$',
+    },
+    {
+      matchDatasources: [
+        'github-tags',
+      ],
+      matchPackageNames: [
+        'Nicolazroyale/cockpit-tailscaled',
       ],
       extractVersion: '^[Vv]?(?<version>\\d+\\.\\d+(?:\\.\\d+)?)$',
     },
