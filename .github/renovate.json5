@@ -30,6 +30,16 @@
         'github-releases',
       ],
       matchPackageNames: [
+        'zany130/cockpit-probe',
+        'zany130/cockpit-diagnostics',
+      ],
+      extractVersion: '^[Vv]?(?<version>\\d+\\.\\d+(?:\\.\\d+)?)$',
+    },
+    {
+      matchDatasources: [
+        'github-releases',
+      ],
+      matchPackageNames: [
         'realmcuser/cockpit-nspawn',
       ],
       // Upstream started publishing tags like `cockpit-nspawn-v1.0.0-70`;
