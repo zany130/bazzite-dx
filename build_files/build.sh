@@ -257,6 +257,46 @@ dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \
     cockpit-navigator \
     cockpit-benchmark
 
+# Download and verify cockpit-hardware-probe with checksum
+# renovate: datasource=github-releases depName=zany130/cockpit-probe versioning=loose
+COCKPIT_HARDWARE_PROBE_VERSION="v1.0"
+COCKPIT_HARDWARE_PROBE_RELEASE_VERSION="${COCKPIT_HARDWARE_PROBE_VERSION#[Vv]}"
+if [[ "${COCKPIT_HARDWARE_PROBE_RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    COCKPIT_HARDWARE_PROBE_RELEASE_VERSION="${COCKPIT_HARDWARE_PROBE_RELEASE_VERSION}.0"
+fi
+COCKPIT_HARDWARE_PROBE_RPM="cockpit-hardware-probe-${COCKPIT_HARDWARE_PROBE_RELEASE_VERSION}-1.noarch.rpm"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_HARDWARE_PROBE_VERSION changes.
+COCKPIT_HARDWARE_PROBE_SHA256="bd8ead0406fd6bdab8b998b1c148e56beb6c053a2c84ee126043cbc8435f78bc"
+
+echo "Downloading ${COCKPIT_HARDWARE_PROBE_RPM}..."
+COCKPIT_HARDWARE_PROBE_URL="https://github.com/zany130/cockpit-probe/releases/download/${COCKPIT_HARDWARE_PROBE_VERSION}/${COCKPIT_HARDWARE_PROBE_RPM}"
+curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_HARDWARE_PROBE_RPM}" "${COCKPIT_HARDWARE_PROBE_URL}"
+echo "Verifying checksum..."
+echo "${COCKPIT_HARDWARE_PROBE_SHA256}  /tmp/${COCKPIT_HARDWARE_PROBE_RPM}" | sha256sum -c -
+echo "Installing ${COCKPIT_HARDWARE_PROBE_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_HARDWARE_PROBE_RPM}"
+rm -f "/tmp/${COCKPIT_HARDWARE_PROBE_RPM}"
+
+# Download and verify cockpit-diagnostics with checksum
+# renovate: datasource=github-releases depName=zany130/cockpit-diagnostics versioning=loose
+COCKPIT_DIAGNOSTICS_VERSION="V1.0"
+COCKPIT_DIAGNOSTICS_RELEASE_VERSION="${COCKPIT_DIAGNOSTICS_VERSION#[Vv]}"
+if [[ "${COCKPIT_DIAGNOSTICS_RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+$ ]]; then
+    COCKPIT_DIAGNOSTICS_RELEASE_VERSION="${COCKPIT_DIAGNOSTICS_RELEASE_VERSION}.0"
+fi
+COCKPIT_DIAGNOSTICS_RPM="cockpit-diagnostics-${COCKPIT_DIAGNOSTICS_RELEASE_VERSION}-1.noarch.rpm"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_DIAGNOSTICS_VERSION changes.
+COCKPIT_DIAGNOSTICS_SHA256="809ad753057820d23406c57d7c5c67fd711e1262a7f5188a26240cf573bffcf1"
+
+echo "Downloading ${COCKPIT_DIAGNOSTICS_RPM}..."
+COCKPIT_DIAGNOSTICS_URL="https://github.com/zany130/cockpit-diagnostics/releases/download/${COCKPIT_DIAGNOSTICS_VERSION}/${COCKPIT_DIAGNOSTICS_RPM}"
+curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_DIAGNOSTICS_RPM}" "${COCKPIT_DIAGNOSTICS_URL}"
+echo "Verifying checksum..."
+echo "${COCKPIT_DIAGNOSTICS_SHA256}  /tmp/${COCKPIT_DIAGNOSTICS_RPM}" | sha256sum -c -
+echo "Installing ${COCKPIT_DIAGNOSTICS_RPM}..."
+dnf5 install -y "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
+rm -f "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
+
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
 COCKPIT_NSPAWN_VERSION="v1.0.0-76"
