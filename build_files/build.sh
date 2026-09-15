@@ -340,6 +340,14 @@ dnf5 -y copr enable loteran/arctis-sound-manager
 dnf5 install -y arctis-sound-manager
 dnf5 -y copr disable loteran/arctis-sound-manager
 
+dnf5 -y copr enable rok/cdemu
+dnf5 install -y \
+    akmod-vhba \
+    cdemu-client \
+    cdemu-daemon \
+    gcdemu
+dnf5 -y copr disable rok/cdemu
+
 # DX Services
 systemctl enable docker.socket
 systemctl enable podman.socket
