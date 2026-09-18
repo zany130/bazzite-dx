@@ -341,7 +341,7 @@ dnf5 install -y arctis-sound-manager
 dnf5 -y copr disable loteran/arctis-sound-manager
 
 dnf5 -y copr enable rok/cdemu
-dnf5 install -y \
+dnf5 install -y --setopt=install_weak_deps=False \
     cdemu-client \
     cdemu-daemon \
     gcdemu
