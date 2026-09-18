@@ -19,7 +19,7 @@ Base: `ghcr.io/ublue-os/bazzite-deck:testing`
 **Hardware:** solaar, liquidctl, arctis-sound-manager  
 **Storage:** btfs, megasync, dolphin-megasync  
 **Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
-**Media:** vlc (+ all plugins), python3-pygame  
+**Media:** cd-emu, vlc (+ all plugins), python3-pygame  
 
 ## Boot Chime
 
