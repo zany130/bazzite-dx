@@ -344,7 +344,7 @@ dnf5 -y copr enable rok/cdemu
 dnf5 install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts \
     cdemu-client \
     cdemu-daemon \
-    gcdemu
+    gcdemu \
     vhba
 dnf5 -y copr disable rok/cdemu
 
