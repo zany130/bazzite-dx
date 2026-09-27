@@ -1,487 +1,243 @@
-# bazzite-dx
+# Bazzite DX
 
-Custom [Bazzite-Deck](https://github.com/ublue-os/bazzite) with DX tooling and additional packages and automation.
+[![Build container image](https://github.com/zany130/bazzite-dx/actions/workflows/build.yml/badge.svg)](https://github.com/zany130/bazzite-dx/actions/workflows/build.yml)
 
-## Quick Start
+My custom [Bazzite](https://bazzite.gg/) image, combining Steam Game Mode and the KDE Plasma desktop with development tools, containers, virtualization, and a collection of personal hardware and desktop customizations.
+
+The goal is a gaming PC that can also serve as a development workstation, with the tools built into the image instead of added through local package layering.
+
+## Current status
+
+**Functional and evolving.** This is a personal image with opinionated defaults and some features tailored to my setup. It is an independent customization of Bazzite, not an official Bazzite edition.
+
+| | Current configuration |
+| --- | --- |
+| Base image | `ghcr.io/ublue-os/bazzite-deck:stable`, pinned by digest |
+| Published image | `ghcr.io/zany130/bazzite-dx:latest` |
+| Desktop and gaming sessions | KDE Plasma and Steam Game Mode from the Bazzite Deck base |
+| Build system | Universal Blue image-template, Podman, and GitHub Actions |
+
+The `latest` tag is this project's output tag; it does not mean the image tracks Bazzite's testing channel. See the [Containerfile](Containerfile) for the exact base and the [build workflow](https://github.com/zany130/bazzite-dx/actions/workflows/build.yml) for build results.
+
+## Switch to this image
+
+From an existing, compatible bootc installation:
 
 ```bash
 sudo bootc switch ghcr.io/zany130/bazzite-dx:latest
 sudo systemctl reboot
 ```
 
-## Additional Packages
+This stages the image for the next boot. These commands switch an existing system; they are not a fresh-install procedure.
 
-Base: `ghcr.io/ublue-os/bazzite-deck:testing`
+## What's included
 
-**System:** coolercontrol
-**DX:** android-tools, bcc/bpftrace/bpftop, ccache, code, cockpit, cockpit-machines, cockpit-ostree, cockpit-ws-selinux, cockpit-file-sharing, cockpit-hardware-probe, cockpit-diagnostics, cockpit-nspawn, cockpit-navigator, cockpit-benchmark, containerd, Docker CE (+ buildx/compose), flatpak-builder, google-noto-sans-fonts, guestfs-tools, libvirt, podman-machine, podman-tui, QEMU/KVM, ramalama, rclone, restic, ROCm CLI tooling, sysprof, tiptop, usbmuxd, virt-manager, virtiofsd, VirtualBox guest additions, waypipe, zsh (plus supporting tools like git-subtree, nicstat, numactl, python3-libvirt, qemu-user-static-aarch64, swtpm)
-**Desktop:** kvantum, plasma-discover (minimal), kwin-effect-roundcorners
-**Hardware:** solaar, liquidctl, arctis-sound-manager  
-**Storage:** btfs, megasync, dolphin-megasync  
-**Boot/Security:** beep, rEFInd, rEFInd-tools, sbctl, google-authenticator  
-**Media:** cd-emu, vlc (+ all plugins), python3-pygame  
+Alongside the Bazzite Deck base, this image adds the following tools and customizations. The [build script](build_files/build.sh) is the source of truth for additional packages.
 
-## Boot Chime
+| Area | Highlights |
+| --- | --- |
+| Development and debugging | Android tools, Flatpak Builder, ccache, git-subtree, BCC, bpftrace, bpftop, sysprof, and tiptop |
+| Containers | Docker CE with Compose and Buildx, Podman Machine, and Podman TUI |
+| Virtual machines | QEMU/KVM, libvirt, native virt-manager, guestfs-tools, virtiofsd, swtpm, and AArch64 user-mode emulation |
+| System administration | Cockpit, machine and OSTree integration, plus file sharing, file navigation, benchmarking, hardware probe, diagnostics, and nspawn extensions |
+| Compute | Ramalama and ROCm HIP, OpenCL, and diagnostic tools |
+| Remote access and backups | Waypipe, Mosh, rclone, restic, and Nmap |
+| Hardware | CoolerControl, liquidctl, Solaar, and Arctis Sound Manager |
+| Desktop and media | Kvantum, rounded KWin corners, mpv, CDEmu/gCDEmu, and Tesseract OCR with English and Spanish language data |
+| Storage and sync | MEGAsync, Dolphin integration for MEGAsync, and BTFS |
+| Boot and authentication | rEFInd tools, sbctl, Google Authenticator PAM support, and a PC speaker startup chime |
 
-PC speaker beep at startup (1000Hz, 1500Hz, 1700Hz). Disable with:
+Kate, KWrite, and KFind are removed by the build. The repository also includes VS Code settings and extension setup hooks; these expect the `code` command to be available.
+
+### Services and setup
+
+Docker, Podman, and the modular libvirt sockets are enabled during the build. Installing a package does not mean every related service is enabled or configured: Cockpit is included, but this repository does not explicitly enable `cockpit.socket`.
+
+The image also ships virtualization setup helpers:
+
 ```bash
-sudo systemctl disable beep-startup.service
+ujust setup-virtualization help
 ```
 
-## Gamescope Background Apps
-
-Background applications run invisibly under Xvfb during the Gamescope/Steam session. Each application is independently supervised by systemd through `gamescope-app@.service`, while `gamescope-apps.target` groups their lifecycle with the Gamescope session.
-
-Packaged app definitions live in `/etc/gamescope/apps.d/`. A user definition with the same app name in `~/.config/gamescope/apps.d/` takes precedence.
-
-Example user app:
+Extra fonts can be installed through the included Homebrew bundle:
 
 ```bash
-mkdir -p ~/.config/gamescope/apps.d
-cat > ~/.config/gamescope/apps.d/openrgb.conf <<'EOF'
-COMMAND=(
-    openrgb
-    --startminimized
-)
-EOF
-
-systemctl --user enable gamescope-app@openrgb.service
+ujust install-fonts
 ```
 
-The instance name deliberately matches the app, making its status and logs immediately identifiable:
+## Game Mode features
+
+### Choose the default session
+
+Use the included helper to select Steam Game Mode or the desktop as the SDDM autologin session:
 
 ```bash
+ujust toggle-gamemode
+```
+
+Or choose directly:
+
+```bash
+ujust toggle-gamemode gamemode
+ujust toggle-gamemode desktop
+ujust toggle-gamemode status
+```
+
+The selection takes effect at the next login or reboot.
+
+### Background applications
+
+Applications can run in the background under Xvfb while the Gamescope session is active. Each app has its own systemd user service, logs, and restart handling. The group stops when Game Mode ends or Plasma starts.
+
+MEGAsync and Discord are the packaged defaults. The Discord definition expects the `com.discordapp.Discord` Flatpak to be installed separately.
+
+```bash
+# Inspect an app
 systemctl --user status gamescope-app@discord.service
 journalctl --user -u gamescope-app@discord.service -f
-systemctl --user restart gamescope-app@discord.service
-systemctl --user disable --now gamescope-app@discord.service
+
+# Stop and disable a packaged default
+systemctl --user mask --now gamescope-app@discord.service
+
+# Restore it for the next Game Mode session
+systemctl --user unmask gamescope-app@discord.service
 ```
 
-Packaged defaults are `gamescope-app@megasync.service` and `gamescope-app@discord.service`. Either can be disabled independently with `systemctl --user mask gamescope-app@APP.service`.
-
-To disable every Gamescope background app:
+To prevent the app group from starting in subsequent Game Mode sessions:
 
 ```bash
+mkdir -p ~/.config/gamescope
 touch ~/.config/gamescope/disable-apps
 ```
 
-Remove the flag and restart the Gamescope session to enable the target again. See [`GAMESCOPE_APPS.md`](GAMESCOPE_APPS.md) for configuration, migration, and debugging details.
+Remove that file and restart the Gamescope session to allow the group to start again.
 
-## LG Buddy
+Custom app definitions go in `~/.config/gamescope/apps.d/`. A user definition overrides a packaged definition with the same name. See [Gamescope background applications](GAMESCOPE_APPS.md) for examples, migration instructions, and troubleshooting.
 
-Controls LG WebOS TV at boot/shutdown/sleep. Not enabled by default - requires setup.
+### Nested Steam Game Mode
 
-**Components:** systemd service, startup/shutdown scripts, sleep hook
+The **Nested Steam Gamemode** application launcher, also available as `gamemode-nested`, starts Steam's Game Mode interface in a Gamescope window from the desktop.
 
-**Setup:**
-1. Install alga: `brew install pipx`, then `pipx install alga` (may need to restart shell)
-2. Pair TV: `alga tv add <identifier> [TV_IP]`
-3. Edit files, replace `zany130` with your username:
-   - `/usr/local/bin/LG_Buddy_Startup` - Set `TV_INPUT="HDMI_1"` (find options with `alga input list`)
-   - `/usr/local/bin/LG_Buddy_Shutdown`
-   - `/usr/lib/systemd/system-sleep/lg-buddy-sleep`
-   - `/etc/systemd/system/LG_Buddy.service` - Update `User=` and `Group=`
-4. Enable: `sudo systemctl daemon-reload && sudo systemctl enable --now LG_Buddy.service`
+This is an experimental convenience feature with limitations. It restarts Steam, does not reproduce every feature of a full Game Mode session, and requires closing Steam through its tray icon to exit.
 
-**Behavior:** TV powers on/switches input at boot/wake, powers off at shutdown/sleep (not reboot)
+## Updates
 
-**Logs:**
+Run:
+
 ```bash
-journalctl -u LG_Buddy.service -f
-journalctl -t lg-buddy-sleep -f
+ujust update
 ```
 
-## Video Port Reset
+The included recipe runs Topgrade with this image's configuration to update the system and supported tools you have installed, including Flatpaks, Distrobox containers, Homebrew packages, and selected language package managers. It also includes a custom Plasmoid update command.
 
-Triggers display hotplug events to fix detection issues. Passwordless sudo enabled.
+To invoke the same configuration directly:
+
+```bash
+topgrade --config /etc/ublue-os/topgrade.toml --keep
+```
+
+The enabled updater list lives in [topgrade.toml](system_files/etc/ublue-os/topgrade.toml). Not every updater applies to every system, and configured commands require their corresponding tools to be installed.
+
+## Hardware and desktop helpers
+
+### LG Buddy
+
+LG Buddy provides scripts for controlling an LG webOS TV alongside the PC: power on and select an input at startup, power off at shutdown, and coordinate power state around sleep and wake. The shutdown script leaves the TV on during a reboot.
+
+**This integration is specific to my setup and needs customization before use.** It expects a paired [alga](https://github.com/Tenzer/alga) installation at `/home/zany130/.local/bin/alga` and uses `HDMI_1` by default.
+
+The relevant files are:
+
+| File in the image | Purpose |
+| --- | --- |
+| `/usr/libexec/LG_Buddy_Startup` | Startup commands, username, and TV input |
+| `/usr/libexec/LG_Buddy_Shutdown` | Shutdown commands and username |
+| `/usr/lib/systemd/system-sleep/lg-buddy-sleep` | Sleep/wake commands, username, and TV input |
+| `/etc/systemd/system/LG_Buddy.service` | Service user, group, and script paths |
+
+For a custom build, update these files under [`system_files/`](system_files/) to match your account and TV. Files under `/usr` are image-managed; they are not ordinary editable configuration files on the running system.
+
+The boot/shutdown service is not enabled by the build. Once alga is installed, paired, and the paths and account settings match your system, enable it with:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now LG_Buddy.service
+```
+
+The sleep hook is installed independently of the service and can run whenever its expected alga executable exists. Disabling the service alone does not disable that hook.
+
+Logs are available with:
+
+```bash
+journalctl -u LG_Buddy.service -b
+journalctl -t lg-buddy-sleep -b
+```
+
+### Display connector reset
+
+The `reset-video-port` helper triggers a display connector hotplug event. It can be useful when troubleshooting display detection or wake problems; it is not a guaranteed fix for driver or VRR issues.
 
 ```bash
 # List connectors
 sudo reset-video-port --list
 
-# Reset port
+# Reset a connector by card number or PCI address
 sudo reset-video-port 1 DP-2
 sudo reset-video-port 0000:03:00.0 DP-2
 ```
 
-Use cases: display not detected, black screen on wake, resolution/VRR issues
+### Startup chime
 
-## Waypipe
+A PC speaker chime is enabled by default. Hardware without a PC speaker may not produce a sound.
 
-Run Wayland GUI apps over SSH (like X11 forwarding but for Wayland).
+To disable it:
 
-**Basic usage:**
+```bash
+sudo systemctl disable beep-startup.service
+```
+
+### Wayland apps over SSH
+
+Waypipe is included for forwarding Wayland applications over SSH. It needs to be installed on both systems:
+
 ```bash
 waypipe ssh user@host application
-waypipe ssh user@host firefox
 ```
 
-**Performance tuning:**
-```bash
-waypipe --compress zstd ssh user@host app  # slower network
-waypipe --compress none ssh user@host app  # faster network
-```
+## Authentication and permissions
 
-Requires waypipe on both systems. Debug with: `waypipe -d ssh user@host app`
+This image includes personal policy changes worth reviewing before adopting it:
 
-## Updates with Topgrade
+- [SSH configuration](system_files/etc/ssh/sshd_config.d/99-bazzite.conf) disables the SSH password authentication method and allows public-key or PAM keyboard-interactive authentication. The accompanying [PAM configuration](system_files/etc/pam.d/sshd) includes Google Authenticator and the system password-auth stack; this is not a mandatory key-plus-OTP policy.
+- A [sudoers rule](system_files/etc/sudoers.d/1-AllowScripts) allows members of `wheel` to run `reset-video-port` without a password.
+- A [Polkit rule](system_files/etc/polkit-1/rules.d/90-plugin-loader.rules) permits members of `wheel` to start and stop `plugin_loader.service` without an authentication prompt.
+- The [privileged setup hook](system_files/usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh) adds members of `wheel` to the Docker group when the hook runs.
 
-This image ships [topgrade](https://github.com/topgrade-rs/topgrade) and restores the `ujust update` recipe that upstream Bazzite removed in favour of `bazzite-updater`. Running `ujust update` (or simply `topgrade`) performs a single-command update across:
+## Build and customize
 
-- **System packages** (rpm-ostree/bootc layer)
-- **Flatpak** applications
-- **Distrobox** containers
-- **Homebrew** formulae and casks
-- **Cargo**, **pip**, **npm/pnpm/yarn**, **rustup**, and other language package managers
-- **VS Code** extensions, **Plasmoids**, and other tools
+This project uses the [Universal Blue image-template](https://github.com/ublue-os/image-template).
 
-The active configuration lives at [`system_files/etc/ublue-os/topgrade.toml`](system_files/etc/ublue-os/topgrade.toml) and is installed to `/etc/ublue-os/topgrade.toml`. It restricts topgrade to a curated set of updaters (see the `only` list in that file) and adds custom commands for Plasmoids and Mozilla/CSS Loader themes.
+| Path | Purpose |
+| --- | --- |
+| [`Containerfile`](Containerfile) | Base image, file overlay, permissions, and image validation |
+| [`build_files/build.sh`](build_files/build.sh) | Additional packages, repositories, and service defaults |
+| [`system_files/`](system_files/) | Files installed into the image |
+| [`image-template.env`](image-template.env) | Image name, metadata, and default tag |
+| [`Justfile`](Justfile) | Local build, lint, and disk-image helpers |
+| [`.github/workflows/build.yml`](.github/workflows/build.yml) | Container builds, publishing, and signing |
 
-**Usage:**
-```bash
-ujust update                                                        # run via the ujust alias
-topgrade --config /etc/ublue-os/topgrade.toml --keep               # run directly
-```
-
-## Config Changes
-
-- Custom SSH, Polkit, sudoers rules
-- Custom Topgrade config (`/etc/ublue-os/topgrade.toml`)
-
----
-
-## Building (Template Info)
-
-Based on [Universal Blue image-template](https://github.com/ublue-os/image-template).
-
-**Key files:**
-- `Containerfile` - Image build definition
-- `build_files/build.sh` - Package installation
-- `.github/workflows/build.yml` - CI/CD
-- `Justfile` - Local build commands (run `just --list`)
-
-**Local build:** `just build`  
-**Switch to custom image:** `sudo bootc switch ghcr.io/<user>/<image>:latest`
-
-
-Original readme
-
----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
-# image-template
-
-This repository is meant to be a template for building your own custom [bootc](https://github.com/bootc-dev/bootc) image. This template is the recommended way to make customizations to any image published by the Universal Blue Project.
-
-# Community
-
-If you have questions about this template after following the instructions, try the following spaces:
-- [Universal Blue Forums](https://universal-blue.discourse.group/)
-- [Universal Blue Discord](https://discord.gg/WEu6BdFEtp)
-- [bootc discussion forums](https://github.com/bootc-dev/bootc/discussions) - This is not an Universal Blue managed space, but is an excellent resource if you run into issues with building bootc images.
-
-# How to Use
-
-To get started on your first bootc image, simply read and follow the steps in the next few headings.
-If you prefer instructions in video form, TesterTech created an excellent tutorial, embedded below.
-
-[![Video Tutorial](https://img.youtube.com/vi/IxBl11Zmq5w/0.jpg)](https://www.youtube.com/watch?v=IxBl11Zmq5wE)
-
-## Step 0: Prerequisites
-
-These steps assume you have the following:
-- A Github Account
-- A machine running a bootc image (e.g. Bazzite, Bluefin, Aurora, or Fedora Atomic)
-- Experience installing and using CLI programs
-
-## Step 1: Preparing the Template
-
-### Step 1a: Copying the Template
-
-Select `Use this Template` on this page. You can set the name and description of your repository to whatever you would like, but all other settings should be left untouched.
-
-Once you have finished copying the template, you need to enable the Github Actions workflows for your new repository.
-To enable the workflows, go to the `Actions` tab of the new repository and click the button to enable workflows.
-
-### Step 1b: Cloning the New Repository
-
-Here I will defer to the much superior GitHub documentation on the matter. You can use whichever method is easiest.
-[GitHub Documentation](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository)
-
-Once you have the repository on your local drive, proceed to the next step.
-
-## Step 2: Initial Setup
-
-### Step 2a: Creating a Cosign Key
-
-Container signing is important for end-user security and is enabled on all Universal Blue images. By default the image builds *will fail* if you don't.
-
-First, install the [cosign CLI tool](https://edu.chainguard.dev/open-source/sigstore/cosign/how-to-install-cosign/#installing-cosign-with-the-cosign-binary)
-With the cosign tool installed, run inside your repo folder:
+With `just`, Podman, and `jq` installed, build from the repository root:
 
 ```bash
-COSIGN_PASSWORD="" cosign generate-key-pair
+just build
 ```
 
-The signing key will be used in GitHub Actions and will not work if it is password protected.
+Use `just --list` to see the available build and disk-image commands. When making your own fork, update the image metadata and publishing configuration, and configure `SIGNING_SECRET` for the signing step. See the upstream template for the full setup guide.
 
-> [!WARNING]
-> Be careful to *never* accidentally commit `cosign.key` into your git repo. If this key goes out to the public, the security of your repository is compromised.
+The build locks Qt 6 and Plasma packages during customization and selectively enables third-party repositories for package installation to reduce unintended changes to the base desktop stack.
 
-Next, you need to add the key to GitHub. This makes use of GitHub's secret signing system.
+## Feedback and upstream projects
 
-<details>
-    <summary>Using the Github Web Interface (preferred)</summary>
+Report issues with this image's additions or configuration in [this repository](https://github.com/zany130/bazzite-dx/issues). Include your image version, relevant logs, and whether the problem also occurs on upstream Bazzite when known.
 
-Go to your repository settings, under `Secrets and Variables` -> `Actions`
-![image](https://user-images.githubusercontent.com/1264109/216735595-0ecf1b66-b9ee-439e-87d7-c8cc43c2110a.png)
-Add a new secret and name it `SIGNING_SECRET`, then paste the contents of `cosign.key` into the secret and save it. Make sure it's the .key file and not the .pub file. Once done, it should look like this:
-![image](https://user-images.githubusercontent.com/1264109/216735690-2d19271f-cee2-45ac-a039-23e6a4c16b34.png)
-</details>
-<details>
-<summary>Using the Github CLI</summary>
-
-If you have the `github-cli` installed, run:
-
-```bash
-gh secret set SIGNING_SECRET < cosign.key
-```
-</details>
-
-### Step 2b: Choosing Your Base Image
-
-To choose a base image, simply modify the line in the container file starting with `FROM`. This will be the image your image derives from, and is your starting point for modifications.
-For a base image, you can choose any of the Universal Blue images or start from a Fedora Atomic system. Below this paragraph is a dropdown with a non-exhaustive list of potential base images.
-
-<details>
-    <summary>Base Images</summary>
-
-- Bazzite: `ghcr.io/ublue-os/bazzite:stable`
-- Aurora: `ghcr.io/ublue-os/aurora:stable`
-- Bluefin: `ghcr.io/ublue-os/bluefin:stable`
-- Universal Blue Base: `ghcr.io/ublue-os/base-main:latest`
-- Fedora: `quay.io/fedora/fedora-bootc:44`
-
-You can find more Universal Blue images on the [packages page](https://github.com/orgs/ublue-os/packages).
-</details>
-
-If you don't know which image to pick, choosing the one your system is currently on is the best bet for a smooth transition. To find out what image your system currently uses, run the following command:
-```bash
-sudo bootc status
-```
-This will show you all the info you need to know about your current image. The image you are currently on is displayed after `Booted image:`. Paste that information after the `FROM` statement in the Containerfile to set it as your base image.
-
-### Step 2c: Changing Names
-
-Change the `IMAGE_NAME` and `REPO_ORGANIZATION` variable inside the `image-template.env`
-
-To commit and push all the files changed and added in step 2 into your Github repository:
-```bash
-git add Containerfile image-template.env cosign.pub
-git commit -m "Initial Setup"
-git push
-```
-Once pushed, go look at the Actions tab on your Github repository's page.  The green checkmark should be showing on the top commit, which means your new image is ready!
-
-## Step 3: Switch to Your Image
-
-From your bootc system, run the following command substituting in your Github username and image name where noted.
-```bash
-sudo bootc switch ghcr.io/<username>/<image_name>
-```
-This should queue your image for the next reboot, which you can do immediately after the command finishes. You have officially set up your custom image! See the following section for an explanation of the important parts of the template for customization.
-
-# Repository Contents
-
-## Containerfile
-
-The [Containerfile](./Containerfile) defines the operations used to customize the selected image.This file is the entrypoint for your image build, and works exactly like a regular podman Containerfile. For reference, please see the [Podman Documentation](https://docs.podman.io/en/latest/Introduction.html).
-
-## build.sh
-
-The [build.sh](./build_files/build.sh) file is called from your Containerfile. It is the best place to install new packages or make any other customization to your system. There are customization examples contained within it for your perusal.
-
-## build.yml
-
-The [build.yml](./.github/workflows/build.yml) Github Actions workflow creates your custom OCI image and publishes it to the Github Container Registry (GHCR). By default, the image name will match the Github repository name.
-
-# Building Disk Images
-
-This template provides an out of the box workflow for creating disk images (ISO, qcow, raw) for your custom OCI image which can be used to directly install onto your machines.
-
-This template provides a way to upload the disk images that is generated from the workflow to a S3 bucket. The disk images will also be available as an artifact from the job, if you wish to use an alternate provider. To upload to S3 we use [rclone](https://rclone.org/) which is able to use [many S3 providers](https://rclone.org/s3/).
-
-## Setting Up ISO Builds
-
-The [build-disk.yml](./.github/workflows/build-disk.yml) Github Actions workflow creates a disk image from your OCI image by utilizing the [bootc-image-builder](https://osbuild.org/docs/bootc/). In order to use this workflow you must complete the following steps:
-
-1. Modify `disk_config/iso.toml` to point to your custom container image before generating an ISO image.
-2. If you changed your image name from the default in `build.yml` then in the `build-disk.yml` file edit the `IMAGE_REGISTRY`, `IMAGE_NAME` and `DEFAULT_TAG` environment variables with the correct values. If you did not make changes, skip this step.
-3. Finally, if you want to upload your disk images to S3 then you will need to add your S3 configuration to the repository's Action secrets. This can be found by going to your repository settings, under `Secrets and Variables` -> `Actions`. You will need to add the following
-  - `S3_PROVIDER` - Must match one of the values from the [supported list](https://rclone.org/s3/)
-  - `S3_BUCKET_NAME` - Your unique bucket name
-  - `S3_ACCESS_KEY_ID` - It is recommended that you make a separate key just for this workflow
-  - `S3_SECRET_ACCESS_KEY` - See above.
-  - `S3_REGION` - The region your bucket lives in. If you do not know then set this value to `auto`.
-  - `S3_ENDPOINT` - This value will be specific to the bucket as well.
-
-Once the workflow is done, you'll find the disk images either in your S3 bucket or as part of the summary under `Artifacts` after the workflow is completed.
-
-# Artifacthub
-
-This template comes with the necessary tooling to index your image on [artifacthub.io](https://artifacthub.io). Use the `artifacthub-repo.yml` file at the root to verify yourself as the publisher. This is important to you for a few reasons:
-
-- The value of artifacthub is it's one place for people to index their custom images, and since we depend on each other to learn, it helps grow the community. 
-- You get to see your pet project listed with the other cool projects in Cloud Native.
-- Since the site puts your README front and center, it's a good way to learn how to write a good README, learn some marketing, finding your audience, etc. 
-
-[Discussion Thread](https://universal-blue.discourse.group/t/listing-your-custom-image-on-artifacthub/6446)
-
-# Justfile Documentation
-
-The `Justfile` contains various commands and configurations for building and managing container images and virtual machine images using Podman and other utilities. It is also used inside Github Actions.
-
-## Required Utilities
-
-Container build:
-- [just](https://just.systems/man/en/introduction.html)
-- [podman](https://docs.podman.io/en/latest)
-- [jq](https://jqlang.org)
-
-These are usually preinstalled on Universal Blue's Bootc Images.
-
-Linting:
-- shfmt
-- shellcheck
-
-## Environment Variables
-
-These are all sourced from the `image-template.env` file.
-
-- `image_name`: The name of the image (default: "image-template").
-- `default_tag`: The default tag for the image (default: "latest").
-- `bib_image`: The Bootc Image Builder (BIB) image (default: "quay.io/centos-bootc/bootc-image-builder:latest").
-
-## Building The Image
-
-All these recipes will work (with default values) without supplying any arguments to them, e.g. `just build`
-
-### `just build`
-
-Builds a container image using Podman.
-
-```bash
-just build $target_image $tag
-```
-
-Arguments:
-- `$target_image`: The tag you want to apply to the image (default: `$image_name`).
-- `$tag`: The tag for the image (default: `$default_tag`).
-
-### Rechunking
-We can flatten the layers of container images to make sure there isn't a single huge layer when your image gets published.
-This does not make your image faster to download, just provides better resumability.
-
-#### `just ostree-rechunk`
-Rechunks the existing Image with [rpm-ostree](https://coreos.github.io/rpm-ostree/build-chunked-oci/)
-
-```bash
-just ostree-rechunk $target_image $tag
-```
-
-#### `just rechunk`
-Rechunks the existing Image with [chunkah](https://github.com/coreos/chunkah), this is probably gonna be the default here at some point, try it out, it's cool.
-
-```bash
-just rechunk $target_image $tag
-```
-
-### Switching to the locally built image for testing
-
-The image has to be in the containers-storage owned by root, to be able to rebase to it, see the `_rootful_load_image` recipe.
-
-`sudo just build` and `sudo just ostree-rechunk` builds directly as root and allows you to skip the transfer to the root containers-storage.
-
-You can rebase to all the images that are in your containers-storage:
-
-```
-sudo podman image list --filter=label=containers.bootc=1
-```
-
-See [man bootc switch](https://bootc.dev/bootc/man/bootc-switch.8.html) for more info.
-
-```
-sudo bootc switch --transport containers-storage localhost/myimage:latest
-```
-
-and reboot your system!
-
-## Building and Running Virtual Machines and ISOs
-
-The below commands all build QCOW2 images. To produce or use a different type of image, substitute in the command with that type in the place of `qcow2`. The available types are `qcow2`, `iso`, and `raw`.
-
-### `just build-qcow2`
-
-Builds a QCOW2 virtual machine image.
-
-```bash
-just build-qcow2 $target_image $tag
-```
-
-### `just rebuild-qcow2`
-
-Rebuilds a QCOW2 virtual machine image.
-
-```bash
-just rebuild-vm $target_image $tag
-```
-
-### `just run-vm-qcow2`
-
-Runs a virtual machine from a QCOW2 image.
-
-```bash
-just run-vm-qcow2 $target_image $tag
-```
-
-### `just spawn-vm`
-
-Runs a virtual machine using systemd-vmspawn.
-
-```bash
-just spawn-vm rebuild="0" type="qcow2" ram="6G"
-```
-
-## File Management
-
-### `just check`
-
-Checks the syntax of all `.just` files and the `Justfile`.
-
-### `just fix`
-
-Fixes the syntax of all `.just` files and the `Justfile`.
-
-### `just clean`
-
-Cleans the repository by removing build artifacts.
-
-### `just lint`
-
-Runs shell check on all Bash scripts.
-
-### `just format`
-
-Runs shfmt on all Bash scripts.
-
-## Additional resources
-
-For additional driver support, ublue maintains a set of scripts and container images available at [ublue-akmod](https://github.com/ublue-os/akmods). These images include the necessary scripts to install multiple kernel drivers within the container (Nvidia, OpenRazer, Framework...). The documentation provides guidance on how to properly integrate these drivers into your container image.
-
-## Community Examples
-
-These are images derived from this template (or similar enough to this template). Reference them when building your image!
-
-- [m2Giles' OS](https://github.com/m2giles/m2os)
-- [bOS](https://github.com/bsherman/bos)
-- [Homer](https://github.com/bketelsen/homer/)
-- [Amy OS](https://github.com/astrovm/amyos)
-- [VeneOS](https://github.com/Venefilyn/veneos)
+Thanks to [Bazzite](https://github.com/ublue-os/bazzite), [Universal Blue](https://universal-blue.org/), and the developers of the tools included here.
