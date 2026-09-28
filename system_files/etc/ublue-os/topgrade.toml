@@ -1,7 +1,7 @@
 [misc]
 only = [
     "app_man", "brew_cask", "brew_formula", "bun_packages", "cargo",
-    "chezmoi", "containers", "cursor", "custom_commands", "distrobox",
+    "chezmoi", "containers", "custom_commands", "distrobox",
     "dotnet", "firmware", "flatpak", "flutter", "fossil", "gearlever",
     "gem", "git_repos", "github_cli_extensions", "go", "micro", "node", "pearl", "pip3", "pipx", "pnpm",
     "ruby_gems", "rustup", "spicetify", "system", "tldr", "vagrant",

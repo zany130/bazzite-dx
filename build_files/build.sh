@@ -366,6 +366,10 @@ dnf5 install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts \
     vhba
 dnf5 -y copr disable rok/cdemu
 
+dnf5 -y copr enable pvermeer/sunshine
+dnf5 install -y sunshine
+dnf5 -y copr enable pvermeer/sunshine
+
 # DX Services
 systemctl enable docker.socket
 systemctl enable podman.socket
