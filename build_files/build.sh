@@ -150,6 +150,43 @@ tesseract-libs \
 mosh \
 nmap
 
+# Download and verify rEFInd_GUI from its Fedora 44 release package.
+# renovate: datasource=github-releases depName=jlobue10/rEFInd_GUI versioning=loose
+REFIND_GUI_VERSION="v3.4.6"
+REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
+# SHA256 sidecars are published with each release; update manually when the version changes.
+REFIND_GUI_SHA256="c4d20874c8a43e2c9ce50641cfce031f1b7fa72e37902ad37bbf544f1cb428dd"
+REFIND_GUI_URL="https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
+curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_RPM}" "${REFIND_GUI_URL}"
+echo "${REFIND_GUI_SHA256}  /tmp/${REFIND_GUI_RPM}" | sha256sum -c -
+dnf5 install -y "/tmp/${REFIND_GUI_RPM}"
+rm -f "/tmp/${REFIND_GUI_RPM}"
+
+REFIND_GUI_SOURCE_ARCHIVE="rEFInd_GUI-${REFIND_GUI_VERSION}.tar.gz"
+REFIND_GUI_SOURCE_SHA256="58c4e9eca88ac93b42e63985d586091d7381c0647c566480803f579d449f8972"
+REFIND_GUI_SOURCE_URL="https://github.com/jlobue10/rEFInd_GUI/archive/refs/tags/${REFIND_GUI_VERSION}.tar.gz"
+curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" "${REFIND_GUI_SOURCE_URL}"
+echo "${REFIND_GUI_SOURCE_SHA256}  /tmp/${REFIND_GUI_SOURCE_ARCHIVE}" | sha256sum -c -
+mkdir -p /usr/share/rEFInd_GUI
+tar -xzf "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" \
+    -C /usr/share/rEFInd_GUI \
+    --strip-components=1 \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/VERSION" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/GUI" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/icons" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/backgrounds" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/themes" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/refind_install_package_mgr.sh" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/refind_install_Sourceforge.sh" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/uninstall_rEFInd.sh" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/scan_esp.sh" \
+    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/refind-GUI.conf"
+rm -f "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}"
+install -m 0644 /usr/share/rEFInd_GUI/GUI/UEFI_icon.png /etc/rEFInd/UEFI_icon.png
+printf '%s\n' /usr/share/rEFInd_GUI/backgrounds > /etc/rEFInd/background-dir
+chown root:root /etc/rEFInd/background-dir
+chmod 0644 /etc/rEFInd/background-dir
+
 # Install third-party packages only while their owning repository is enabled.
 terra_install_attempts=3
 terra_install_succeeded=0

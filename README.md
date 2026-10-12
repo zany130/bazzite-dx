@@ -45,7 +45,7 @@ Alongside the Bazzite Deck base, this image adds the following tools and customi
 | Hardware | CoolerControl, liquidctl, Solaar, and Arctis Sound Manager |
 | Desktop and media | Kvantum, rounded KWin corners, mpv, CDEmu/gCDEmu, and Tesseract OCR with English and Spanish language data |
 | Storage and sync | MEGAsync, Dolphin integration for MEGAsync, and BTFS |
-| Boot and authentication | rEFInd tools, sbctl, Google Authenticator PAM support, and a PC speaker startup chime |
+| Boot and authentication | rEFInd tools and rEFInd_GUI, sbctl, Google Authenticator PAM support, and a PC speaker startup chime |
 
 Kate, KWrite, and KFind are removed by the build. The repository also includes VS Code settings and extension setup hooks; these expect the `code` command to be available.
 

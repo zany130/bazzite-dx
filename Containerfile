@@ -40,6 +40,8 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     \
     # Enforce correct permissions on sensitive files
     chmod 0440 /etc/sudoers.d/1-AllowScripts && \
+    chmod 0440 /etc/sudoers.d/zz_install_config_from_GUI && \
+    visudo -cf /etc/sudoers.d/zz_install_config_from_GUI && \
     chmod 0644 /etc/pam.d/sshd && \
     chmod 0644 /etc/polkit-1/rules.d/90-plugin-loader.rules && \
     chmod 0644 /etc/ublue-os/topgrade.toml && \
