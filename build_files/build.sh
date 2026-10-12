@@ -150,6 +150,18 @@ tesseract-libs \
 mosh \
 nmap
 
+# Download and verify rEFInd_GUI from its Fedora 44 release package.
+# renovate: datasource=github-releases depName=jlobue10/rEFInd_GUI versioning=loose
+REFIND_GUI_VERSION="v3.4.6"
+REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
+# SHA256 sidecars are published with each release; update manually when the version changes.
+REFIND_GUI_SHA256="c4d20874c8a43e2c9ce50641cfce031f1b7fa72e37902ad37bbf544f1cb428dd"
+REFIND_GUI_URL="https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
+curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_RPM}" "${REFIND_GUI_URL}"
+echo "${REFIND_GUI_SHA256}  /tmp/${REFIND_GUI_RPM}" | sha256sum -c -
+dnf5 install -y "/tmp/${REFIND_GUI_RPM}"
+rm -f "/tmp/${REFIND_GUI_RPM}"
+
 # Install third-party packages only while their owning repository is enabled.
 terra_install_attempts=3
 terra_install_succeeded=0
