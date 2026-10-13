@@ -152,7 +152,7 @@ nmap
 
 # Download and verify rEFInd_GUI from its Fedora 44 release package.
 # renovate: datasource=github-releases depName=jlobue10/rEFInd_GUI versioning=loose
-REFIND_GUI_VERSION="v3.4.6"
+REFIND_GUI_VERSION="v3.4.7"
 REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
 # SHA256 sidecars are published with each release; update manually when the version changes.
 REFIND_GUI_SHA256="c4d20874c8a43e2c9ce50641cfce031f1b7fa72e37902ad37bbf544f1cb428dd"
