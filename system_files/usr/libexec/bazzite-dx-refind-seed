@@ -1,0 +1,60 @@
+#!/usr/bin/python3
+"""Copy missing user data without following destination symlinks."""
+import os
+import shutil
+import sys
+import tempfile
+from pathlib import Path
+
+source = Path(sys.argv[1] if len(sys.argv) > 1 else "/usr/share/rEFInd_GUI")
+target = Path.home() / ".local/rEFInd_GUI"
+
+def directory(path):
+    if path.is_symlink() or (path.exists() and not path.is_dir()):
+        raise RuntimeError(f"Refusing unsafe data directory: {path}")
+    if path != Path.home():
+        directory(path.parent)
+    if not path.exists():
+        path.mkdir()
+
+def seed(src, dst, mode=None):
+    # Existing files, directories and even dangling links belong to the user.
+    if dst.is_symlink():
+        return
+    if src.is_dir() and not src.is_symlink():
+        if dst.exists() and not dst.is_dir():
+            return
+        directory(dst)
+        for child in src.iterdir():
+            seed(child, dst / child.name)
+    elif not dst.exists():
+        if src.is_symlink():
+            dst.symlink_to(os.readlink(src))
+        else:
+            # Publish a complete file exclusively; a failed copy can be retried.
+            fd, temporary = tempfile.mkstemp(prefix=".dx-seed-", dir=dst.parent)
+            try:
+                with src.open("rb") as inp, os.fdopen(fd, "wb") as out:
+                    shutil.copyfileobj(inp, out)
+                shutil.copymode(src, temporary)
+                if mode is not None:
+                    os.chmod(temporary, mode)
+                try:
+                    os.link(temporary, dst)
+                except FileExistsError:
+                    pass
+            finally:
+                os.unlink(temporary)
+
+directory(target)
+for name in ("GUI", "icons", "backgrounds", "themes"):
+    directory(target / name)
+    seed(source / name, target / name)
+for name in ("refind_install_package_mgr.sh", "refind_install_Sourceforge.sh",
+             "uninstall_rEFInd.sh", "scan_esp.sh"):
+    seed(source / name, target / name, mode=0o755)
+seed(source / "refind-GUI.conf", target / "GUI/refind.conf")
+for name in ("backgrounds", "themes"):
+    link = target / "GUI" / name
+    if not link.exists() and not link.is_symlink():
+        link.symlink_to("../" + name)

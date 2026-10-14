@@ -1,0 +1,13 @@
+[Unit]
+Description=Reconcile Bazzite DX packaged helpers and Docker groups
+After=local-fs.target
+Before=display-manager.service rEFInd_bg_randomizer.service rEFInd_theme_randomizer.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/bazzite-dx-refind-sync
+ExecStart=/usr/bin/bash /usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target

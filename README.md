@@ -70,10 +70,13 @@ ujust install-fonts
 The image installs the version-pinned upstream RPM and matching source assets;
 there is no need to run `install-rEFInd-GUI.sh` separately. The RPM supplies the
 GUI, privileged helper, menu launcher, randomizer service units, and runtime
-dependencies (including xterm). The user setup hook stages the bundled themes,
-backgrounds, icons, GUI files, and install/uninstall scripts under
-`~/.local/rEFInd_GUI`, preserving existing assets and refreshing the scripts and
-default `GUI/refind.conf`. It also creates the GUI's themes/backgrounds shortcuts.
+dependencies (including xterm). `bazzite-dx-user-setup.service` runs the user
+hooks at login independently of Bazzite's versioned setup. It stages missing
+bundled themes, backgrounds, icons, GUI files, and install/uninstall scripts
+under `~/.local/rEFInd_GUI`. Existing settings, scripts, themes and shortcuts
+(including `GUI/refind.conf`) are preserved. Missing themes/backgrounds shortcuts
+are created; symlinked data directories are refused. VS Code setup retries until
+all three extensions install successfully, then records completion.
 
 The image supplies the UEFI icon and a root-owned background-directory pointer
 to `/usr/share/rEFInd_GUI/backgrounds`, so the boot-time randomizer uses the
@@ -83,6 +86,25 @@ Packaging does not install themes or bootloaders onto an EFI partition, enable
 the randomizer services, or alter boot entries; those remain explicit GUI
 actions. The integration does not layer packages with rpm-ostree, replace
 `~/.Xresources`, or create an extra desktop launcher.
+
+On Atomic upgrades, `bazzite-dx-system-setup.service` reconciles the GUI and
+helper before the display manager and randomizers start. The authoritative
+RPM binaries are copied into immutable `/usr/libexec/rEFInd_GUI` at build time.
+Their upstream `/etc/rEFInd` paths remain unchanged for the GUI version handshake,
+sudoers and randomizer units. Only missing binaries or root-owned, non-writable
+files matching a known packaged checksum (or the last successfully synchronized
+checksum in root-owned `/var/lib/bazzite-dx`) are replaced atomically. Recognized
+3.4.6 payloads migrate to the current release. Unknown custom binaries, symlinks
+and unsafe ownership/permissions are preserved and logged for manual review;
+no custom binary is executed to determine its version. Custom sudoers and systemd
+overrides are not rewritten. The same boot service reconciles Docker membership
+for wheel users without relying on the removed setup library.
+
+The pinned Bazzite base `44.20261012.1` identifies upstream revision
+`2fab72cbc9a3257d80c607e173f22527aea3b39b`. Its
+`bazzite-user-setup.service` invokes `/usr/libexec/bazzite-user-setup`, which does
+not dispatch the legacy ublue hook directories. The separate DX services ensure
+these tasks run even when Bazzite has already recorded its setup version.
 
 Renovate updates the release version and RPM checksum together. A restricted
 workflow pins the matching source archive on Renovate PRs before dispatching

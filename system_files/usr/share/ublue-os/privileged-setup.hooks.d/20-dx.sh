@@ -1,15 +1,14 @@
-#!/usr/bin/env bash
-
-source /usr/lib/ublue/setup-services/libsetup.sh
-
-version-script dx-usergroups privileged 1 || exit 0
-
+#!/usr/bin/bash
+set -euo pipefail
+# Reconcile all wheel users on each boot, including users added later.
 # Function to append a group entry to /etc/group
 append_group() {
 	local group_name="$1"
 	if ! grep -q "^$group_name:" /etc/group; then
 		echo "Appending $group_name to /etc/group"
-		grep "^$group_name:" /usr/lib/group | tee -a /etc/group >/dev/null
+		entry=$(getent group "$group_name")
+		[[ -n "$entry" ]] || return 1
+		printf '%s\n' "$entry" >> /etc/group
 	fi
 }
 
@@ -22,5 +21,8 @@ append_group docker
 
 mapfile -t wheelarray < <(getent group wheel | cut -d ":" -f 4 | tr ',' '\n')
 for user in "${wheelarray[@]}"; do
-	usermod -aG docker "$user"
+	[[ -n "$user" ]] || continue
+	if ! id -nG "$user" | tr ' ' '\n' | grep -qx docker; then
+		usermod -aG docker "$user"
+	fi
 done

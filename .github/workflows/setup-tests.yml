@@ -1,0 +1,18 @@
+name: Setup regression tests
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - run: python3 -m unittest discover -s tests -p 'test_*.py'
+      - name: Check setup shell scripts
+        run: |
+          bash -n build_files/build.sh
+          shellcheck system_files/usr/share/ublue-os/user-setup.hooks.d/{11-vscode-extensions,12-refind-gui}.sh system_files/usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh

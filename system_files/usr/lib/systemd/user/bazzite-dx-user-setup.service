@@ -1,0 +1,13 @@
+[Unit]
+Description=Seed Bazzite DX user data
+After=bazzite-user-setup.service
+ConditionUser=!@system
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/bash /usr/share/ublue-os/user-setup.hooks.d/12-refind-gui.sh
+# A missing or unavailable editor must not block rEFInd setup.
+ExecStart=-/usr/bin/bash /usr/share/ublue-os/user-setup.hooks.d/11-vscode-extensions.sh
+
+[Install]
+WantedBy=default.target
