@@ -1,0 +1,36 @@
+name: Update rEFInd source checksum
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions: {}
+
+concurrency:
+  group: refind-checksums-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  update:
+    if: >-
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.head_ref, 'renovate/jlobue10-refind_gui-')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: read
+      actions: write
+    steps:
+      # Only trusted base code runs with the write token. No PR checkout,
+      # imports, shell evaluation, artifacts, or caches from the PR.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+      - name: Verify RPM, pin source checksum, and dispatch build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python3 .github/scripts/refind_checksums.py

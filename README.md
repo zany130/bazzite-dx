@@ -65,6 +65,30 @@ Extra fonts can be installed through the included Homebrew bundle:
 ujust install-fonts
 ```
 
+### rEFInd GUI integration
+
+The image installs the version-pinned upstream RPM and matching source assets;
+there is no need to run `install-rEFInd-GUI.sh` separately. The RPM supplies the
+GUI, privileged helper, menu launcher, randomizer service units, and runtime
+dependencies (including xterm). The user setup hook stages the bundled themes,
+backgrounds, icons, GUI files, and install/uninstall scripts under
+`~/.local/rEFInd_GUI`, preserving existing assets and refreshing the scripts and
+default `GUI/refind.conf`. It also creates the GUI's themes/backgrounds shortcuts.
+
+The image supplies the UEFI icon and a root-owned background-directory pointer
+to `/usr/share/rEFInd_GUI/backgrounds`, so the boot-time randomizer uses the
+image's bundled backgrounds. Members of `wheel` can run the helper's exact
+`install-config`, `install-themes`, and `efi-utility` commands without a password.
+Packaging does not install themes or bootloaders onto an EFI partition, enable
+the randomizer services, or alter boot entries; those remain explicit GUI
+actions. The integration does not layer packages with rpm-ostree, replace
+`~/.Xresources`, or create an extra desktop launcher.
+
+Renovate updates the release version and RPM checksum together. A restricted
+workflow pins the matching source archive on Renovate PRs before dispatching
+the image build. See [checksum automation](.github/REFIND_CHECKSUMS.md) for
+the trust boundaries, activation requirements, and validation commands.
+
 ## Game Mode features
 
 ### Choose the default session

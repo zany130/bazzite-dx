@@ -8,23 +8,37 @@
   customManagers: [
     {
       // Matches inline `# renovate: datasource=... depName=...` annotations in build.sh.
-      // Uses github-releases (not github-release-attachments) because the RPM asset filenames
-      // embed the version, making digest computation impossible for github-release-attachments.
-      // SHA256 variables in the script must be updated manually when the version changes.
-      // The generic [A-Z_]+_VERSION pattern is intentional: only lines immediately preceded
-      // by a valid `# renovate:` annotation comment will be matched, so false positives
-      // are not possible; it also makes this manager reusable for future annotated packages.
+      // Restrict to github-releases so the digest-aware manager below is the
+      // only match for rEFInd_GUI.
       customType: 'regex',
       managerFilePatterns: [
         '/^build_files/build\\.sh$/',
       ],
       matchStrings: [
-        '# renovate: datasource=(?<datasource>[a-z-]+) depName=(?<depName>[^\\s]+)[^\\n]*\\n[A-Z_]+_VERSION="(?<currentValue>[^"]+)"',
+        '# renovate: datasource=(?<datasource>github-releases) depName=(?<depName>[^\\s]+)[^\\n]*\\n[A-Z_]+_VERSION="(?<currentValue>[^"]+)"',
       ],
+      versioningTemplate: 'loose',
+    },
+    {
+      customType: 'regex',
+      managerFilePatterns: ['/^build_files/build\\.sh$/'],
+      matchStrings: [
+        '# renovate: datasource=github-release-attachments depName=jlobue10/rEFInd_GUI\\nREFIND_GUI_VERSION="(?<currentValue>v[0-9]+\\.[0-9]+\\.[0-9]+)"\\nREFIND_GUI_SHA256="(?<currentDigest>[a-f0-9]{64})"',
+      ],
+      datasourceTemplate: 'github-release-attachments',
+      depNameTemplate: 'jlobue10/rEFInd_GUI',
       versioningTemplate: 'loose',
     },
   ],
   packageRules: [
+    {
+      matchDatasources: ['github-release-attachments'],
+      matchPackageNames: ['jlobue10/rEFInd_GUI'],
+      // Keep the source-checksum workflow's allowlist stable for future majors.
+      branchTopic: 'jlobue10-refind_gui-{{{newMajor}}}.x',
+      pinDigests: true,
+      automerge: false,
+    },
     {
       matchDatasources: [
         'github-releases',

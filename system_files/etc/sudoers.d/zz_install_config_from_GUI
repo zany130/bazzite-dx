@@ -1,1 +1,1 @@
-%wheel ALL=(root) NOPASSWD: /etc/rEFInd/rEFInd_GUI_helper install-config, /etc/rEFInd/rEFInd_GUI_helper install-themes
+%wheel ALL=(root) NOPASSWD: /etc/rEFInd/rEFInd_GUI_helper install-config, /etc/rEFInd/rEFInd_GUI_helper install-themes, /etc/rEFInd/rEFInd_GUI_helper efi-utility
