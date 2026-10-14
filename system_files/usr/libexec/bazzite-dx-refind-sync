@@ -1,0 +1,97 @@
+#!/usr/bin/python3
+"""Refresh only recognized, root-owned RPM binaries on Atomic deployments."""
+import hashlib
+import json
+import os
+from pathlib import Path
+import stat
+import tempfile
+
+
+def digest(path):
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def trusted(path, directory=False):
+    info = path.lstat()
+    return (info.st_uid == 0 and info.st_gid == 0
+            and not info.st_mode & 0o022
+            and (stat.S_ISDIR(info.st_mode) if directory else stat.S_ISREG(info.st_mode)))
+
+
+def safe_parents(path, root):
+    while path != root:
+        if not trusted(path, directory=True):
+            raise RuntimeError(f"Unsafe directory: {path}")
+        path = path.parent
+    if not trusted(root, directory=True):
+        raise RuntimeError(f"Unsafe root: {root}")
+
+
+def replace(path, content, mode):
+    # Same-directory rename never follows a destination symlink.
+    fd, temporary = tempfile.mkstemp(prefix=".dx-refind-", dir=path.parent)
+    try:
+        with os.fdopen(fd, "wb") as out:
+            out.write(content)
+            out.flush()
+            os.fchmod(out.fileno(), mode)
+            os.fsync(out.fileno())
+        os.replace(temporary, path)
+    finally:
+        if os.path.exists(temporary):
+            os.unlink(temporary)
+
+
+def sync(root=Path("/")):
+    manifest = root / "usr/share/rEFInd_GUI/packaged-binaries.json"
+    safe_parents(manifest.parent, root)
+    if not trusted(manifest):
+        raise RuntimeError("Unsafe packaged binary manifest")
+    known = json.loads(manifest.read_text())
+    destination = root / "etc/rEFInd"
+    safe_parents(destination.parent, root)
+    if not destination.exists() and not destination.is_symlink():
+        destination.mkdir(mode=0o755)
+    safe_parents(destination, root)
+    state_dir = root / "var/lib/bazzite-dx"
+    safe_parents(state_dir.parent, root)
+    if not state_dir.exists() and not state_dir.is_symlink():
+        state_dir.mkdir(mode=0o755)
+    safe_parents(state_dir, root)
+    state_file = state_dir / "refind-binaries.json"
+    previous = {}
+    if state_file.exists() or state_file.is_symlink():
+        if not trusted(state_file):
+            raise RuntimeError("Unsafe helper migration state")
+        previous = json.loads(state_file.read_text())
+    for name in ("rEFInd_GUI", "rEFInd_GUI_helper"):
+        src = root / "usr/libexec/rEFInd_GUI" / name
+        safe_parents(src.parent, root)
+        if not trusted(src):
+            raise RuntimeError(f"Unsafe packaged binary: {src}")
+        current = digest(src)
+        if current not in known[name]:
+            raise RuntimeError(f"Packaged binary checksum mismatch: {src}")
+        dst = destination / name
+        if dst.exists() or dst.is_symlink():
+            if not trusted(dst):
+                print(f"Preserving unsafe/customized path: {dst}")
+                continue
+            installed = digest(dst)
+            if installed != current and installed not in known[name] and installed != previous.get(name):
+                print(f"Preserving customized binary: {dst}; manual reconciliation required")
+                continue
+            if installed == current:
+                previous[name] = current
+                continue
+        replace(dst, src.read_bytes(), 0o755)
+        previous[name] = current
+        print(f"Refreshed packaged binary: {dst}")
+    replace(state_file, (json.dumps(previous) + "\n").encode(), 0o600)
+
+
+if __name__ == "__main__":
+    if os.geteuid() != 0:
+        raise SystemExit("Must run as root")
+    sync()
