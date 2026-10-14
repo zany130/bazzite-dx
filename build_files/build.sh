@@ -151,11 +151,10 @@ mosh \
 nmap
 
 # Download and verify rEFInd_GUI from its Fedora 44 release package.
-# renovate: datasource=github-releases depName=jlobue10/rEFInd_GUI versioning=loose
+# renovate: datasource=github-release-attachments depName=jlobue10/rEFInd_GUI
 REFIND_GUI_VERSION="v3.4.7"
-REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
-# SHA256 sidecars are published with each release; update manually when the version changes.
 REFIND_GUI_SHA256="36841b85b1d250bf3e02bc8525234fce7e78346595ce5a78baa6260c4acbd208"
+REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
 REFIND_GUI_URL="https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
 curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_RPM}" "${REFIND_GUI_URL}"
 echo "${REFIND_GUI_SHA256}  /tmp/${REFIND_GUI_RPM}" | sha256sum -c -
@@ -163,7 +162,7 @@ dnf5 install -y "/tmp/${REFIND_GUI_RPM}"
 rm -f "/tmp/${REFIND_GUI_RPM}"
 
 REFIND_GUI_SOURCE_ARCHIVE="rEFInd_GUI-${REFIND_GUI_VERSION}.tar.gz"
-# Hash the matching GitHub tag archive separately; update alongside the RPM hash.
+# Updated on Renovate PRs by refind-checksums.yml before dispatching the image build.
 REFIND_GUI_SOURCE_SHA256="fe9e0f51a0db74c175ecbfea188f407d9285bf190f4961435c4b897c435e91b8"
 REFIND_GUI_SOURCE_URL="https://github.com/jlobue10/rEFInd_GUI/archive/refs/tags/${REFIND_GUI_VERSION}.tar.gz"
 curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" "${REFIND_GUI_SOURCE_URL}"

@@ -84,6 +84,11 @@ the randomizer services, or alter boot entries; those remain explicit GUI
 actions. The integration does not layer packages with rpm-ostree, replace
 `~/.Xresources`, or create an extra desktop launcher.
 
+Renovate updates the release version and RPM checksum together. A restricted
+workflow pins the matching source archive on Renovate PRs before dispatching
+the image build. See [checksum automation](.github/REFIND_CHECKSUMS.md) for
+the trust boundaries, activation requirements, and validation commands.
+
 ## Game Mode features
 
 ### Choose the default session
