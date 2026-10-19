@@ -377,10 +377,10 @@ rm -f "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
 
 # Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
-COCKPIT_NSPAWN_VERSION="v1.0.0-77"
+COCKPIT_NSPAWN_VERSION="v1.0.0-78"
 COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
-COCKPIT_NSPAWN_SHA256="47c3b8ee790a7180c8ad2f226caf7f8171de5955b3e56f816da6f0f22683d2b9"
+COCKPIT_NSPAWN_SHA256="b255eb398c28ae319fc738d047b4ec56abd0ad1c7f4d4cc3b977daf49afb56a2"
 
 echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
 COCKPIT_NSPAWN_RELEASE_TAGS=(
