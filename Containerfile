@@ -4,7 +4,7 @@ COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:96301a1520b5bb63db95640896300c10ae3b1fcf8bf10681af154514395e1634
+FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:88b50295e7ecab0bf34610ca3af24d5f1c55f2ee38ef3d781c4abf988bafca6e
 
 COPY --from=ctx /system_files /
 
