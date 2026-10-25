@@ -186,7 +186,7 @@ rm -f "/tmp/${REFIND_GUI_RPM}"
 
 REFIND_GUI_SOURCE_ARCHIVE="rEFInd_GUI-${REFIND_GUI_VERSION}.tar.gz"
 # Updated on Renovate PRs by refind-checksums.yml before dispatching the image build.
-REFIND_GUI_SOURCE_SHA256="a4884aa50a85695742c7fd08635ed21fa277c48c238085bdd424c38d542a0082"
+REFIND_GUI_SOURCE_SHA256="6c6742739ded1d427f52d658e8cc286745cd7b77b9223ece4c3a2be29ed90178"
 REFIND_GUI_SOURCE_URL="https://github.com/jlobue10/rEFInd_GUI/archive/refs/tags/${REFIND_GUI_VERSION}.tar.gz"
 curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" "${REFIND_GUI_SOURCE_URL}"
 echo "${REFIND_GUI_SOURCE_SHA256}  /tmp/${REFIND_GUI_SOURCE_ARCHIVE}" | sha256sum -c -
