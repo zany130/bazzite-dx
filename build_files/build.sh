@@ -152,8 +152,8 @@ nmap
 
 # Download and verify rEFInd_GUI from its Fedora 44 release package.
 # renovate: datasource=github-release-attachments depName=jlobue10/rEFInd_GUI
-REFIND_GUI_VERSION="v3.5.0"
-REFIND_GUI_SHA256="96a52d1ca8e7e65ca7b6ad305683536757f98d787737409e9e11e8a694aa35ed"
+REFIND_GUI_VERSION="v3.5.1"
+REFIND_GUI_SHA256="77cd0d2923332baef08abbedebd3722a21b63164bdd2828985b42c25cc3310bb"
 REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
 REFIND_GUI_URL="https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
 curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_RPM}" "${REFIND_GUI_URL}"
