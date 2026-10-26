@@ -447,6 +447,7 @@ dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \
     punktfunk \
     punktfunk-web \
     punktfunk-scripting
+systemctl --global disable punktfunk-scripting.service
 
 # Independent DX setup: Bazzite's own setup runner does not dispatch legacy
 # ublue hook directories. Enable both for new and already-configured users.
