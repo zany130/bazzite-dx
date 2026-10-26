@@ -42,6 +42,7 @@ Alongside the Bazzite Deck base, this image adds the following tools and customi
 | System administration | Cockpit, machine and OSTree integration, plus file sharing, file navigation, benchmarking, hardware probe, diagnostics, and nspawn extensions |
 | Compute | Ramalama and ROCm HIP, OpenCL, and diagnostic tools |
 | Remote access and backups | Waypipe, Mosh, rclone, restic, and Nmap |
+| Game and desktop streaming | Punktfunk host, web console, and scripting runner |
 | Hardware | CoolerControl, liquidctl, Solaar, and Arctis Sound Manager |
 | Desktop and media | Kvantum, rounded KWin corners, mpv, CDEmu/gCDEmu, and Tesseract OCR with English and Spanish language data |
 | Storage and sync | MEGAsync, Dolphin integration for MEGAsync, and BTFS |
@@ -112,6 +113,68 @@ the image build. See [checksum automation](.github/REFIND_CHECKSUMS.md) for
 the trust boundaries, activation requirements, and validation commands.
 
 ## Game Mode features
+
+### Game and desktop streaming with Punktfunk
+
+[Punktfunk](https://punktfunk.unom.io/en/) replaces the image's previous
+Sunshine install. The image includes the Punktfunk host, its web management
+console, and the scripting/plugin runner from the signed Bazzite RPM repository.
+Packages are baked into the bootc image; **do not layer the RPMs separately**.
+
+After booting the updated image, enable the per-user host and web console from
+your desktop session:
+
+```bash
+systemctl --user enable --now punktfunk-host punktfunk-web
+```
+
+#### Optional game-library scanning and plugins
+
+The upstream `punktfunk-scripting` RPM globally enables its user service during
+installation. Bazzite-DX deliberately **disables that global autostart** after
+installing the RPM, so the scripting runner remains opt-in. This does not
+prevent starting the streaming host and web console separately.
+
+The runner handles Punktfunk plugins, including game-library scanners. If it
+is disabled, the **game library may appear empty** even though direct game or
+desktop streaming works. To enable game-library scanning and plugin/script
+execution for your user, run:
+
+```bash
+systemctl --user enable --now punktfunk-scripting.service
+```
+
+To turn the scripting runner off again without stopping the streaming host:
+
+```bash
+systemctl --user disable --now punktfunk-scripting.service
+```
+
+This controls the current user's service; it does not change other users'
+settings. Only enable plugins and scripts you trust.
+
+For controller forwarding, follow [Punktfunk's Bazzite setup guide](https://docs.punktfunk.unom.io/docs/bazzite)
+and log out and back in after joining the groups:
+
+```bash
+ujust add-user-to-input-group add
+sudo usermod -aG punktfunk "$USER"
+```
+
+To let other devices on your trusted LAN connect, open the relevant firewalld
+services (the build intentionally does **not** open ports automatically):
+
+```bash
+sudo firewall-cmd --reload
+sudo firewall-cmd --permanent --add-service=punktfunk-native --add-service=punktfunk-web
+sudo firewall-cmd --reload
+```
+
+For Moonlight clients, enable GameStream in Punktfunk and separately allow
+`punktfunk-gamestream` through the firewall. Remote internet access and
+browser-only sharing need their own security/networking configuration; neither
+is enabled by baking in the RPMs. Installation does not automatically enable
+per-user services, pair clients, or configure unattended/headless streaming.
 
 ### Choose the default session
 
