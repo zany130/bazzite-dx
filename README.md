@@ -128,6 +128,31 @@ your desktop session:
 systemctl --user enable --now punktfunk-host punktfunk-web
 ```
 
+#### Optional game-library scanning and plugins
+
+The upstream `punktfunk-scripting` RPM globally enables its user service during
+installation. Bazzite-DX deliberately **disables that global autostart** after
+installing the RPM, so the scripting runner remains opt-in. This does not
+prevent starting the streaming host and web console separately.
+
+The runner handles Punktfunk plugins, including game-library scanners. If it
+is disabled, the **game library may appear empty** even though direct game or
+desktop streaming works. To enable game-library scanning and plugin/script
+execution for your user, run:
+
+```bash
+systemctl --user enable --now punktfunk-scripting.service
+```
+
+To turn the scripting runner off again without stopping the streaming host:
+
+```bash
+systemctl --user disable --now punktfunk-scripting.service
+```
+
+This controls the current user's service; it does not change other users'
+settings. Only enable plugins and scripts you trust.
+
 For controller forwarding, follow [Punktfunk's Bazzite setup guide](https://docs.punktfunk.unom.io/docs/bazzite)
 and log out and back in after joining the groups:
 
