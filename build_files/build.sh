@@ -426,9 +426,27 @@ dnf5 install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts \
     vhba
 dnf5 -y copr disable rok/cdemu
 
-dnf5 -y copr enable pvermeer/sunshine
-dnf5 install -y sunshine
-dnf5 -y copr enable pvermeer/sunshine
+# Use Punktfunk's signed Bazzite RPMs for streaming in Gaming Mode and KDE.
+# Keep this repository disabled outside its own install transaction, like other
+# third-party package sources in this image.
+cat > /etc/yum.repos.d/punktfunk.repo <<'EOF'
+[gitea-unom-bazzite]
+name=Punktfunk (unom, Bazzite)
+baseurl=https://git.unom.io/api/packages/unom/rpm/bazzite
+enabled=0
+gpgcheck=1
+repo_gpgcheck=1
+gpgkey=https://git.unom.io/api/packages/unom/rpm/repository.key
+       https://git.unom.io/api/packages/unom/generic/punktfunk-keys/1/RPM-GPG-KEY-punktfunk
+EOF
+
+# Include the web console and scripting runner explicitly, rather than relying
+# on weak dependencies. User services, pairing and firewall access are
+# configured after installation, not during the image build.
+dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \
+    punktfunk \
+    punktfunk-web \
+    punktfunk-scripting
 
 # Independent DX setup: Bazzite's own setup runner does not dispatch legacy
 # ublue hook directories. Enable both for new and already-configured users.
