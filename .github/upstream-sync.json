@@ -1,0 +1,21 @@
+{
+  "repo": "ublue-os/bazzite",
+  "branch": "main",
+  "files": [
+    {
+      "local": "system_files/usr/share/ublue-os/just/10-update.just",
+      "upstream": "system_files/desktop/shared/usr/share/ublue-os/just/10-update.just",
+      "base_sha": null
+    },
+    {
+      "local": "system_files/usr/share/ublue-os/just/84-bazzite-virt.just",
+      "upstream": "system_files/desktop/shared/usr/share/ublue-os/just/84-bazzite-virt.just",
+      "base_sha": null
+    },
+    {
+      "local": "system_files/etc/ublue-os/topgrade.toml",
+      "upstream": "system_files/desktop/shared/etc/ublue-os/topgrade.toml",
+      "base_sha": null
+    }
+  ]
+}

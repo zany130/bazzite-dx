@@ -1,0 +1,43 @@
+name: Sync upstream Bazzite files
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Merge upstream changes
+        id: sync
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          SUMMARY_FILE: ${{ runner.temp }}/summary.md
+        run: python3 .github/scripts/upstream_sync.py
+      - name: Open pull request
+        if: steps.sync.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SUMMARY_FILE: ${{ runner.temp }}/summary.md
+        run: |
+          branch=automation/upstream-sync
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -B "$branch"
+          git add -A .github/upstream-sync.json system_files
+          git commit -m "chore: sync files from upstream Bazzite"
+          git push --force origin "$branch"
+          if [ -z "$(gh pr list --head "$branch" --json number -q '.[0].number')" ]; then
+            gh pr create --head "$branch" --base main \
+              --title "chore: sync files from upstream Bazzite" \
+              --body-file "$SUMMARY_FILE"
+          else
+            gh pr edit "$branch" --body-file "$SUMMARY_FILE"
+          fi
