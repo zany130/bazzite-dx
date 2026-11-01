@@ -65,7 +65,7 @@ for f in cfg["files"]:
         open(local, "w").write(open(f["local"]).read())
         rc = subprocess.run(["git", "merge-file", "-L", "ours", "-L", "upstream-base", "-L", "upstream",
                              local, paths["base"], paths["new"]]).returncode
-        if rc < 0:
+        if not 0 <= rc <= 127:
             raise SystemExit(f"merge-file failed for {f['local']}")
         open(f["local"], "w").write(open(local).read())
     f["base_sha"] = head

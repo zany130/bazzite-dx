@@ -6,8 +6,13 @@ on:
   workflow_dispatch:
 
 permissions:
+  actions: write
   contents: write
   pull-requests: write
+
+concurrency:
+  group: upstream-sync
+  cancel-in-progress: false
 
 jobs:
   sync:
@@ -34,6 +39,9 @@ jobs:
           git add -A .github/upstream-sync.json system_files
           git commit -m "chore: sync files from upstream Bazzite"
           git push --force origin "$branch"
+          commit=$(git rev-parse HEAD)
+          gh workflow run build.yml --ref "$branch" -f verified_head="$commit"
+          gh workflow run setup-tests.yml --ref "$branch" -f verified_head="$commit"
           if [ -z "$(gh pr list --head "$branch" --json number -q '.[0].number')" ]; then
             gh pr create --head "$branch" --base main \
               --title "chore: sync files from upstream Bazzite" \
