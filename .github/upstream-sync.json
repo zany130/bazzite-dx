@@ -17,112 +17,112 @@
       "branch": "main",
       "local": "system_files/etc/skel/.config/Code/User/settings.json",
       "upstream": "system_files/etc/skel/.config/Code/User/settings.json",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/bin/gamemode-nested",
       "upstream": "system_files/usr/bin/gamemode-nested",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/lib/systemd/system/bazzite-dx-groups.service",
       "upstream": "system_files/usr/lib/systemd/system/bazzite-dx-groups.service",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/libexec/bazzite-dx-groups",
       "upstream": "system_files/usr/libexec/bazzite-dx-groups",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/libexec/bazzite-dx-kvmfr-setup",
       "upstream": "system_files/usr/libexec/bazzite-dx-kvmfr-setup",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/applications/gamemode-nested.desktop",
       "upstream": "system_files/usr/share/applications/gamemode-nested.desktop",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/backgrounds/convergence.jxl",
       "upstream": "system_files/usr/share/backgrounds/convergence.jxl",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/bazaar/blocklist-dx.yaml",
       "upstream": "system_files/usr/share/ublue-os/bazaar/blocklist-dx.yaml",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/homebrew/bazzite-dx-fonts.Brewfile",
       "upstream": "system_files/usr/share/ublue-os/homebrew/bazzite-dx-fonts.Brewfile",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/just/84-bazzite-virt.just",
       "upstream": "system_files/usr/share/ublue-os/just/84-bazzite-virt.just",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/just/95-bazzite-dx.just",
       "upstream": "system_files/usr/share/ublue-os/just/95-bazzite-dx.just",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh",
       "upstream": "system_files/usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/user-setup.hooks.d/11-vscode-extensions.sh",
       "upstream": "system_files/usr/share/ublue-os/user-setup.hooks.d/11-vscode-extensions.sh",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/user-setup.hooks.d/99-privileged.sh",
       "upstream": "system_files/usr/share/ublue-os/user-setup.hooks.d/99-privileged.sh",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/wallpapers/convergence.jxl",
       "upstream": "system_files/usr/share/wallpapers/convergence.jxl",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     },
     {
       "repo": "ublue-os/bazzite-dx",
       "branch": "main",
       "local": "system_files/usr/share/ublue-os/homebrew/bazzite-dx-ai.Brewfile",
       "upstream": "system_files/usr/share/ublue-os/homebrew/bazzite-dx-ai.Brewfile",
-      "base_sha": "6aed9efbe7e2caf72bd2f0096794ee8ad38a43cd"
+      "base_sha": "eb327d2dcfd0ed8636a10212e1e23552d56c3d6a"
     }
   ]
 }
