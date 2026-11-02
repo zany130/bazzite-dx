@@ -82,6 +82,7 @@ for f in cfg["files"]:
             notes.append(f"- `{f['local']}`: updated from upstream")
         else:
             notes.append(f"- `{f['local']}`: changed upstream and locally (or binary), review manually")
+            continue
         f["base_sha"] = head
         changed = True
         continue
