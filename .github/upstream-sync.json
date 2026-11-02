@@ -5,17 +5,17 @@
     {
       "local": "system_files/usr/share/ublue-os/just/10-update.just",
       "upstream": "system_files/desktop/shared/usr/share/ublue-os/just/10-update.just",
-      "base_sha": null
+      "base_sha": "3a46cd99bc7aff9ffc962ec0fb595c2087484d8f"
     },
     {
       "local": "system_files/usr/share/ublue-os/just/84-bazzite-virt.just",
       "upstream": "system_files/desktop/shared/usr/share/ublue-os/just/84-bazzite-virt.just",
-      "base_sha": null
+      "base_sha": "3a46cd99bc7aff9ffc962ec0fb595c2087484d8f"
     },
     {
       "local": "system_files/etc/ublue-os/topgrade.toml",
       "upstream": "system_files/desktop/shared/etc/ublue-os/topgrade.toml",
-      "base_sha": null
+      "base_sha": "3a46cd99bc7aff9ffc962ec0fb595c2087484d8f"
     }
   ]
 }
