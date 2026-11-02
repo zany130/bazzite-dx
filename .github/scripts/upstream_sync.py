@@ -9,7 +9,7 @@ current upstream commit (no file change) so later runs can merge.
 Writes a summary to the path in $SUMMARY_FILE and sets changed=true in
 $GITHUB_OUTPUT when anything was modified.
 """
-import json, os, subprocess, tempfile, urllib.request
+import json, os, subprocess, tempfile, urllib.error, urllib.request
 
 CFG = ".github/upstream-sync.json"
 
@@ -25,7 +25,7 @@ def api(url):
 def raw(repo, ref, path):
     try:
         with urllib.request.urlopen(f"https://raw.githubusercontent.com/{repo}/{ref}/{path}") as r:
-            return r.read().decode()
+            return r.read()
     except urllib.error.HTTPError as e:
         if e.code == 404:
             return None
@@ -33,16 +33,36 @@ def raw(repo, ref, path):
 
 
 cfg = json.load(open(CFG))
-repo = cfg["repo"]
-head = api(f"https://api.github.com/repos/{repo}/commits/{cfg['branch']}")["sha"]
+heads = {}
+
+
+def head_of(repo, branch):
+    if (repo, branch) not in heads:
+        heads[(repo, branch)] = api(f"https://api.github.com/repos/{repo}/commits/{branch}")["sha"]
+    return heads[(repo, branch)]
+
+
+def is_text(b):
+    return b"\0" not in b
+
+
 notes, changed = [], False
 
 for f in cfg["files"]:
+    repo = f.get("repo", cfg["repo"])
+    head = head_of(repo, f.get("branch", cfg["branch"]))
     new = raw(repo, head, f["upstream"])
     if new is None:
         notes.append(f"- `{f['local']}`: upstream file `{f['upstream']}` no longer exists, review manually")
         continue
     base_sha = f.get("base_sha")
+    if not os.path.exists(f["local"]):
+        os.makedirs(os.path.dirname(f["local"]), exist_ok=True)
+        open(f["local"], "wb").write(new)
+        f["base_sha"] = head
+        changed = True
+        notes.append(f"- `{f['local']}`: added from `{repo}` `{head[:9]}`")
+        continue
     if not base_sha:
         f["base_sha"] = head
         changed = True
@@ -55,19 +75,27 @@ for f in cfg["files"]:
         f["base_sha"] = head
         changed = True
         continue
-    base = base or ""
+    local_bytes = open(f["local"], "rb").read()
+    if base is None or not (is_text(new) and is_text(local_bytes)):
+        if local_bytes == base:
+            open(f["local"], "wb").write(new)
+            notes.append(f"- `{f['local']}`: updated from upstream")
+        else:
+            notes.append(f"- `{f['local']}`: changed upstream and locally (or binary), review manually")
+            continue
+        f["base_sha"] = head
+        changed = True
+        continue
     with tempfile.TemporaryDirectory() as d:
         paths = {}
-        for name, text in (("base", base), ("new", new)):
+        for name, data in (("base", base), ("new", new), ("local", local_bytes)):
             paths[name] = os.path.join(d, name)
-            open(paths[name], "w").write(text)
-        local = os.path.join(d, "local")
-        open(local, "w").write(open(f["local"]).read())
+            open(paths[name], "wb").write(data)
         rc = subprocess.run(["git", "merge-file", "-L", "ours", "-L", "upstream-base", "-L", "upstream",
-                             local, paths["base"], paths["new"]]).returncode
+                             paths["local"], paths["base"], paths["new"]]).returncode
         if not 0 <= rc <= 127:
             raise SystemExit(f"merge-file failed for {f['local']}")
-        open(f["local"], "w").write(open(local).read())
+        open(f["local"], "wb").write(open(paths["local"], "rb").read())
     f["base_sha"] = head
     changed = True
     notes.append(f"- `{f['local']}`: merged upstream changes" +
