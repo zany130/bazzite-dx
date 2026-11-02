@@ -29,7 +29,7 @@ jobs:
       - name: Open pull request
         if: steps.sync.outputs.changed == 'true'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.UPSTREAM_SYNC_TOKEN || github.token }}
           SUMMARY_FILE: ${{ runner.temp }}/summary.md
         run: |
           branch=automation/upstream-sync
@@ -45,7 +45,9 @@ jobs:
           if [ -z "$(gh pr list --head "$branch" --json number -q '.[0].number')" ]; then
             gh pr create --head "$branch" --base main \
               --title "chore: sync files from upstream Bazzite" \
-              --body-file "$SUMMARY_FILE"
+              --body-file "$SUMMARY_FILE" || {
+              echo "::warning::Could not create PR (enable 'Allow GitHub Actions to create and approve pull requests' or set UPSTREAM_SYNC_TOKEN). Branch $branch was pushed: open a PR manually."
+            }
           else
             gh pr edit "$branch" --body-file "$SUMMARY_FILE"
           fi
