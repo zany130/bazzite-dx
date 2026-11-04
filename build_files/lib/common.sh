@@ -27,6 +27,20 @@ download_verified() {
     verify_sha256 "${dest}" "${sha256}"
 }
 
+# Download a pinned RPM, verify it, install it, and remove the temporary file.
+# install_pinned_rpm SHA256 RPM_FILENAME URL
+install_pinned_rpm() {
+    local sha256="${1}"
+    local rpm_name="${2}"
+    local url="${3}"
+
+    echo "Downloading ${rpm_name}..."
+    download_verified "${url}" "/tmp/${rpm_name}" "${sha256}"
+    echo "Installing ${rpm_name}..."
+    dnf5 install -y "/tmp/${rpm_name}"
+    rm -f "/tmp/${rpm_name}"
+}
+
 # GitHub tags v1.0 and V1.0 are published as 1.0.0 RPM versions.
 loose_rpm_version() {
     local version="${1#[Vv]}"

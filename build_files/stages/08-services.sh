@@ -1,7 +1,16 @@
 #!/bin/bash
 
-# Service defaults and package removals. Sourced by build.sh.
+# Systemd configuration and final package removals. Sourced by build.sh.
 # The removal stays last so it cannot change dependency resolution of earlier installs.
+#
+# Stage 03 dependencies, for a future build that omits the DX package layer:
+#   docker.socket          requires docker-ce from Stage 03
+#   virt*.socket           requires libvirt from Stage 03
+# podman.socket comes from the Deck base. podman-machine is the Stage 03 addition.
+# bazzite-dx-user-setup, bazzite-dx-system-setup, and the rEFInd seed binaries
+# come from system_files, not from Stage 03.
+# punktfunk-scripting.service is enabled by the Stage 04 RPM; this stage turns
+# that default off. beep-startup and the editor removals do not depend on Stage 03.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "ERROR: source stages/08-services.sh from build.sh." >&2
@@ -14,9 +23,11 @@ chmod 0755 /usr/libexec/bazzite-dx-refind-seed /usr/libexec/bazzite-dx-refind-sy
 systemctl --global enable bazzite-dx-user-setup.service
 systemctl enable bazzite-dx-system-setup.service
 
-# DX Services
+# Requires docker-ce from Stage 03.
 systemctl enable docker.socket
+# podman.socket is part of the Deck base. podman-machine is installed in Stage 03.
 systemctl enable podman.socket
+# Requires libvirt from Stage 03.
 systemctl enable \
     virtinterfaced.socket \
     virtlockd.socket \
@@ -28,6 +39,9 @@ systemctl enable \
     virtqemud.socket \
     virtsecretd.socket \
     virtstoraged.socket
+
+# The Punktfunk RPM in Stage 04 enables this user service. Leave it opt-in.
+systemctl --global disable punktfunk-scripting.service
 
 # Deck customizations (commented out - now provided by deck:testing base image)
 # See README "Additional Packages" -> "Deck" for why this block is kept for rollback.

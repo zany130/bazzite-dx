@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Third-party packages whose repositories were disabled during setup.
-# Each transaction opts into its own repository. Sourced by build.sh.
+# Custom third-party packages. Docker CE is upstream DX and stays in Stage 03.
+# Each transaction opts into its own disabled repository. Sourced by build.sh.
 # rpmfusion_repo_args is filled by stages/01-repositories.sh.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
@@ -38,13 +38,10 @@ dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \
     dolphin-megasync \
     megasync
 
-docker_packages=(
-    containerd.io
-    docker-buildx-plugin
-    docker-ce
-    docker-ce-cli
-    docker-compose-plugin
-)
-
-dnf5 --refresh --enable-repo=docker-ce-stable install -y \
-    "${docker_packages[@]}"
+# Include the web console and scripting runner explicitly, rather than relying
+# on weak dependencies. Stage 08 disables the user service this RPM enables.
+# User pairing and firewall access stay out of the image build.
+dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \
+    punktfunk \
+    punktfunk-web \
+    punktfunk-scripting

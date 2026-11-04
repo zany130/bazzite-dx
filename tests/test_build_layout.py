@@ -16,12 +16,12 @@ SOURCE_ORDER = [
     "lib/repositories.sh",
     "lib/copr.sh",
     "stages/01-repositories.sh",
-    "stages/02-base-packages.sh",
-    "stages/03-refind-gui.sh",
+    "stages/02-fedora-packages.sh",
+    "stages/03-dx-packages.sh",
     "stages/04-third-party-packages.sh",
-    "stages/05-dx-packages.sh",
+    "stages/05-copr-packages.sh",
     "stages/06-cockpit.sh",
-    "stages/07-copr-punktfunk.sh",
+    "stages/07-refind-gui.sh",
     "stages/08-services.sh",
 ]
 
@@ -65,7 +65,6 @@ DX_GROUPS = {
     ],
     "dx_workstation_packages": [
         "cockpit",
-        "cockpit-machines",
         "cockpit-ostree",
         "cockpit-ws-selinux",
         "guestfs-tools",
@@ -146,8 +145,8 @@ class BuildLayoutTest(unittest.TestCase):
             self.assertEqual(len(re.findall(rf"^{name}=", text, re.M)), 1)
 
     def test_package_lists_and_transactions_are_unchanged(self):
-        self.assertEqual(bash_array(read("stages/02-base-packages.sh"), "base_packages"), BASE_PACKAGES)
-        dx = read("stages/05-dx-packages.sh")
+        self.assertEqual(bash_array(read("stages/02-fedora-packages.sh"), "fedora_packages"), BASE_PACKAGES)
+        dx = read("stages/03-dx-packages.sh")
         for name, packages in DX_GROUPS.items():
             self.assertEqual(bash_array(dx, name), packages, name)
         self.assertIn(
@@ -161,14 +160,17 @@ class BuildLayoutTest(unittest.TestCase):
             '    "${dx_acceleration_packages[@]}"',
             dx,
         )
-        third = read("stages/04-third-party-packages.sh")
         self.assertIn(
             "dnf5 --refresh --enable-repo=docker-ce-stable install -y \\\n"
             '    "${docker_packages[@]}"',
-            third,
+            dx,
+        )
+        self.assertLess(
+            dx.index("dnf5 --refresh --enable-repo=docker-ce-stable install -y"),
+            dx.index('"${dx_debug_packages[@]}"'),
         )
         self.assertEqual(
-            bash_array(third, "docker_packages"),
+            bash_array(dx, "docker_packages"),
             [
                 "containerd.io",
                 "docker-buildx-plugin",
@@ -177,6 +179,9 @@ class BuildLayoutTest(unittest.TestCase):
                 "docker-compose-plugin",
             ],
         )
+        self.assertNotIn("cockpit-machines", dx)
+        third = read("stages/04-third-party-packages.sh")
+        self.assertNotIn("docker-ce", third)
         self.assertIn(
             'dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \\\n'
             "    dolphin-megasync \\\n"
@@ -184,6 +189,11 @@ class BuildLayoutTest(unittest.TestCase):
             third,
         )
         cockpit = read("stages/06-cockpit.sh")
+        self.assertIn("dnf5 install -y cockpit-machines\n", cockpit)
+        self.assertLess(
+            cockpit.index("dnf5 install -y cockpit-machines"),
+            cockpit.index('dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y'),
+        )
         self.assertIn(
             'dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \\\n'
             "    cockpit-file-sharing \\\n"
@@ -191,6 +201,8 @@ class BuildLayoutTest(unittest.TestCase):
             "    cockpit-benchmark",
             cockpit,
         )
+        machines = cockpit.split("dnf5 install -y cockpit-machines", 1)[0]
+        self.assertNotIn("--enable-repo", machines)
         services = read("stages/08-services.sh")
         self.assertIn(
             "dnf5 remove -y \\\n    kate \\\n    kwrite \\\n    kfind\n",
@@ -208,16 +220,65 @@ class BuildLayoutTest(unittest.TestCase):
         self.assertIn('"${terra_repo_id}.enabled=0"', read("lib/repositories.sh"))
         self.assertIn("enabled=0\n", repos)
         self.assertIn("gpgcheck=1\n", repos)
-        punkt = read("stages/07-copr-punktfunk.sh")
-        self.assertIn("repo_gpgcheck=1\n", punkt)
+        self.assertIn("repo_gpgcheck=1\n", repos)
         self.assertLess(
-            punkt.index("copr_install_isolated rok/cdemu"),
-            punkt.index("dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y"),
+            repos.index('dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"'),
+            repos.index("dnf5 --refresh makecache"),
         )
-        self.assertLess(
-            punkt.index("punktfunk-scripting"),
-            punkt.index("systemctl --global disable punktfunk-scripting.service"),
+        self.assertLess(repos.index("enabled=0\ngpgcheck=1\nrepo_gpgcheck=1\n"), repos.index("dnf5 --refresh makecache"))
+        self.assertIn(
+            "dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \\\n"
+            "    punktfunk \\\n"
+            "    punktfunk-web \\\n"
+            "    punktfunk-scripting",
+            read("stages/04-third-party-packages.sh"),
         )
+        copr = read("stages/05-copr-packages.sh")
+        self.assertIn("copr_install_isolated rok/cdemu", copr)
+        self.assertNotIn("punktfunk", copr)
+        self.assertIn(
+            "systemctl --global disable punktfunk-scripting.service\n",
+            read("stages/08-services.sh"),
+        )
+
+    def test_stage_03_is_optional_for_later_custom_stages(self):
+        names = {path.name for path in (BUILD_DIR / "stages").iterdir()}
+        self.assertEqual(
+            names,
+            {
+                "01-repositories.sh",
+                "02-fedora-packages.sh",
+                "03-dx-packages.sh",
+                "04-third-party-packages.sh",
+                "05-copr-packages.sh",
+                "06-cockpit.sh",
+                "07-refind-gui.sh",
+                "08-services.sh",
+            },
+        )
+        dx = read("stages/03-dx-packages.sh")
+        self.assertIsNone(re.search(r"^[A-Za-z_][A-Za-z0-9_]*\(\)", dx, re.M))
+        later = "\n".join(
+            read(name)
+            for name in SOURCE_ORDER
+            if name.startswith("stages/") and name.split("/")[1] > "03-dx-packages.sh"
+        )
+        for owned in (
+            "docker_packages",
+            "dx_debug_packages",
+            "dx_editor_packages",
+            "dx_workstation_packages",
+            "dx_container_packages",
+            "dx_virtualization_packages",
+            "dx_remote_packages",
+            "dx_acceleration_packages",
+        ):
+            self.assertNotIn(owned, later, owned)
+        services = read("stages/08-services.sh")
+        self.assertIn("docker.socket          requires docker-ce from Stage 03", services)
+        self.assertIn("virt*.socket           requires libvirt from Stage 03", services)
+        cockpit = read("stages/06-cockpit.sh")
+        self.assertIn("Skipping Stage 03 can let this install bring them back", cockpit)
 
     def test_scripts_pass_bash_and_shellcheck(self):
         scripts = sorted(BUILD_DIR.rglob("*.sh"))

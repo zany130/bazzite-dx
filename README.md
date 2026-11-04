@@ -329,7 +329,7 @@ This project uses the [Universal Blue image-template](https://github.com/ublue-o
 | Path | Purpose |
 | --- | --- |
 | [`Containerfile`](Containerfile) | Base image, file overlay, permissions, and image validation |
-| [`build_files/build.sh`](build_files/build.sh) | Build entry point. Package, repository, and service steps are in [`build_files/stages/`](build_files/stages) |
+| [`build_files/build.sh`](build_files/build.sh) | Build entry point. Stages in [`build_files/stages/`](build_files/stages) run in order from repositories through services |
 | [`system_files/`](system_files/) | Files installed into the image |
 | [`image-template.env`](image-template.env) | Image name, metadata, and default tag |
 | [`Justfile`](Justfile) | Local build, lint, and disk-image helpers |
@@ -344,6 +344,8 @@ just build
 Use `just --list` to see the available build and disk-image commands. When making your own fork, update the image metadata and publishing configuration, and configure `SIGNING_SECRET` for the signing step. See the upstream template for the full setup guide.
 
 The build locks Qt 6 and Plasma packages during customization and selectively enables third-party repositories for package installation to reduce unintended changes to the base desktop stack.
+
+`stages/03-dx-packages.sh` is the upstream DX package layer, including Docker CE. Leaving that stage out of `build.sh` is how to drop the layer later. `stages/08-services.sh` still enables `docker.socket` and the libvirt sockets from that layer, and it disables Punktfunk scripting after Stage 04 installs it, so those lines need to change with it. `cockpit-machines` is installed later in Stage 06; without Stage 03 its dependencies can pull Cockpit and libvirt back in.
 
 ## Feedback and upstream projects
 
