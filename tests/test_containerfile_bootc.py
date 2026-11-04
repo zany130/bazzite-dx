@@ -23,7 +23,8 @@ class ContainerfileBootcTest(unittest.TestCase):
         )
 
     def test_image_is_linted_with_bootc(self):
-        self.assertIn("RUN bootc container lint\n", self.text)
+        self.assertEqual(sum(line.startswith("RUN ") for line in self.text.splitlines()), 1)
+        self.assertTrue(self.text.rstrip().endswith("&& \\\n    bootc container lint"))
 
 
 if __name__ == "__main__":

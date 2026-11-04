@@ -58,10 +58,5 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod 0644 /usr/lib/systemd/user/gamescope-app@.service && \
     chmod 0644 /usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf && \
     chmod 0644 /etc/gamescope/apps.d/*.conf && \
-    chmod 0755 /usr/libexec/gamescope-xvfb-launch
-
-### LINTING
-## Verify final image and contents are correct.
-## The Fedora 45 base is a bootc image. `ostree container commit` fails there
-## with "Not in an ostree-based container environment".
-RUN bootc container lint
+    chmod 0755 /usr/libexec/gamescope-xvfb-launch && \
+    bootc container lint

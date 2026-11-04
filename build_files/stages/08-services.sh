@@ -41,6 +41,9 @@ systemctl enable \
     virtstoraged.socket
 
 # The Punktfunk RPM in Stage 04 enables this user service. Leave it opt-in.
+# The benchmark dependency installs Fedora's native web server. Bazzite
+# manages the container with cockpit.service; only it should listen on 9090.
+systemctl mask cockpit.socket
 systemctl --global disable punktfunk-scripting.service
 
 # Deck customizations (commented out - now provided by deck:testing base image)

@@ -1,12 +1,7 @@
 #!/bin/bash
 
-# Custom Cockpit integrations. Upstream DX Cockpit packages stay in Stage 03.
-# 45Drives repository setup is in Stage 01 and left disabled.
-# Version pins are assigned in build.sh for Renovate. Sourced by build.sh.
-#
-# cockpit-machines can depend on Cockpit and libvirt. The normal build installs
-# those in Stage 03 first, so this transaction does not have to pull them.
-# Skipping Stage 03 can let this install bring them back as dependencies.
+# Bazzite's web server connects to the host bridge over SSH. Keep custom
+# pages on the host. cockpit-machines may install libvirt without Stage 03.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "ERROR: source stages/06-cockpit.sh from build.sh." >&2
@@ -14,7 +9,14 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # Normally enabled repositories only. 45Drives is not enabled for this install.
-dnf5 install -y cockpit-machines
+# cockpit-benchmark requires cockpit, whose web server RPM replaces Deck's
+# vendor cockpit.service. Preserve the base wrapper at systemd's higher
+# priority path so ujust cockpit still starts the Quadlet after that install.
+wrapper=/usr/lib/systemd/system/cockpit.service
+grep -Fxq 'Requires=cockpit-container.service' "${wrapper}"
+install -Dm0644 "${wrapper}" /etc/systemd/system/cockpit.service
+
+dnf5 install -y cockpit-machines cockpit-ostree
 
 # Filled by stages/01-repositories.sh in this same shell.
 # shellcheck disable=SC2154

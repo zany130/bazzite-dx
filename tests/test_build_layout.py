@@ -1,4 +1,4 @@
-"""The sourced build keeps the previous transaction order and package lists."""
+"""Validate sourced stage ownership and repository scoping."""
 
 import re
 import subprocess
@@ -38,9 +38,6 @@ BASE_PACKAGES = [
     "rEFInd-tools",
     "solaar",
     "tesseract",
-    "tesseract-langpack-eng",
-    "tesseract-langpack-spa",
-    "tesseract-libs",
     "mosh",
     "nmap",
 ]
@@ -60,30 +57,18 @@ DX_GROUPS = {
     "dx_editor_packages": [
         "flatpak-builder",
         "git-subtree",
-        "google-noto-sans-fonts",
         "ramalama",
-    ],
-    "dx_workstation_packages": [
-        "cockpit",
-        "cockpit-ostree",
-        "cockpit-ws-selinux",
-        "guestfs-tools",
     ],
     "dx_container_packages": ["podman-machine", "podman-tui"],
     "dx_virtualization_packages": [
+        "guestfs-tools",
         "libvirt",
-        "python3-libvirt",
         "qemu",
         "qemu-kvm",
-        "qemu-system-x86",
-        "qemu-user-static-aarch64",
-        "swtpm",
         "virt-manager",
-        "virtiofsd",
-        "virtualbox-guest-additions",
     ],
-    "dx_remote_packages": ["rclone", "restic", "usbmuxd", "waypipe", "zsh"],
-    "dx_acceleration_packages": ["rocm-clinfo", "rocm-hip", "rocm-opencl", "rocm-smi"],
+    "dx_remote_packages": ["rclone", "restic", "waypipe", "zsh"],
+    "dx_acceleration_packages": ["rocm-hip"],
 }
 
 
@@ -144,7 +129,7 @@ class BuildLayoutTest(unittest.TestCase):
         ]:
             self.assertEqual(len(re.findall(rf"^{name}=", text, re.M)), 1)
 
-    def test_package_lists_and_transactions_are_unchanged(self):
+    def test_package_groups_and_transaction_scopes(self):
         self.assertEqual(bash_array(read("stages/02-fedora-packages.sh"), "fedora_packages"), BASE_PACKAGES)
         dx = read("stages/03-dx-packages.sh")
         for name, packages in DX_GROUPS.items():
@@ -153,7 +138,6 @@ class BuildLayoutTest(unittest.TestCase):
             'dnf5 install -y \\\n'
             '    "${dx_debug_packages[@]}" \\\n'
             '    "${dx_editor_packages[@]}" \\\n'
-            '    "${dx_workstation_packages[@]}" \\\n'
             '    "${dx_container_packages[@]}" \\\n'
             '    "${dx_virtualization_packages[@]}" \\\n'
             '    "${dx_remote_packages[@]}" \\\n'
@@ -189,9 +173,9 @@ class BuildLayoutTest(unittest.TestCase):
             third,
         )
         cockpit = read("stages/06-cockpit.sh")
-        self.assertIn("dnf5 install -y cockpit-machines\n", cockpit)
+        self.assertIn("dnf5 install -y cockpit-machines cockpit-ostree\n", cockpit)
         self.assertLess(
-            cockpit.index("dnf5 install -y cockpit-machines"),
+            cockpit.index("dnf5 install -y cockpit-machines cockpit-ostree"),
             cockpit.index('dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y'),
         )
         self.assertIn(
@@ -201,7 +185,9 @@ class BuildLayoutTest(unittest.TestCase):
             "    cockpit-benchmark",
             cockpit,
         )
-        machines = cockpit.split("dnf5 install -y cockpit-machines", 1)[0]
+        self.assertIn('install -Dm0644 "${wrapper}" /etc/systemd/system/cockpit.service', cockpit)
+        self.assertIn("systemctl mask cockpit.socket", read("stages/08-services.sh"))
+        machines = cockpit.split("dnf5 install -y cockpit-machines cockpit-ostree", 1)[0]
         self.assertNotIn("--enable-repo", machines)
         services = read("stages/08-services.sh")
         self.assertIn(
@@ -267,7 +253,6 @@ class BuildLayoutTest(unittest.TestCase):
             "docker_packages",
             "dx_debug_packages",
             "dx_editor_packages",
-            "dx_workstation_packages",
             "dx_container_packages",
             "dx_virtualization_packages",
             "dx_remote_packages",
@@ -278,7 +263,7 @@ class BuildLayoutTest(unittest.TestCase):
         self.assertIn("docker.socket          requires docker-ce from Stage 03", services)
         self.assertIn("virt*.socket           requires libvirt from Stage 03", services)
         cockpit = read("stages/06-cockpit.sh")
-        self.assertIn("Skipping Stage 03 can let this install bring them back", cockpit)
+        self.assertNotIn("${dx_", cockpit)
 
     def test_scripts_pass_bash_and_shellcheck(self):
         scripts = sorted(BUILD_DIR.rglob("*.sh"))

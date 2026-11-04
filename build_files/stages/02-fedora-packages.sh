@@ -22,9 +22,6 @@ fedora_packages=(
     rEFInd-tools
     solaar
     tesseract
-    tesseract-langpack-eng
-    tesseract-langpack-spa
-    tesseract-libs
     mosh
     nmap
 )

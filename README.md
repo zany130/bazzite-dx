@@ -52,7 +52,7 @@ Kate, KWrite, and KFind are removed by the build. The repository also includes V
 
 ### Services and setup
 
-Docker, Podman, and the modular libvirt sockets are enabled during the build. Installing a package does not mean every related service is enabled or configured: Cockpit is included, but this repository does not explicitly enable `cockpit.socket`.
+Docker, Podman, and the modular libvirt sockets are enabled during the build. Deck provides the Cockpit container, host bridge, and NetworkManager, Podman, system, files, and storage pages. Stage 06 adds Machines, OSTree, and the custom pages. The 45Drives benchmark pulls in Fedora's native web server. The image preserves Deck's container-launching service for `ujust cockpit` and masks the native `cockpit.socket`. Container login requires SSH on the host.
 
 The image also ships virtualization setup helpers:
 
@@ -345,7 +345,7 @@ Use `just --list` to see the available build and disk-image commands. When makin
 
 The build locks Qt 6 and Plasma packages during customization and selectively enables third-party repositories for package installation to reduce unintended changes to the base desktop stack.
 
-`stages/03-dx-packages.sh` is the upstream DX package layer, including Docker CE. Leaving that stage out of `build.sh` is how to drop the layer later. `stages/08-services.sh` still enables `docker.socket` and the libvirt sockets from that layer, and it disables Punktfunk scripting after Stage 04 installs it, so those lines need to change with it. `cockpit-machines` is installed later in Stage 06; without Stage 03 its dependencies can pull Cockpit and libvirt back in.
+Stage 03 adds DX development tools and Docker CE to Deck. To omit it, remove its source line and the Docker and libvirt socket enablement in stage 08. Stage 06 still installs the libvirt dependencies required by Cockpit Machines.
 
 ## Feedback and upstream projects
 
