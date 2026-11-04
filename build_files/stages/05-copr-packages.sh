@@ -26,5 +26,4 @@ copr_install_isolated rok/cdemu \
     --setopt=tsflags=noscripts \
     cdemu-client \
     cdemu-daemon \
-    gcdemu \
-    vhba
+    gcdemu
