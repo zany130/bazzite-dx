@@ -78,7 +78,9 @@ jobs:
           echo "IMAGE_REGISTRY=${IMAGE_REGISTRY,,}" >> ${GITHUB_ENV}
           echo "IMAGE_NAME=${IMAGE_NAME,,}" >> ${GITHUB_ENV}
 
-      # This actually builds the container image
+      # This actually builds the container image. Pull requests run this
+      # complete Podman build, including bootc container lint, and then stop.
+      # Rechunking and registry tags are publish work and stay off pull_request.
       - name: Build Image
         id: build-image
         run: |
@@ -89,6 +91,7 @@ jobs:
       # This is optional, this provides smaller delta updates
       - name: Rechunk with rpm-ostree
         id: rechunk
+        if: github.event_name != 'pull_request'
         run: |
           just ostree-rechunk \
             ${IMAGE_NAME} \
@@ -106,6 +109,7 @@ jobs:
 
       - name: Generate Build Tags
         id: gen-build-tags
+        if: github.event_name != 'pull_request'
         run: |
           alias_tags="$(just generate-build-tags \
                         ${IMAGE_NAME} \
@@ -117,6 +121,7 @@ jobs:
 
       - name: Tag Image
         id: tag-images
+        if: github.event_name != 'pull_request'
         env:
           ALIAS_TAGS: ${{ steps.gen-build-tags.outputs.alias_tags }}
         run: |
