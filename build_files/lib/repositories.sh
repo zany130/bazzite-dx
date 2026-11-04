@@ -8,6 +8,28 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1
 fi
 
+# Install packages with one additional repository enabled for the transaction.
+dnf_install_with_retry() {
+    local repo="$1"
+    shift
+    local attempt
+    local attempts=3
+
+    for ((attempt=1; attempt<=attempts; attempt++)); do
+        echo "Installing packages with ${repo} enabled (attempt ${attempt}/${attempts})."
+        if dnf5 --refresh --enable-repo="${repo}" install -y "$@"; then
+            return 0
+        fi
+        if (( attempt < attempts )); then
+            echo "Install failed on attempt ${attempt}/${attempts}; cleaning metadata before retrying." >&2
+            dnf5 clean all --enable-repo="${repo}" || return 1
+        fi
+    done
+
+    echo "ERROR: Failed to install $* with ${repo} enabled after ${attempts} attempts." >&2
+    return 1
+}
+
 # Configure Terra through a DNF5 repository override.
 # The packaged repo must already exist. This refuses to invent terra.repo.
 configure_terra_repository() {

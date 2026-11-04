@@ -17,7 +17,9 @@
 # (build_files/bazzite/04-initialize.sh). When a COPR is missing, register it
 # and disable it before the install, so an installation failure cannot leave
 # it enabled. When the repository is already defined, leave its saved
-# enablement alone.
+# enablement alone, including when that inherited repository is enabled.
+# Disabling an inherited COPR would change the base image's configuration.
+# The named packages still come only from --from-repo.
 #
 # Disabling first is safe for the projects this image uses. Their Fedora 45
 # repo files contain only the main repository, with no external dependency

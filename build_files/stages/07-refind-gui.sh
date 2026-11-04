@@ -1,18 +1,22 @@
 #!/bin/bash
 
-# Download and verify rEFInd_GUI from its Fedora 44 release package.
-# Version and checksum pins are assigned in build.sh for Renovate.
-# Sourced by build.sh.
+# rEFInd GUI integration. Version and checksum pins are assigned in build.sh
+# for Renovate. Sourced by build.sh. This stage does not depend on Stage 03.
+#
+# install_pinned_rpm removes the RPM after dnf installs it. The manifest below
+# reads the RPM database with rpm -q, not the deleted file. The source archive
+# is not an RPM install, so it stays on download_verified.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
-    echo "ERROR: source stages/03-refind-gui.sh from build.sh." >&2
+    echo "ERROR: source stages/07-refind-gui.sh from build.sh." >&2
     exit 1
 fi
 
 REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
-REFIND_GUI_URL="https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
-download_verified "${REFIND_GUI_URL}" "/tmp/${REFIND_GUI_RPM}" "${REFIND_GUI_SHA256}"
-dnf5 install -y "/tmp/${REFIND_GUI_RPM}"
+install_pinned_rpm \
+    "${REFIND_GUI_SHA256}" \
+    "${REFIND_GUI_RPM}" \
+    "https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
 # Keep executable payloads in immutable /usr as the authoritative upgrade source.
 # /etc remains the upstream ABI used by the GUI, exact sudoers rules and units.
 install -d -m 0755 /usr/libexec/rEFInd_GUI /usr/share/rEFInd_GUI
@@ -36,12 +40,10 @@ for line in subprocess.check_output(["rpm", "-q", "--dump", "rEFInd_GUI"], text=
         known[name].append(fields[3])
 Path("/usr/share/rEFInd_GUI/packaged-binaries.json").write_text(json.dumps(known) + "\n")
 PYMANIFEST
-rm -f "/tmp/${REFIND_GUI_RPM}"
 
 REFIND_GUI_SOURCE_ARCHIVE="rEFInd_GUI-${REFIND_GUI_VERSION}.tar.gz"
-REFIND_GUI_SOURCE_URL="https://github.com/jlobue10/rEFInd_GUI/archive/refs/tags/${REFIND_GUI_VERSION}.tar.gz"
 download_verified \
-    "${REFIND_GUI_SOURCE_URL}" \
+    "https://github.com/jlobue10/rEFInd_GUI/archive/refs/tags/${REFIND_GUI_VERSION}.tar.gz" \
     "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" \
     "${REFIND_GUI_SOURCE_SHA256}"
 mkdir -p /usr/share/rEFInd_GUI

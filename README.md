@@ -52,7 +52,7 @@ Kate, KWrite, and KFind are removed by the build. The repository also includes V
 
 ### Services and setup
 
-Docker, Podman, and the modular libvirt sockets are enabled during the build. Installing a package does not mean every related service is enabled or configured: Cockpit is included, but this repository does not explicitly enable `cockpit.socket`.
+Docker, Podman, and the modular libvirt sockets are enabled during the build. Deck provides the Cockpit container, host bridge, and NetworkManager, Podman, system, files, and storage pages. Stage 06 adds Machines, OSTree, and the custom pages. The 45Drives benchmark pulls in Fedora's native web server. The image preserves Deck's container-launching service for `ujust cockpit` and masks the native `cockpit.socket`. Container login requires SSH on the host.
 
 The image also ships virtualization setup helpers:
 
@@ -329,7 +329,7 @@ This project uses the [Universal Blue image-template](https://github.com/ublue-o
 | Path | Purpose |
 | --- | --- |
 | [`Containerfile`](Containerfile) | Base image, file overlay, permissions, and image validation |
-| [`build_files/build.sh`](build_files/build.sh) | Build entry point. Package, repository, and service steps are in [`build_files/stages/`](build_files/stages) |
+| [`build_files/build.sh`](build_files/build.sh) | Build entry point. Stages in [`build_files/stages/`](build_files/stages) run in order from repositories through services |
 | [`system_files/`](system_files/) | Files installed into the image |
 | [`image-template.env`](image-template.env) | Image name, metadata, and default tag |
 | [`Justfile`](Justfile) | Local build, lint, and disk-image helpers |
@@ -344,6 +344,8 @@ just build
 Use `just --list` to see the available build and disk-image commands. When making your own fork, update the image metadata and publishing configuration, and configure `SIGNING_SECRET` for the signing step. See the upstream template for the full setup guide.
 
 The build locks Qt 6 and Plasma packages during customization and selectively enables third-party repositories for package installation to reduce unintended changes to the base desktop stack.
+
+Stage 03 adds DX development tools and Docker CE to Deck. To omit it, remove its source line and the Docker and libvirt socket enablement in stage 08. Stage 06 still installs the libvirt dependencies required by Cockpit Machines.
 
 ## Feedback and upstream projects
 
