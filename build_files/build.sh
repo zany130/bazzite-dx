@@ -2,6 +2,30 @@
 
 set -ouex pipefail
 
+# Configure Terra through a DNF5 repository override.
+# The packaged repo must already exist. This refuses to invent terra.repo.
+configure_terra_repository() {
+    local terra_repo_id="terra"
+    local terra_excludes="qt6-*,kf6-*,plasma-*,fcitx5-qt*"
+    local repolist
+
+    if ! repolist="$(dnf5 repolist --all)"; then
+        echo "ERROR: Failed to list DNF repositories while configuring Terra." >&2
+        return 1
+    fi
+    if ! awk -v repo="${terra_repo_id}" 'NR > 1 && $1 == repo { found = 1 } END { exit !found }' <<< "${repolist}"; then
+        echo "ERROR: Terra repository '${terra_repo_id}' is not defined. Refusing to create /etc/yum.repos.d/terra.repo." >&2
+        return 1
+    fi
+
+    # enabled=0 keeps Terra off by default. excludepkgs is stored beside any
+    # existing "exclude" override, so base-image exclusions are preserved and
+    # Qt6, KDE Frameworks, Plasma, and fcitx Qt packages stay out of Terra.
+    dnf5 config-manager setopt \
+        "${terra_repo_id}.enabled=0" \
+        "${terra_repo_id}.excludepkgs=${terra_excludes}"
+}
+
 #Version locking so we dont ever accidently partialy update any qt or plasma packages
 dnf5 versionlock add 'qt6-*' 'plasma-*'
 
@@ -15,18 +39,16 @@ dnf5 versionlock add 'qt6-*' 'plasma-*'
 # https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
 
 # Keep Terra disabled except for transactions that explicitly need it.
+# Fedora 45 ships the packaged definition in /usr/share/dnf5/repos.d/terra.repo.
+# Appending options to a missing /etc/yum.repos.d/terra.repo creates a file
+# with no section header and makes every later dnf5 command fail. Overrides
+# belong in /etc/dnf/repos.override.d, which config-manager maintains.
 echo 'Configuring Terra Repository.'
-dnf5 config-manager setopt terra.enabled=0
-
-# Exclude core Qt/KDE/fcitx Qt packages from Terra to avoid pulling in
-# mismatched Qt private ABI versions that break plasmoids at runtime.
-if grep -q '^excludepkgs=' /etc/yum.repos.d/terra.repo; then
-    sed -i 's@^excludepkgs=.*@excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*@' /etc/yum.repos.d/terra.repo
-else
-    echo 'excludepkgs=qt6-*,kf6-*,plasma-*,fcitx5-qt*' >> /etc/yum.repos.d/terra.repo
-fi
+configure_terra_repository
 
 # Keep RPM Fusion disabled except for transactions that explicitly need it.
+# Fedora 45 may install these definitions under /usr/share/dnf5/repos.d.
+# repolist and config-manager see that location, so the files are not edited.
 echo 'Configuring RPM Fusion Repository.'
 get_available_repos() {
     dnf5 repolist --all | awk 'NR > 1 && $1 != "" {print $1}'
