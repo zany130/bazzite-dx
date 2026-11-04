@@ -206,8 +206,7 @@ class CoprInstallTest(unittest.TestCase):
             "    --setopt=tsflags=noscripts \\\n"
             "    cdemu-client \\\n"
             "    cdemu-daemon \\\n"
-            "    gcdemu \\\n"
-            "    vhba\n",
+            "    gcdemu\n",
             text,
         )
         executable = "\n".join(
