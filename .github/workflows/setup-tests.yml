@@ -22,5 +22,7 @@ jobs:
       - run: python3 -m unittest discover -s tests -p 'test_*.py'
       - name: Check setup shell scripts
         run: |
-          bash -n build_files/build.sh
+          find build_files -name '*.sh' -print0 | xargs -0 -n1 bash -n
+          find build_files -name '*.sh' -print0 | xargs -0 shellcheck
+          shellcheck -x build_files/build.sh
           shellcheck system_files/usr/share/ublue-os/user-setup.hooks.d/{11-vscode-extensions,12-refind-gui}.sh system_files/usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh

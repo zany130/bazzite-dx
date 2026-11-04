@@ -11,7 +11,9 @@ from pathlib import Path
 
 
 ROOT = Path(__file__).resolve().parents[1]
-BUILD = ROOT / "build_files" / "build.sh"
+BUILD = ROOT / "build_files" / "lib" / "repositories.sh"
+THIRD_PARTY = ROOT / "build_files" / "stages" / "04-third-party-packages.sh"
+BUILD_SCRIPTS = ROOT / "build_files"
 FUNCTION = re.compile(
     r"^configure_terra_repository\(\) \{\n.*?\n\}",
     re.MULTILINE | re.DOTALL,
@@ -22,7 +24,7 @@ EXCLUDES = "qt6-*,kf6-*,plasma-*,fcitx5-qt*"
 def load_function():
     match = FUNCTION.search(BUILD.read_text())
     if match is None:
-        raise AssertionError("configure_terra_repository() is missing from build.sh")
+        raise AssertionError("configure_terra_repository() is missing from lib/repositories.sh")
     return match.group(0)
 
 
@@ -33,8 +35,9 @@ class TerraRepositoryTest(unittest.TestCase):
         cls.function = load_function()
 
     def test_build_script_does_not_edit_packaged_terra_repo(self):
-        self.assertNotRegex(self.text, r">>\s*/etc/yum\.repos\.d/terra\.repo")
-        self.assertNotRegex(self.text, r"sed\s+-i[^\n]*terra\.repo")
+        scripts = "\n".join(path.read_text() for path in BUILD_SCRIPTS.rglob("*.sh"))
+        self.assertNotRegex(scripts, r">>\s*/etc/yum\.repos\.d/terra\.repo")
+        self.assertNotRegex(scripts, r"sed\s+-i[^\n]*terra\.repo")
         self.assertNotRegex(self.text, r"grep[^\n]*terra\.repo")
         self.assertIn("Refusing to create /etc/yum.repos.d/terra.repo.", self.function)
         self.assertIn('terra_excludes="qt6-*,kf6-*,plasma-*,fcitx5-qt*"', self.function)
@@ -43,7 +46,7 @@ class TerraRepositoryTest(unittest.TestCase):
 
     def test_terra_packages_still_install_from_an_explicit_repo(self):
         self.assertRegex(
-            self.text,
+            THIRD_PARTY.read_text(),
             r"dnf5 --refresh --enable-repo=terra install -y \\\n"
             r"\s+coolercontrol \\\n"
             r"\s+sbctl \\\n"

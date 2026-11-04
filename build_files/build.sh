@@ -1,562 +1,61 @@
 #!/bin/bash
+# shellcheck source-path=SCRIPTDIR
+# Pins are read by the sourced stages. `shellcheck -x` follows those files.
+# shellcheck disable=SC2034,SC1091
+
+# Image build entry point. The Containerfile runs this once.
+# Stages are sourced so shell state, including rpmfusion_repo_args, is shared.
+# Bazzite runs numbered scripts as separate processes; that split does not fit
+# state that later package transactions still need.
+#
+# Version pins stay in this file. Renovate's regex managers and
+# refind-checksums.yml match build_files/build.sh only.
 
 set -ouex pipefail
 
-# Configure Terra through a DNF5 repository override.
-# The packaged repo must already exist. This refuses to invent terra.repo.
-configure_terra_repository() {
-    local terra_repo_id="terra"
-    local terra_excludes="qt6-*,kf6-*,plasma-*,fcitx5-qt*"
-    local repolist
-
-    if ! repolist="$(dnf5 repolist --all)"; then
-        echo "ERROR: Failed to list DNF repositories while configuring Terra." >&2
-        return 1
-    fi
-    if ! awk -v repo="${terra_repo_id}" 'NR > 1 && $1 == repo { found = 1 } END { exit !found }' <<< "${repolist}"; then
-        echo "ERROR: Terra repository '${terra_repo_id}' is not defined. Refusing to create /etc/yum.repos.d/terra.repo." >&2
-        return 1
-    fi
-
-    # enabled=0 keeps Terra off by default. excludepkgs is stored beside any
-    # existing "exclude" override, so base-image exclusions are preserved and
-    # Qt6, KDE Frameworks, Plasma, and fcitx Qt packages stay out of Terra.
-    dnf5 config-manager setopt \
-        "${terra_repo_id}.enabled=0" \
-        "${terra_repo_id}.excludepkgs=${terra_excludes}"
-}
-
-#Version locking so we dont ever accidently partialy update any qt or plasma packages
-dnf5 versionlock add 'qt6-*' 'plasma-*'
-
-# system_files/ is copied into / by the Containerfile (COPY system_files/ /)
-
-### Install packages
-
-# Packages can be installed from any enabled yum repo on the image.
-# RPM Fusion repos may be provided by the base image, but bootstrap them if absent.
-# List of rpmfusion packages can be found here:
-# https://mirrors.rpmfusion.org/mirrorlist?path=free/fedora/updates/39/x86_64/repoview/index.html&protocol=https&redirect=1
-
-# Keep Terra disabled except for transactions that explicitly need it.
-# Fedora 45 ships the packaged definition in /usr/share/dnf5/repos.d/terra.repo.
-# Appending options to a missing /etc/yum.repos.d/terra.repo creates a file
-# with no section header and makes every later dnf5 command fail. Overrides
-# belong in /etc/dnf/repos.override.d, which config-manager maintains.
-echo 'Configuring Terra Repository.'
-configure_terra_repository
-
-# Keep RPM Fusion disabled except for transactions that explicitly need it.
-# Fedora 45 may install these definitions under /usr/share/dnf5/repos.d.
-# repolist and config-manager see that location, so the files are not edited.
-echo 'Configuring RPM Fusion Repository.'
-get_available_repos() {
-    dnf5 repolist --all | awk 'NR > 1 && $1 != "" {print $1}'
-}
-
-repo_matches_family() {
-    local repo_id="${1}"
-    local repo_family="${2}"
-
-    case "${repo_id}" in
-        "${repo_family}"|"${repo_family}"-*)
-            return 0
-            ;;
-    esac
-
-    return 1
-}
-
-ensure_rpmfusion_release_repo() {
-    local repo_family="${1}"
-    local repo_url="${2}"
-    local available_repos
-    available_repos="$(get_available_repos)"
-    while IFS= read -r repo_id; do
-        repo_matches_family "${repo_id}" "${repo_family}" || continue
-        case "${repo_id}" in
-            *-debuginfo|*-source)
-                continue
-                ;;
-        esac
-        return 0
-    done <<< "${available_repos}"
-    echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
-    dnf5 install -y "${repo_url}"
-}
-
-scope_rpmfusion_repo_family() {
-    local repo_family="${1}"
-    local repo_id
-
-    while IFS= read -r repo_id; do
-        repo_matches_family "${repo_id}" "${repo_family}" || continue
-        case "${repo_id}" in
-            *-debuginfo|*-source)
-                continue
-                ;;
-        esac
-        if ! dnf5 config-manager setopt "${repo_id}.enabled=0"; then
-            echo "ERROR: Failed to disable RPM Fusion repo '${repo_id}'." >&2
-            exit 1
-        fi
-        rpmfusion_repo_args+=("--enable-repo=${repo_id}")
-    done <<< "$(get_available_repos)"
-}
-
-fedora_version="$(rpm -E %fedora)"
-if ! [[ "${fedora_version}" =~ ^[0-9]+$ ]]; then
-    echo "ERROR: Unable to determine Fedora version for RPM Fusion bootstrap: '${fedora_version}'. Verify the base image is Fedora and 'rpm -E %fedora' returns a numeric release." >&2
-    exit 1
-fi
-
-ensure_rpmfusion_release_repo \
-    rpmfusion-free \
-    "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
-ensure_rpmfusion_release_repo \
-    rpmfusion-nonfree \
-    "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
-
-rpmfusion_repo_args=()
-scope_rpmfusion_repo_family rpmfusion-free
-scope_rpmfusion_repo_family rpmfusion-nonfree
-if ((${#rpmfusion_repo_args[@]} == 0)); then
-    echo "ERROR: No RPM Fusion repositories are available for scoped installs." >&2
-    exit 1
-fi
-
-# Configure the Docker repository for scoped package installs.
-echo 'Configuring Docker repository.'
-# SHA256 verified from https://download.docker.com/linux/fedora/gpg on 2026-07-10.
-DOCKER_GPG_SHA256="e6c650e0700b1bf4868b693b30761b926844befc8a0acb7ac0dd9b1faf1b7423"
-curl --fail-with-body --retry 3 -Lo /tmp/docker-gpg https://download.docker.com/linux/fedora/gpg
-echo "${DOCKER_GPG_SHA256}  /tmp/docker-gpg" | sha256sum -c -
-rpm --import /tmp/docker-gpg
-rm -f /tmp/docker-gpg
-cat > /etc/yum.repos.d/docker-ce.repo <<'EOF'
-[docker-ce-stable]
-name=Docker CE Stable - $basearch
-baseurl=https://download.docker.com/linux/fedora/$releasever/$basearch/stable
-enabled=0
-gpgcheck=1
-gpgkey=https://download.docker.com/linux/fedora/gpg
-
-[docker-ce-stable-source]
-name=Docker CE Stable - Sources
-baseurl=https://download.docker.com/linux/fedora/$releasever/source/stable
-enabled=0
-gpgcheck=1
-gpgkey=https://download.docker.com/linux/fedora/gpg
-
-EOF
-
-dnf5 --refresh makecache
-
-# Non-DX custom packages
-dnf5 install -y \
-beep \
-btfs \
-bsdtar \
-google-authenticator \
-kvantum \
-liquidctl \
-mpv \
-python3-pygame \
-rEFInd \
-rEFInd-tools \
-solaar \
-tesseract \
-tesseract-langpack-eng \
-tesseract-langpack-spa \
-tesseract-libs \
-mosh \
-nmap
-
-# Download and verify rEFInd_GUI from its Fedora 44 release package.
 # renovate: datasource=github-release-attachments depName=jlobue10/rEFInd_GUI
 REFIND_GUI_VERSION="v3.5.8"
 REFIND_GUI_SHA256="1d1d87d0206ad5e408dbd45b000613ae9e6e48723edb6c92d8c70ba22c4fa6da"
-REFIND_GUI_RPM="rEFInd_GUI-${REFIND_GUI_VERSION#v}-1.fc44.x86_64.rpm"
-REFIND_GUI_URL="https://github.com/jlobue10/rEFInd_GUI/releases/download/${REFIND_GUI_VERSION}/${REFIND_GUI_RPM}"
-curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_RPM}" "${REFIND_GUI_URL}"
-echo "${REFIND_GUI_SHA256}  /tmp/${REFIND_GUI_RPM}" | sha256sum -c -
-dnf5 install -y "/tmp/${REFIND_GUI_RPM}"
-# Keep executable payloads in immutable /usr as the authoritative upgrade source.
-# /etc remains the upstream ABI used by the GUI, exact sudoers rules and units.
-install -d -m 0755 /usr/libexec/rEFInd_GUI /usr/share/rEFInd_GUI
-install -m 0755 /etc/rEFInd/rEFInd_GUI /etc/rEFInd/rEFInd_GUI_helper /usr/libexec/rEFInd_GUI/
-# Retain known 3.4.6/3.4.7 release bytes for migration; include the installed RPM's
-# SHA-256 file metadata automatically on subsequent Renovate updates.
-python3 - <<'PYMANIFEST'
-import json
-import subprocess
-from pathlib import Path
-known = {
-    "rEFInd_GUI": ["fa1788d3b28ccec18ce9b87af5856959476ea956b1c083f63a060d03efe65829",
-                   "3468198d2364f690aceb8a0da7fb11e0713df50d27b7cc2ed48c3c3a92400c5c"],
-    "rEFInd_GUI_helper": ["68ee3a57456e9722cef615cd27a43e4c80cf5060b569e4582f3048ab7be84169",
-                          "3c1772e51f6763300f47102a8048f700670a2e891ce4921b5af139d3fe6c25b1"],
-}
-for line in subprocess.check_output(["rpm", "-q", "--dump", "rEFInd_GUI"], text=True).splitlines():
-    fields = line.split()
-    name = Path(fields[0]).name
-    if fields[0] == "/etc/rEFInd/" + name and name in known:
-        known[name].append(fields[3])
-Path("/usr/share/rEFInd_GUI/packaged-binaries.json").write_text(json.dumps(known) + "\n")
-PYMANIFEST
-rm -f "/tmp/${REFIND_GUI_RPM}"
-
-REFIND_GUI_SOURCE_ARCHIVE="rEFInd_GUI-${REFIND_GUI_VERSION}.tar.gz"
 # Updated on Renovate PRs by refind-checksums.yml before dispatching the image build.
 REFIND_GUI_SOURCE_SHA256="94fb78edbc2bac425a794abb8dcbabc2d9b6ced39f65b3531f33a8b842af543c"
-REFIND_GUI_SOURCE_URL="https://github.com/jlobue10/rEFInd_GUI/archive/refs/tags/${REFIND_GUI_VERSION}.tar.gz"
-curl --fail-with-body --retry 3 -Lo "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" "${REFIND_GUI_SOURCE_URL}"
-echo "${REFIND_GUI_SOURCE_SHA256}  /tmp/${REFIND_GUI_SOURCE_ARCHIVE}" | sha256sum -c -
-mkdir -p /usr/share/rEFInd_GUI
-tar -xzf "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}" \
-    -C /usr/share/rEFInd_GUI \
-    --strip-components=1 \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/VERSION" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/GUI" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/icons" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/backgrounds" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/themes" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/refind_install_package_mgr.sh" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/refind_install_Sourceforge.sh" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/uninstall_rEFInd.sh" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/scan_esp.sh" \
-    "rEFInd_GUI-${REFIND_GUI_VERSION#v}/refind-GUI.conf"
-rm -f "/tmp/${REFIND_GUI_SOURCE_ARCHIVE}"
-install -m 0644 /usr/share/rEFInd_GUI/GUI/UEFI_icon.png /etc/rEFInd/UEFI_icon.png
-printf '%s\n' /usr/share/rEFInd_GUI/backgrounds > /etc/rEFInd/background-dir
-chown root:root /etc/rEFInd/background-dir
-chmod 0644 /etc/rEFInd/background-dir
 
-# Install third-party packages only while their owning repository is enabled.
-terra_install_attempts=3
-terra_install_succeeded=0
-for ((terra_install_attempt=1; terra_install_attempt<=terra_install_attempts; terra_install_attempt++)); do
-    echo "Installing Terra packages (attempt ${terra_install_attempt}/${terra_install_attempts})."
-    if dnf5 --refresh --enable-repo=terra install -y \
-        coolercontrol \
-        sbctl \
-        topgrade; then
-        terra_install_succeeded=1
-        break
-    fi
-
-    if (( terra_install_attempt < terra_install_attempts )); then
-        echo "Terra package install failed on attempt ${terra_install_attempt}/${terra_install_attempts}; cleaning Terra metadata before retrying." >&2
-        dnf5 clean all --enable-repo=terra
-    fi
-done
-
-if (( terra_install_succeeded == 0 )); then
-    echo "ERROR: Failed to install Terra packages (coolercontrol, sbctl, topgrade) after ${terra_install_attempts} attempts." >&2
-    exit 1
-fi
-
-dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \
-    dolphin-megasync \
-    megasync
-
-docker_packages=(
-containerd.io
-docker-buildx-plugin
-docker-ce
-docker-ce-cli
-docker-compose-plugin
-)
-
-dnf5 --refresh --enable-repo=docker-ce-stable install -y \
-    "${docker_packages[@]}"
-
-# DX Packages
-# Restore DX-specific tooling that is present in bazzite-dx but missing from deck:testing.
-dx_debug_packages=(
-android-tools
-bcc
-bpftop
-bpftrace
-ccache
-nicstat
-numactl
-sysprof
-tiptop
-)
-dx_editor_packages=(
-flatpak-builder
-git-subtree
-google-noto-sans-fonts
-ramalama
-)
-dx_workstation_packages=(
-cockpit
-cockpit-machines
-cockpit-ostree
-cockpit-ws-selinux
-guestfs-tools
-)
-dx_container_packages=(
-podman-machine
-podman-tui
-)
-dx_virtualization_packages=(
-libvirt
-python3-libvirt
-qemu
-qemu-kvm
-qemu-system-x86
-qemu-user-static-aarch64
-swtpm
-virt-manager
-virtiofsd
-virtualbox-guest-additions
-)
-dx_remote_packages=(
-rclone
-restic
-usbmuxd
-waypipe
-zsh
-)
-dx_acceleration_packages=(
-rocm-clinfo
-rocm-hip
-rocm-opencl
-rocm-smi
-)
-
-dnf5 install -y \
-    "${dx_debug_packages[@]}" \
-    "${dx_editor_packages[@]}" \
-    "${dx_workstation_packages[@]}" \
-    "${dx_container_packages[@]}" \
-    "${dx_virtualization_packages[@]}" \
-    "${dx_remote_packages[@]}" \
-    "${dx_acceleration_packages[@]}"
-
-# Install 45Drives Cockpit packages
-echo "Adding 45Drives repository..."
-curl --fail-with-body --retry 3 -Lo /tmp/45drives.repo https://repo.45drives.com/lists/45drives.repo
-dnf5 config-manager addrepo --from-repofile=/tmp/45drives.repo
-curl --fail-with-body --retry 3 -Lo /tmp/45drives-gpg.asc https://repo.45drives.com/key/gpg.asc
-rpm --import /tmp/45drives-gpg.asc
-rm -f /tmp/45drives.repo /tmp/45drives-gpg.asc
-dnf5 --refresh makecache
-
-fortyfive_repolist="$(dnf5 repolist --all)"
-fortyfive_repo_id="$(awk 'NR > 1 && $1 ~ /^45drives/ && $1 !~ /source|debuginfo/ {print $1; exit}' <<< "${fortyfive_repolist}")"
-if [[ -z "${fortyfive_repo_id}" ]]; then
-    echo "ERROR: Could not find 45Drives repository ID after adding repo." >&2
-    exit 1
-fi
-dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"
-dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \
-    cockpit-file-sharing \
-    cockpit-navigator \
-    cockpit-benchmark
-
-# Download and verify cockpit-hardware-probe with checksum
 # renovate: datasource=github-releases depName=zany130/cockpit-probe versioning=loose
 COCKPIT_HARDWARE_PROBE_VERSION="v1.0"
-COCKPIT_HARDWARE_PROBE_RELEASE_VERSION="${COCKPIT_HARDWARE_PROBE_VERSION#[Vv]}"
-if [[ "${COCKPIT_HARDWARE_PROBE_RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+$ ]]; then
-    COCKPIT_HARDWARE_PROBE_RELEASE_VERSION="${COCKPIT_HARDWARE_PROBE_RELEASE_VERSION}.0"
-fi
-COCKPIT_HARDWARE_PROBE_RPM="cockpit-hardware-probe-${COCKPIT_HARDWARE_PROBE_RELEASE_VERSION}-1.noarch.rpm"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_HARDWARE_PROBE_VERSION changes.
 COCKPIT_HARDWARE_PROBE_SHA256="bd8ead0406fd6bdab8b998b1c148e56beb6c053a2c84ee126043cbc8435f78bc"
 
-echo "Downloading ${COCKPIT_HARDWARE_PROBE_RPM}..."
-COCKPIT_HARDWARE_PROBE_URL="https://github.com/zany130/cockpit-probe/releases/download/${COCKPIT_HARDWARE_PROBE_VERSION}/${COCKPIT_HARDWARE_PROBE_RPM}"
-curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_HARDWARE_PROBE_RPM}" "${COCKPIT_HARDWARE_PROBE_URL}"
-echo "Verifying checksum..."
-echo "${COCKPIT_HARDWARE_PROBE_SHA256}  /tmp/${COCKPIT_HARDWARE_PROBE_RPM}" | sha256sum -c -
-echo "Installing ${COCKPIT_HARDWARE_PROBE_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_HARDWARE_PROBE_RPM}"
-rm -f "/tmp/${COCKPIT_HARDWARE_PROBE_RPM}"
-
-# Download and verify cockpit-diagnostics with checksum
 # renovate: datasource=github-releases depName=zany130/cockpit-diagnostics versioning=loose
 COCKPIT_DIAGNOSTICS_VERSION="V1.0"
-COCKPIT_DIAGNOSTICS_RELEASE_VERSION="${COCKPIT_DIAGNOSTICS_VERSION#[Vv]}"
-if [[ "${COCKPIT_DIAGNOSTICS_RELEASE_VERSION}" =~ ^[0-9]+\.[0-9]+$ ]]; then
-    COCKPIT_DIAGNOSTICS_RELEASE_VERSION="${COCKPIT_DIAGNOSTICS_RELEASE_VERSION}.0"
-fi
-COCKPIT_DIAGNOSTICS_RPM="cockpit-diagnostics-${COCKPIT_DIAGNOSTICS_RELEASE_VERSION}-1.noarch.rpm"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_DIAGNOSTICS_VERSION changes.
 COCKPIT_DIAGNOSTICS_SHA256="809ad753057820d23406c57d7c5c67fd711e1262a7f5188a26240cf573bffcf1"
 
-echo "Downloading ${COCKPIT_DIAGNOSTICS_RPM}..."
-COCKPIT_DIAGNOSTICS_URL="https://github.com/zany130/cockpit-diagnostics/releases/download/${COCKPIT_DIAGNOSTICS_VERSION}/${COCKPIT_DIAGNOSTICS_RPM}"
-curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_DIAGNOSTICS_RPM}" "${COCKPIT_DIAGNOSTICS_URL}"
-echo "Verifying checksum..."
-echo "${COCKPIT_DIAGNOSTICS_SHA256}  /tmp/${COCKPIT_DIAGNOSTICS_RPM}" | sha256sum -c -
-echo "Installing ${COCKPIT_DIAGNOSTICS_RPM}..."
-dnf5 install -y "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
-rm -f "/tmp/${COCKPIT_DIAGNOSTICS_RPM}"
-
-# Download and verify cockpit-nspawn with checksum
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
 COCKPIT_NSPAWN_VERSION="v1.0.0-78"
-COCKPIT_NSPAWN_RPM="cockpit-nspawn-${COCKPIT_NSPAWN_VERSION#v}.fc44.noarch.rpm"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
 COCKPIT_NSPAWN_SHA256="b255eb398c28ae319fc738d047b4ec56abd0ad1c7f4d4cc3b977daf49afb56a2"
 
-echo "Downloading ${COCKPIT_NSPAWN_RPM}..."
-COCKPIT_NSPAWN_RELEASE_TAGS=(
-  "cockpit-nspawn-${COCKPIT_NSPAWN_VERSION}"
-  "${COCKPIT_NSPAWN_VERSION}"
-)
-for cockpit_nspawn_release_tag in "${COCKPIT_NSPAWN_RELEASE_TAGS[@]}"; do
-  COCKPIT_NSPAWN_URL="https://github.com/realmcuser/cockpit-nspawn/releases/download/${cockpit_nspawn_release_tag}/${COCKPIT_NSPAWN_RPM}"
-  if curl --fail-with-body --retry 3 -Lo "/tmp/${COCKPIT_NSPAWN_RPM}" "${COCKPIT_NSPAWN_URL}" && [ -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
-    break
-  fi
-  rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
-done
-if [ ! -s "/tmp/${COCKPIT_NSPAWN_RPM}" ]; then
-  echo "Failed to download ${COCKPIT_NSPAWN_RPM}" >&2
-  exit 1
-fi
+BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-echo "Verifying checksum..."
-echo "${COCKPIT_NSPAWN_SHA256}  /tmp/${COCKPIT_NSPAWN_RPM}" | sha256sum -c -
+# shellcheck source=lib/common.sh
+source "${BUILD_ROOT}/lib/common.sh"
+# shellcheck source=lib/repositories.sh
+source "${BUILD_ROOT}/lib/repositories.sh"
+# shellcheck source=lib/copr.sh
+source "${BUILD_ROOT}/lib/copr.sh"
 
-echo "Installing ${COCKPIT_NSPAWN_RPM}..."
-mkdir -p /var/usrlocal
-rpm2cpio "/tmp/${COCKPIT_NSPAWN_RPM}" | (cd / && cpio -idm --quiet --no-absolute-filenames \
-    './usr/local/lib/nspawn-pull*' \
-    './usr/share/cockpit/nspawn*')
-rm -f "/tmp/${COCKPIT_NSPAWN_RPM}"
-
-# Install each COPR package, then disable its repository immediately.
-dnf5 -y copr enable matinlotfali/KDE-Rounded-Corners
-dnf5 install -y kwin-effect-roundcorners
-dnf5 -y copr disable matinlotfali/KDE-Rounded-Corners
-
-dnf5 -y copr enable loteran/arctis-sound-manager
-dnf5 install -y arctis-sound-manager
-dnf5 -y copr disable loteran/arctis-sound-manager
-
-dnf5 -y copr enable rok/cdemu
-dnf5 install -y --setopt=install_weak_deps=False --setopt=tsflags=noscripts \
-    cdemu-client \
-    cdemu-daemon \
-    gcdemu \
-    vhba
-dnf5 -y copr disable rok/cdemu
-
-# Use Punktfunk's signed Bazzite RPMs for streaming in Gaming Mode and KDE.
-# Keep this repository disabled outside its own install transaction, like other
-# third-party package sources in this image.
-cat > /etc/yum.repos.d/punktfunk.repo <<'EOF'
-[gitea-unom-bazzite]
-name=Punktfunk (unom, Bazzite)
-baseurl=https://git.unom.io/api/packages/unom/rpm/bazzite
-enabled=0
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://git.unom.io/api/packages/unom/rpm/repository.key
-       https://git.unom.io/api/packages/unom/generic/punktfunk-keys/1/RPM-GPG-KEY-punktfunk
-EOF
-
-# Include the web console and scripting runner explicitly, rather than relying
-# on weak dependencies. User services, pairing and firewall access are
-# configured after installation, not during the image build.
-dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \
-    punktfunk \
-    punktfunk-web \
-    punktfunk-scripting
-systemctl --global disable punktfunk-scripting.service
-
-# Independent DX setup: Bazzite's own setup runner does not dispatch legacy
-# ublue hook directories. Enable both for new and already-configured users.
-chmod 0755 /usr/libexec/bazzite-dx-refind-seed /usr/libexec/bazzite-dx-refind-sync
-systemctl --global enable bazzite-dx-user-setup.service
-systemctl enable bazzite-dx-system-setup.service
-
-# DX Services
-systemctl enable docker.socket
-systemctl enable podman.socket
-systemctl enable \
-    virtinterfaced.socket \
-    virtlockd.socket \
-    virtlogd.socket \
-    virtnetworkd.socket \
-    virtnodedevd.socket \
-    virtnwfilterd.socket \
-    virtproxyd.socket \
-    virtqemud.socket \
-    virtsecretd.socket \
-    virtstoraged.socket
-
-# Deck customizations (commented out - now provided by deck:testing base image)
-# See README "Additional Packages" -> "Deck" for why this block is kept for rollback.
-# mkdir -p /usr/share/gamescope-session-plus /etc/sddm.conf.d
-#
-# downloads=(
-#     "https://large-package-sources.nobaraproject.org/bootstrap_steam.tar.gz|/usr/share/gamescope-session-plus/bootstrap_steam.tar.gz"
-#     "https://raw.githubusercontent.com/ublue-os/bazzite/main/system_files/deck/shared/etc/sddm.conf.d/virtualkbd.conf|/etc/sddm.conf.d/virtualkbd.conf"
-# )
-#
-# for item in "${downloads[@]}"; do
-#     IFS='|' read -r url dest <<<"${item}"
-#     if ! curl --fail-with-body --retry 3 -Lo "${dest}" "${url}" || [ ! -s "${dest}" ]; then
-#         echo "Failed to download ${dest}" >&2
-#         exit 1
-#     fi
-# done
-#
-# dnf5 install -y \
-#     sddm \
-#     steamos-manager-powerstation
-#
-# packages_to_remove=(ds-inhibit plasma-login-manager steamdeck-kde-presets-desktop)
-#
-# services_to_disable_before_remove=(ds-inhibit.service plasmalogin.service)
-# for service in "${services_to_disable_before_remove[@]}"; do
-#     if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
-#         systemctl disable "${service}"
-#     fi
-# done
-#
-# installed_packages_to_remove=()
-# for package in "${packages_to_remove[@]}"; do
-#     if rpm -q "${package}" >/dev/null 2>&1; then
-#         installed_packages_to_remove+=("${package}")
-#     fi
-# done
-#
-# if ((${#installed_packages_to_remove[@]})); then
-#     dnf5 remove -y "${installed_packages_to_remove[@]}"
-# fi
-#
-# dnf5 -y copr enable ublue-os/bazzite-multilib
-# dnf5 install -y steamdeck-kde-presets
-# dnf5 -y copr disable ublue-os/bazzite-multilib
-#
-# services_to_disable=(gdm.service plasmalogin.service ds-inhibit.service input-remapper.service)
-# for service in "${services_to_disable[@]}"; do
-#     if systemctl list-unit-files "${service}" 2>/dev/null | awk '{print $1}' | grep -qx "${service}"; then
-#         systemctl disable "${service}"
-#     fi
-# done
-#
-# sed -i 's@^NoDisplay=false@NoDisplay=true@' /usr/share/applications/input-remapper-gtk.desktop
-#
-# systemctl enable sddm.service
-# systemctl enable bazzite-autologin.service
-# deck:testing already ships this disabled; keep the old override commented for easy rollback.
-# systemctl disable uupd.timer
-# End disabled Deck block
-
-# Custom non-Deck service restore
-systemctl enable beep-startup.service
-
-# this uninstalls a package
-dnf5 remove -y \
-kate \
-kwrite \
-kfind
+# shellcheck source=stages/01-repositories.sh
+source "${BUILD_ROOT}/stages/01-repositories.sh"
+# shellcheck source=stages/02-base-packages.sh
+source "${BUILD_ROOT}/stages/02-base-packages.sh"
+# shellcheck source=stages/03-refind-gui.sh
+source "${BUILD_ROOT}/stages/03-refind-gui.sh"
+# shellcheck source=stages/04-third-party-packages.sh
+source "${BUILD_ROOT}/stages/04-third-party-packages.sh"
+# shellcheck source=stages/05-dx-packages.sh
+source "${BUILD_ROOT}/stages/05-dx-packages.sh"
+# shellcheck source=stages/06-cockpit.sh
+source "${BUILD_ROOT}/stages/06-cockpit.sh"
+# shellcheck source=stages/07-copr-punktfunk.sh
+source "${BUILD_ROOT}/stages/07-copr-punktfunk.sh"
+# shellcheck source=stages/08-services.sh
+source "${BUILD_ROOT}/stages/08-services.sh"
