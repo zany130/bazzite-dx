@@ -222,6 +222,8 @@ class BuildLayoutTest(unittest.TestCase):
     def test_scripts_pass_bash_and_shellcheck(self):
         scripts = sorted(BUILD_DIR.rglob("*.sh"))
         self.assertGreaterEqual(len(scripts), len(SOURCE_ORDER) + 1)
+        from shutil import which
+
         for script in scripts:
             syntax = subprocess.run(
                 ["bash", "-n", str(script)],
@@ -230,6 +232,9 @@ class BuildLayoutTest(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(syntax.returncode, 0, syntax.stderr)
+        if which("shellcheck") is None:
+            return
+        for script in scripts:
             checked = subprocess.run(
                 ["shellcheck", str(script)],
                 text=True,
