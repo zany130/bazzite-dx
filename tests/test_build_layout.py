@@ -176,12 +176,12 @@ class BuildLayoutTest(unittest.TestCase):
         self.assertIn("dnf5 install -y cockpit-machines cockpit-ostree\n", cockpit)
         self.assertLess(
             cockpit.index("dnf5 install -y cockpit-machines cockpit-ostree"),
-            cockpit.index('dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y'),
+            cockpit.index('dnf5 --refresh --enable-repo="${fortyfive_repo_id}"'),
         )
         self.assertIn(
-            'dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \\\n'
+            'dnf5 --refresh --enable-repo="${fortyfive_repo_id}" \\\n'
+            '    --setopt="${fortyfive_repo_id}.includepkgs=cockpit-file-sharing,cockpit-benchmark" install -y \\\n'
             "    cockpit-file-sharing \\\n"
-            "    cockpit-navigator \\\n"
             "    cockpit-benchmark",
             cockpit,
         )

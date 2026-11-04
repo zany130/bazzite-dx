@@ -18,11 +18,13 @@ install -Dm0644 "${wrapper}" /etc/systemd/system/cockpit.service
 
 dnf5 install -y cockpit-machines cockpit-ostree
 
-# Filled by stages/01-repositories.sh in this same shell.
+# 45Drives has higher priority and also ships EL8 cockpit and cockpit-ws.
+# Only source these two plugins there; Fedora supplies their dependencies.
+# Deck already ships cockpit-files, which obsoletes the available Navigator RPM.
 # shellcheck disable=SC2154
-dnf5 --refresh --enable-repo="${fortyfive_repo_id}" install -y \
+dnf5 --refresh --enable-repo="${fortyfive_repo_id}" \
+    --setopt="${fortyfive_repo_id}.includepkgs=cockpit-file-sharing,cockpit-benchmark" install -y \
     cockpit-file-sharing \
-    cockpit-navigator \
     cockpit-benchmark
 
 COCKPIT_HARDWARE_PROBE_RELEASE_VERSION="$(loose_rpm_version "${COCKPIT_HARDWARE_PROBE_VERSION}")"
