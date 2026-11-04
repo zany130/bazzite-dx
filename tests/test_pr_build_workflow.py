@@ -75,6 +75,21 @@ class PullRequestBuildWorkflowTest(unittest.TestCase):
         for name in PUBLISH_STEPS:
             self.assertEqual(self.by_name[name]["if"], PUBLISH_IF, name)
 
+    def test_toolchain_cleanup_runs_only_on_small_disks(self):
+        disk = self.by_name["Check free disk space"]
+        cleanup = self.by_name["Maximize build space"]
+        self.assertIsNone(disk["if"])
+        self.assertEqual(cleanup["if"], "steps.disk.outputs.squeeze == 'true'")
+        body = "\n".join(disk["body"])
+        self.assertIn("threshold_kib=$((70 * 1024 * 1024))", body)
+        self.assertIn('echo "squeeze=true"', body)
+        self.assertIn('echo "squeeze=false"', body)
+        cleanup_body = "\n".join(cleanup["body"])
+        self.assertIn(
+            "ublue-os/remove-unwanted-software@695eb75bc387dbcd9685a8e72d23439d8686cba6",
+            cleanup_body,
+        )
+
     def test_skipped_pull_request_steps_have_no_later_dependency(self):
         for step in self.steps:
             body = "\n".join(step["body"])
