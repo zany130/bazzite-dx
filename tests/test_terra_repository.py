@@ -47,11 +47,52 @@ class TerraRepositoryTest(unittest.TestCase):
     def test_terra_packages_still_install_from_an_explicit_repo(self):
         self.assertRegex(
             THIRD_PARTY.read_text(),
-            r"dnf5 --refresh --enable-repo=terra install -y \\\n"
+            r"dnf_install_with_retry terra \\\n"
             r"\s+coolercontrol \\\n"
             r"\s+sbctl \\\n"
-            r"\s+topgrade;",
+            r"\s+topgrade\n",
         )
+
+    def test_scoped_install_retries_under_strict_mode(self):
+        # Use a capability with spaces to detect accidental splitting of "$@".
+        install = ["--refresh", "--enable-repo=example", "install", "-y", "one", "two >= 1"]
+        clean = ["clean", "all", "--enable-repo=example"]
+        script = r'''set -euo pipefail
+source "$1"
+calls=0
+dnf5() {
+    printf '%s\0' "$@" >> "$LOG"
+    printf '\0' >> "$LOG"
+    if [[ "$1" == clean ]]; then
+        return "$CLEAN_STATUS"
+    fi
+    calls=$((calls + 1))
+    (( calls > FAILURES ))
+}
+dnf_install_with_retry example one "two >= 1"
+echo continued
+'''
+        for failures, clean_status, succeeds, expected in [
+            (0, 0, True, [install]),
+            (1, 0, True, [install, clean, install]),
+            (3, 0, False, [install, clean, install, clean, install]),
+            (1, 1, False, [install, clean]),
+        ]:
+            with self.subTest(failures=failures, clean_status=clean_status), tempfile.TemporaryDirectory() as tmp:
+                log = Path(tmp) / "calls"
+                result = subprocess.run(
+                    ["bash", "-c", script, "test", str(BUILD)],
+                    env={**os.environ, "LOG": str(log), "FAILURES": str(failures),
+                         "CLEAN_STATUS": str(clean_status)},
+                    text=True, capture_output=True,
+                )
+                calls = log.read_bytes().decode().split("\0\0")
+                self.assertEqual(calls.pop(), "")
+                self.assertEqual([call.split("\0") for call in calls], expected)
+                self.assertEqual(result.returncode, 0 if succeeds else 1, result.stderr)
+                self.assertEqual("continued" in result.stdout, succeeds)
+                if failures == 3:
+                    self.assertIn("after 3 attempts", result.stderr)
 
     def test_override_is_applied_when_terra_already_exists(self):
         result, log, created = self.run_configure("terra Terra-45 enabled\nfedora Fedora enabled\n")
