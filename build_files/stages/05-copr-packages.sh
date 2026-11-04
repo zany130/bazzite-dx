@@ -15,6 +15,12 @@ copr_install_isolated matinlotfali/KDE-Rounded-Corners \
 copr_install_isolated loteran/arctis-sound-manager \
     arctis-sound-manager
 
+# The Arctis RPM writes a second, enabled COPR in its postinstall script.
+# Deck already provides /usr/lib64/ladspa/librnnoise_ladspa.so.
+if [[ -f /etc/yum.repos.d/_asm-noise-suppression-for-voice.repo ]]; then
+    dnf5 config-manager setopt 'copr:copr.fedoraproject.org:lkiesow:noise-suppression-for-voice.enabled=0'
+fi
+
 copr_install_isolated rok/cdemu \
     --setopt=install_weak_deps=False \
     --setopt=tsflags=noscripts \
