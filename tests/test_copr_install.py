@@ -10,7 +10,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 COPR = ROOT / "build_files" / "lib" / "copr.sh"
-STAGE = ROOT / "build_files" / "stages" / "07-copr-punktfunk.sh"
+STAGE = ROOT / "build_files" / "stages" / "05-copr-packages.sh"
 
 MOCK = textwrap.dedent(
     """\
