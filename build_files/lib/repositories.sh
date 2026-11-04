@@ -86,7 +86,7 @@ ensure_rpmfusion_release_repo() {
         return 0
     done <<< "${available_repos}"
     echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
-    dnf5 install -y "${repo_url}"
+    dnf5 --setopt=optional_metadata_types=filelists install -y "${repo_url}"
 }
 
 # Appends --enable-repo flags to the caller-initialized rpmfusion_repo_args array.
