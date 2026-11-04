@@ -329,7 +329,7 @@ This project uses the [Universal Blue image-template](https://github.com/ublue-o
 | Path | Purpose |
 | --- | --- |
 | [`Containerfile`](Containerfile) | Base image, file overlay, permissions, and image validation |
-| [`build_files/build.sh`](build_files/build.sh) | Additional packages, repositories, and service defaults |
+| [`build_files/build.sh`](build_files/build.sh) | Build entry point. Package, repository, and service steps are in [`build_files/stages/`](build_files/stages) |
 | [`system_files/`](system_files/) | Files installed into the image |
 | [`image-template.env`](image-template.env) | Image name, metadata, and default tag |
 | [`Justfile`](Justfile) | Local build, lint, and disk-image helpers |
