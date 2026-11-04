@@ -4,7 +4,7 @@ COPY build_files /
 COPY system_files /system_files
 
 # Base Image
-FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:278941ea67603e24e24ff18e8c418b91f2f326fffd3d24edcff9779f36fbdf4e
+FROM ghcr.io/ublue-os/bazzite-deck:stable@sha256:904ab02ebc3c0b98008639a0cd2f62a0cdb56f01258e423dd7759851ce3f7b00
 
 COPY --from=ctx /system_files /
 
@@ -58,10 +58,10 @@ RUN --mount=type=bind,from=ctx,source=/,target=/ctx \
     chmod 0644 /usr/lib/systemd/user/gamescope-app@.service && \
     chmod 0644 /usr/lib/systemd/user/gamescope-session-plus@ogui-steam.service.d/10-apps.conf && \
     chmod 0644 /etc/gamescope/apps.d/*.conf && \
-    chmod 0755 /usr/libexec/gamescope-xvfb-launch && \
-    \
-    ostree container commit
+    chmod 0755 /usr/libexec/gamescope-xvfb-launch
 
 ### LINTING
 ## Verify final image and contents are correct.
+## The Fedora 45 base is a bootc image. `ostree container commit` fails there
+## with "Not in an ostree-based container environment".
 RUN bootc container lint
