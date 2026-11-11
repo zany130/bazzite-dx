@@ -34,9 +34,9 @@ COCKPIT_DIAGNOSTICS_VERSION="V1.0"
 COCKPIT_DIAGNOSTICS_SHA256="809ad753057820d23406c57d7c5c67fd711e1262a7f5188a26240cf573bffcf1"
 
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
-COCKPIT_NSPAWN_VERSION="v1.0.0-78"
+COCKPIT_NSPAWN_VERSION="v1.0.0-83"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.
-COCKPIT_NSPAWN_SHA256="b255eb398c28ae319fc738d047b4ec56abd0ad1c7f4d4cc3b977daf49afb56a2"
+COCKPIT_NSPAWN_SHA256="cd4e8bb057ae0c7dc806570fbe9ec34c15dcee43f2385e40cbc7cd95550ca1f4"
 
 BUILD_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
