@@ -194,7 +194,7 @@ class BuildLayoutTest(unittest.TestCase):
             services,
         )
         self.assertIn("systemctl enable beep-startup.service\n", services)
-        self.assertIn("# dnf5 -y copr enable ublue-os/bazzite-multilib\n", services)
+        self.assertIn("ublue-os/bazzite-multilib", read("lib/copr.sh"))
 
     def test_repository_safeguards_stay_in_order(self):
         repos = read("stages/01-repositories.sh")
