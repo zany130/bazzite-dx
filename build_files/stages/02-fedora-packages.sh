@@ -15,15 +15,12 @@ fedora_packages=(
     bsdtar
     google-authenticator
     kvantum
-    liquidctl
-    mpv
     python3-pygame
     rEFInd
     rEFInd-tools
     solaar
     tesseract
     mosh
-    nmap
 )
 
 dnf5 install -y "${fedora_packages[@]}"
