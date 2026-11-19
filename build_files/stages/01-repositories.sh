@@ -95,18 +95,4 @@ if [[ -z "${fortyfive_repo_id}" ]]; then
 fi
 dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"
 
-# Use Punktfunk's signed Bazzite RPMs for streaming in Gaming Mode and KDE.
-# The file is disabled here. Stage 04 opts into one install transaction, and
-# Stage 08 disables the user service that the RPM enables.
-cat > /etc/yum.repos.d/punktfunk.repo <<'EOF'
-[gitea-unom-bazzite]
-name=Punktfunk (unom, Bazzite)
-baseurl=https://git.unom.io/api/packages/unom/rpm/bazzite
-enabled=0
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://git.unom.io/api/packages/unom/rpm/repository.key
-       https://git.unom.io/api/packages/unom/generic/punktfunk-keys/1/RPM-GPG-KEY-punktfunk
-EOF
-
 dnf5 --refresh makecache
