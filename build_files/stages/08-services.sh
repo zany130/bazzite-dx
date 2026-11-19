@@ -43,6 +43,12 @@ systemctl enable \
 # Custom non-Deck service restore
 systemctl enable beep-startup.service
 
+# Disable bazzites cockpit quadlet and use native fedora installed cockpit instead
+systemctl disable cockpit.service
+systemctl disable cockpit-container.service
+systemctl unmask cockpit.socket
+systemctl enable cockpit.socket
+
 dnf5 remove -y \
     kate \
     kwrite \
