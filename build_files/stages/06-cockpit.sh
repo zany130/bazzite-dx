@@ -1,7 +1,6 @@
 #!/bin/bash
 
-# Bazzite's web server connects to the host bridge over SSH. Keep custom
-# pages on the host. cockpit-machines may install libvirt without Stage 03.
+# Keep custom pages on the host. cockpit-machines may install libvirt without Stage 03.
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     echo "ERROR: source stages/06-cockpit.sh from build.sh." >&2
@@ -9,12 +8,6 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
 fi
 
 # Normally enabled repositories only. 45Drives is not enabled for this install.
-# cockpit-benchmark requires cockpit, whose web server RPM replaces Deck's
-# vendor cockpit.service. Preserve the base wrapper at systemd's higher
-# priority path so ujust cockpit still starts the Quadlet after that install.
-wrapper=/usr/lib/systemd/system/cockpit.service
-grep -Fxq 'Requires=cockpit-container.service' "${wrapper}"
-install -Dm0644 "${wrapper}" /etc/systemd/system/cockpit.service
 
 dnf5 install -y cockpit-machines cockpit-ostree
 
