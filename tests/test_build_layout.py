@@ -31,15 +31,12 @@ BASE_PACKAGES = [
     "bsdtar",
     "google-authenticator",
     "kvantum",
-    "liquidctl",
-    "mpv",
     "python3-pygame",
     "rEFInd",
     "rEFInd-tools",
     "solaar",
     "tesseract",
     "mosh",
-    "nmap",
 ]
 
 DX_GROUPS = {
@@ -185,8 +182,11 @@ class BuildLayoutTest(unittest.TestCase):
             "    cockpit-benchmark",
             cockpit,
         )
-        self.assertIn('install -Dm0644 "${wrapper}" /etc/systemd/system/cockpit.service', cockpit)
-        self.assertIn("systemctl mask cockpit.socket", read("stages/08-services.sh"))
+        services = read("stages/08-services.sh")
+        self.assertIn("systemctl disable cockpit.service\n", services)
+        self.assertIn("systemctl unmask cockpit.socket\n", services)
+        self.assertIn("systemctl enable cockpit.socket\n", services)
+        self.assertNotIn("systemctl disable cockpit-container.service", services)
         machines = cockpit.split("dnf5 install -y cockpit-machines cockpit-ostree", 1)[0]
         self.assertNotIn("--enable-repo", machines)
         services = read("stages/08-services.sh")
