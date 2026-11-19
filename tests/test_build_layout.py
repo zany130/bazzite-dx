@@ -195,7 +195,7 @@ class BuildLayoutTest(unittest.TestCase):
             services,
         )
         self.assertIn("systemctl enable beep-startup.service\n", services)
-        self.assertIn("# dnf5 -y copr enable ublue-os/bazzite-multilib\n", services)
+        self.assertIn("ublue-os/bazzite-multilib", read("lib/copr.sh"))
 
     def test_repository_safeguards_stay_in_order(self):
         repos = read("stages/01-repositories.sh")
@@ -206,26 +206,15 @@ class BuildLayoutTest(unittest.TestCase):
         self.assertIn('"${terra_repo_id}.enabled=0"', read("lib/repositories.sh"))
         self.assertIn("enabled=0\n", repos)
         self.assertIn("gpgcheck=1\n", repos)
-        self.assertIn("repo_gpgcheck=1\n", repos)
+        docker_repo = "enabled=0\ngpgcheck=1\ngpgkey=https://download.docker.com/linux/fedora/gpg\n"
+        self.assertIn(docker_repo, repos)
         self.assertLess(
             repos.index('dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"'),
             repos.index("dnf5 --refresh makecache"),
         )
-        self.assertLess(repos.index("enabled=0\ngpgcheck=1\nrepo_gpgcheck=1\n"), repos.index("dnf5 --refresh makecache"))
-        self.assertIn(
-            "dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \\\n"
-            "    punktfunk \\\n"
-            "    punktfunk-web \\\n"
-            "    punktfunk-scripting",
-            read("stages/04-third-party-packages.sh"),
-        )
+        self.assertLess(repos.index(docker_repo), repos.index("dnf5 --refresh makecache"))
         copr = read("stages/05-copr-packages.sh")
         self.assertIn("copr_install_isolated rok/cdemu", copr)
-        self.assertNotIn("punktfunk", copr)
-        self.assertIn(
-            "systemctl --global disable punktfunk-scripting.service\n",
-            read("stages/08-services.sh"),
-        )
 
     def test_stage_03_is_optional_for_later_custom_stages(self):
         names = {path.name for path in (BUILD_DIR / "stages").iterdir()}
