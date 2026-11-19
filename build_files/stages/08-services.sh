@@ -40,10 +40,6 @@ systemctl enable \
     virtsecretd.socket \
     virtstoraged.socket
 
-# The benchmark dependency installs Fedora's native web server. Bazzite
-# manages the container with cockpit.service; only it should listen on 9090.
-systemctl mask cockpit.socket
-
 # Custom non-Deck service restore
 systemctl enable beep-startup.service
 
