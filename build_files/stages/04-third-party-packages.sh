@@ -11,7 +11,6 @@ fi
 
 # Terra
 dnf_install_with_retry terra \
-    coolercontrol \
     sbctl \
     topgrade
 
@@ -20,9 +19,3 @@ dnf_install_with_retry terra \
 dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \
     dolphin-megasync \
     megasync
-
-# Punktfunk
-dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \
-    punktfunk \
-    punktfunk-web \
-    punktfunk-scripting
