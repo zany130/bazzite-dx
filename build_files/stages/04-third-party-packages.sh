@@ -14,12 +14,6 @@ dnf_install_with_retry terra \
     sbctl \
     topgrade
 
-# Punktfunk
-dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \
-    punktfunk \
-    punktfunk-web \
-    punktfunk-scripting
-
 # RPM Fusion
 # shellcheck disable=SC2154
 dnf5 --refresh "${rpmfusion_repo_args[@]}" install -y \
