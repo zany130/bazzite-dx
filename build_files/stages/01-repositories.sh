@@ -38,12 +38,9 @@ if ! [[ "${fedora_version}" =~ ^[0-9]+$ ]]; then
     exit 1
 fi
 
-ensure_rpmfusion_release_repo \
-    rpmfusion-free \
-    "https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm"
-ensure_rpmfusion_release_repo \
-    rpmfusion-nonfree \
-    "https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
+ensure_rpmfusion_release_repos \
+    "rpmfusion-free=https://mirrors.rpmfusion.org/free/fedora/rpmfusion-free-release-${fedora_version}.noarch.rpm" \
+    "rpmfusion-nonfree=https://mirrors.rpmfusion.org/nonfree/fedora/rpmfusion-nonfree-release-${fedora_version}.noarch.rpm"
 
 rpmfusion_repo_args=()
 scope_rpmfusion_repo_family rpmfusion-free
