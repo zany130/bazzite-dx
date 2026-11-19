@@ -43,9 +43,6 @@ systemctl enable \
 # Custom non-Deck service restore
 systemctl enable beep-startup.service
 
-# Disable the default service from the Punktfunk package.
-systemctl --global disable punktfunk-scripting.service
-
 # Disable bazzites cockpit quadlet and use native fedora installed cockpit instead
 systemctl disable cockpit.service
 systemctl unmask cockpit.socket
