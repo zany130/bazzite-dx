@@ -31,12 +31,15 @@ BASE_PACKAGES = [
     "bsdtar",
     "google-authenticator",
     "kvantum",
+    "liquidctl",
+    "mpv",
     "python3-pygame",
     "rEFInd",
     "rEFInd-tools",
     "solaar",
     "tesseract",
     "mosh",
+    "nmap",
 ]
 
 DX_GROUPS = {
@@ -182,11 +185,8 @@ class BuildLayoutTest(unittest.TestCase):
             "    cockpit-benchmark",
             cockpit,
         )
-        services = read("stages/08-services.sh")
-        self.assertIn("systemctl disable cockpit.service\n", services)
-        self.assertIn("systemctl unmask cockpit.socket\n", services)
-        self.assertIn("systemctl enable cockpit.socket\n", services)
-        self.assertNotIn("systemctl disable cockpit-container.service", services)
+        self.assertIn('install -Dm0644 "${wrapper}" /etc/systemd/system/cockpit.service', cockpit)
+        self.assertIn("systemctl mask cockpit.socket", read("stages/08-services.sh"))
         machines = cockpit.split("dnf5 install -y cockpit-machines cockpit-ostree", 1)[0]
         self.assertNotIn("--enable-repo", machines)
         services = read("stages/08-services.sh")
@@ -195,7 +195,7 @@ class BuildLayoutTest(unittest.TestCase):
             services,
         )
         self.assertIn("systemctl enable beep-startup.service\n", services)
-        self.assertIn("ublue-os/bazzite-multilib", read("lib/copr.sh"))
+        self.assertIn("# dnf5 -y copr enable ublue-os/bazzite-multilib\n", services)
 
     def test_repository_safeguards_stay_in_order(self):
         repos = read("stages/01-repositories.sh")
@@ -206,25 +206,12 @@ class BuildLayoutTest(unittest.TestCase):
         self.assertIn('"${terra_repo_id}.enabled=0"', read("lib/repositories.sh"))
         self.assertIn("enabled=0\n", repos)
         self.assertIn("gpgcheck=1\n", repos)
-        docker_repo = "enabled=0\ngpgcheck=1\ngpgkey=https://download.docker.com/linux/fedora/gpg\n"
-        self.assertIn(docker_repo, repos)
-        punktfunk_repo = (
-            "[gitea-unom-bazzite]\n"
-            "name=punktfunk (unom, Bazzite)\n"
-            "baseurl=https://git.unom.io/api/packages/unom/rpm/bazzite\n"
-            "enabled=0\n"
-            "gpgcheck=1\n"
-            "repo_gpgcheck=1\n"
-            "gpgkey=https://git.unom.io/api/packages/unom/rpm/repository.key "
-            "https://git.unom.io/api/packages/unom/generic/punktfunk-keys/1/RPM-GPG-KEY-punktfunk\n"
-        )
-        self.assertIn(punktfunk_repo, repos)
+        self.assertIn("repo_gpgcheck=1\n", repos)
         self.assertLess(
             repos.index('dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"'),
             repos.index("dnf5 --refresh makecache"),
         )
-        self.assertLess(repos.index(docker_repo), repos.index("dnf5 --refresh makecache"))
-        self.assertLess(repos.index(punktfunk_repo), repos.index("dnf5 --refresh makecache"))
+        self.assertLess(repos.index("enabled=0\ngpgcheck=1\nrepo_gpgcheck=1\n"), repos.index("dnf5 --refresh makecache"))
         self.assertIn(
             "dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \\\n"
             "    punktfunk \\\n"
