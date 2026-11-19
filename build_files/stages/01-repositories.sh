@@ -79,17 +79,6 @@ gpgkey=https://download.docker.com/linux/fedora/gpg
 
 EOF
 
-# Punktfunk RPMs and repository metadata are GPG-signed.
-cat > /etc/yum.repos.d/gitea-unom-bazzite.repo <<'EOF'
-[gitea-unom-bazzite]
-name=punktfunk (unom, Bazzite)
-baseurl=https://git.unom.io/api/packages/unom/rpm/bazzite
-enabled=0
-gpgcheck=1
-repo_gpgcheck=1
-gpgkey=https://git.unom.io/api/packages/unom/rpm/repository.key https://git.unom.io/api/packages/unom/generic/punktfunk-keys/1/RPM-GPG-KEY-punktfunk
-EOF
-
 # The upstream repo file enables 45drives_stable. Disable that id before any
 # package transaction. fortyfive_repo_id is reused by stages/06-cockpit.sh.
 echo "Adding 45Drives repository..."
