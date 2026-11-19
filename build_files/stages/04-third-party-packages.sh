@@ -12,7 +12,8 @@ fi
 # Terra
 dnf_install_with_retry terra \
     sbctl \
-    topgrade
+    topgrade \
+    coolercontrol
 
 # RPM Fusion
 # shellcheck disable=SC2154
