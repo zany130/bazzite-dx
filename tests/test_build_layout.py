@@ -206,38 +206,14 @@ class BuildLayoutTest(unittest.TestCase):
         self.assertIn("enabled=0\n", repos)
         self.assertIn("gpgcheck=1\n", repos)
         docker_repo = "enabled=0\ngpgcheck=1\ngpgkey=https://download.docker.com/linux/fedora/gpg\n"
-        punktfunk_repo = (
-            "[gitea-unom-bazzite]\n"
-            "name=punktfunk (unom, Bazzite)\n"
-            "baseurl=https://git.unom.io/api/packages/unom/rpm/bazzite\n"
-            "enabled=0\n"
-            "gpgcheck=1\n"
-            "repo_gpgcheck=1\n"
-            "gpgkey=https://git.unom.io/api/packages/unom/rpm/repository.key "
-            "https://git.unom.io/api/packages/unom/generic/punktfunk-keys/1/RPM-GPG-KEY-punktfunk\n"
-        )
         self.assertIn(docker_repo, repos)
-        self.assertIn(punktfunk_repo, repos)
         self.assertLess(
             repos.index('dnf5 config-manager setopt "${fortyfive_repo_id}.enabled=0"'),
             repos.index("dnf5 --refresh makecache"),
         )
         self.assertLess(repos.index(docker_repo), repos.index("dnf5 --refresh makecache"))
-        self.assertLess(repos.index(punktfunk_repo), repos.index("dnf5 --refresh makecache"))
-        self.assertIn(
-            "dnf5 --refresh --enable-repo=gitea-unom-bazzite install -y \\\n"
-            "    punktfunk \\\n"
-            "    punktfunk-web \\\n"
-            "    punktfunk-scripting",
-            read("stages/04-third-party-packages.sh"),
-        )
         copr = read("stages/05-copr-packages.sh")
         self.assertIn("copr_install_isolated rok/cdemu", copr)
-        self.assertNotIn("punktfunk", copr)
-        self.assertIn(
-            "systemctl --global disable punktfunk-scripting.service\n",
-            read("stages/08-services.sh"),
-        )
 
     def test_stage_03_is_optional_for_later_custom_stages(self):
         names = {path.name for path in (BUILD_DIR / "stages").iterdir()}

@@ -1,4 +1,6 @@
 cosign.key
+__pycache__/
+*.py[cod]
 _build_*
 output
 _build-*/**

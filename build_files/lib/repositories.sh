@@ -71,27 +71,64 @@ repo_matches_family() {
     return 1
 }
 
-ensure_rpmfusion_release_repo() {
-    local repo_family="${1}"
-    local repo_url="${2}"
+ensure_rpmfusion_release_repos() {
     local available_repos
-    available_repos="$(get_available_repos)"
-    while IFS= read -r repo_id; do
-        repo_matches_family "${repo_id}" "${repo_family}" || continue
-        case "${repo_id}" in
-            *-debuginfo|*-source)
-                continue
-                ;;
-        esac
-        return 0
-    done <<< "${available_repos}"
-    echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
-    dnf5 --setopt=optional_metadata_types=filelists install -y "${repo_url}"
+    local repo_id
+    local spec
+    local repo_family
+    local repo_url
+    local found
+    local -a release_urls=()
+
+    if (($# == 0)); then
+        echo "ERROR: At least one RPM Fusion repository family is required." >&2
+        return 1
+    fi
+
+    if ! available_repos="$(get_available_repos)"; then
+        echo "ERROR: Failed to list DNF repositories while checking RPM Fusion." >&2
+        return 1
+    fi
+
+    for spec in "$@"; do
+        if [[ "${spec}" != *=* ]]; then
+            echo "ERROR: Expected RPM Fusion repository family=URL, got '${spec}'." >&2
+            return 1
+        fi
+        repo_family="${spec%%=*}"
+        repo_url="${spec#*=}"
+        if [[ -z "${repo_family}" || -z "${repo_url}" ]]; then
+            echo "ERROR: RPM Fusion repository family and URL must not be empty." >&2
+            return 1
+        fi
+
+        found=false
+        while IFS= read -r repo_id; do
+            repo_matches_family "${repo_id}" "${repo_family}" || continue
+            case "${repo_id}" in
+                *-debuginfo|*-source)
+                    continue
+                    ;;
+            esac
+            found=true
+            break
+        done <<< "${available_repos}"
+
+        if [[ "${found}" == false ]]; then
+            echo "RPM Fusion repo family '${repo_family}' not found. Installing release package."
+            release_urls+=("${repo_url}")
+        fi
+    done
+
+    if ((${#release_urls[@]} > 0)); then
+        dnf5 --setopt=optional_metadata_types=filelists install -y "${release_urls[@]}"
+    fi
 }
 
 # Appends --enable-repo flags to the caller-initialized rpmfusion_repo_args array.
 scope_rpmfusion_repo_family() {
     local repo_family="${1}"
+    local available_repos
     local repo_id
 
     while IFS= read -r repo_id; do
