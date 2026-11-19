@@ -48,7 +48,6 @@ class TerraRepositoryTest(unittest.TestCase):
         self.assertRegex(
             THIRD_PARTY.read_text(),
             r"dnf_install_with_retry terra \\\n"
-            r"\s+coolercontrol \\\n"
             r"\s+sbctl \\\n"
             r"\s+topgrade\n",
         )
