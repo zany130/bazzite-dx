@@ -1,0 +1,4 @@
+#!/bin/sh
+# Keep this launcher outside the updater-owned bin directory. Preserve arguments.
+# Set WEBKIT_DISABLE_COMPOSITING_MODE=1 yourself only if your GPU needs it.
+exec /var/lib/portmaster/bin/portmaster "$@"

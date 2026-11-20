@@ -17,6 +17,13 @@ if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
     exit 1
 fi
 
+# Bazzite's main justfile imports named files, not a directory glob.
+# Make the optional DX recipes discoverable without running any of them.
+dx_just_import='import "/usr/share/ublue-os/just/95-bazzite-dx.just"'
+if ! grep -Fxq "$dx_just_import" /usr/share/ublue-os/justfile; then
+    printf '\n%s\n' "$dx_just_import" >> /usr/share/ublue-os/justfile
+fi
+
 # Independent DX setup: Bazzite's own setup runner does not dispatch legacy
 # ublue hook directories. Enable both for new and already-configured users.
 chmod 0755 /usr/libexec/bazzite-dx-refind-seed /usr/libexec/bazzite-dx-refind-sync

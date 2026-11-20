@@ -1,0 +1,63 @@
+{
+ "Name": "Portmaster Binaries",
+ "Version": "2.2.9",
+ "Published": "2026-11-11T17:37:44.27105556+03:00",
+ "Artifacts": [
+  {
+   "Filename": "WebView2Loader.dll",
+   "SHA256": "609c974a8cdd6a76a745b3d81b62f321d79f2dc8f4929e1eea8469d9d78baf79",
+   "URLs": ["https://updates.safing.io/windows_amd64/app2/WebView2Loader_v2-2-9.dll"],
+   "Platform": "windows_amd64"
+  },
+  {
+   "Filename": "assets.zip",
+   "SHA256": "08fe60e9f456f97b4f35eee46eb716cf4826e727a36fa29e14369e1d6d1e1628",
+   "URLs": ["https://updates.safing.io/all/ui/modules/assets_v0-3-9.zip"],
+   "Version": "0.3.9"
+  },
+  {
+   "Filename": "portmaster",
+   "SHA256": "95344f600f304f7e1db8f1c148609a33e4ecb843fdc4740dd90395a3c8ec6ee2",
+   "URLs": ["https://updates.safing.io/linux_amd64/app2/portmaster_v2-2-9"],
+   "Platform": "linux_amd64"
+  },
+  {
+   "Filename": "portmaster-core",
+   "SHA256": "679b1fa26e0b7eaec936f3cf6700df48aa9144f230e2232f72a48e3592406b8f",
+   "URLs": ["https://updates.safing.io/linux_amd64/core/portmaster-core_v2-2-9"],
+   "Platform": "linux_amd64"
+  },
+  {
+   "Filename": "portmaster-core.dll",
+   "SHA256": "a0f7d615bdd58230e20fe66df6804fffc20a38bdae8b540780236f6b15dac580",
+   "URLs": ["https://updates.safing.io/windows_amd64/dll/portmaster-core_v1-6-33.dll"],
+   "Platform": "windows_amd64",
+   "Version": "1.6.33"
+  },
+  {
+   "Filename": "portmaster-core.exe",
+   "SHA256": "fef69ccc6f1b583748858669719064228282fdb875c1fe3c1ac6ed75e4a24601",
+   "URLs": ["https://updates.safing.io/windows_amd64/core/portmaster-core_v2-2-9.exe"],
+   "Platform": "windows_amd64"
+  },
+  {
+   "Filename": "portmaster-kext.sys",
+   "SHA256": "f05ebe81e799fd925a143c1ca44761275fef319c7b63fefb0c80f24101a6729c",
+   "URLs": ["https://updates.safing.io/windows_amd64/kext/portmaster-kext_v2-1-2.sys"],
+   "Platform": "windows_amd64",
+   "Version": "2.1.2"
+  },
+  {
+   "Filename": "portmaster.exe",
+   "SHA256": "e4ad47941e9dea5f467bd0cabc588f5510cea1a351af3ae368404cfefe5de446",
+   "URLs": ["https://updates.safing.io/windows_amd64/app2/portmaster_v2-2-9.exe"],
+   "Platform": "windows_amd64"
+  },
+  {
+   "Filename": "portmaster.zip",
+   "SHA256": "744807da0e02e280697f9570a3b674c94c5f9ec725e360f93f39c169a3104ba8",
+   "URLs": ["https://updates.safing.io/all/ui/modules/portmaster_v2-2-9.zip"]
+  }
+ ],
+ "_jess-signature": "Q6RnVmVyc2lvbgFnU3VpdGVJRGtzaWduZmlsZV92MWVOb25jZUTK-UrTalNpZ25hdHVyZXOBo2ZTY2hlbWVnRWQyNTUxOWJJRHgkYzBkZjRkYjAtODZlMS00OGY2LTkzZjMtZDFiOGVkOTk2M2FlZVZhbHVlWECjJBR-Ljqz-_7rn-csz9UQuBzi1US9plZzri3Rco5Mwwy0TvuqBMJv9RatZcMS9DQWwISp0_ZWCDSO18g13X0G"
+}

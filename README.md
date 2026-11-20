@@ -290,3 +290,10 @@ Stage 03 adds DX development tools and Docker CE to Deck. To omit it, remove its
 Report issues with this image's additions or configuration in [this repository](https://github.com/zany130/bazzite-dx/issues). Include your image version, relevant logs, and whether the problem also occurs on upstream Bazzite when known.
 
 Thanks to [Bazzite](https://github.com/ublue-os/bazzite), [Universal Blue](https://universal-blue.org/), and the developers of the tools included here.
+
+### Optional Portmaster
+
+Run `ujust install-portmaster` to install, repair, enable, disable, or remove Portmaster.
+It is not preinstalled or enabled by the image. Native application/intelligence updates use
+persistent writable storage. See [Portmaster setup, migration, and validation](PORTMASTER.md)
+for the explicit firewall switch, prerequisites, retained data, and VM acceptance checks.

@@ -1,0 +1,433 @@
+#!/usr/bin/python3
+"""Optional Portmaster v2 integration. No work is performed at image build/boot."""
+import argparse
+import fcntl
+import hashlib
+import json
+import os
+from pathlib import Path
+import platform
+import shutil
+import stat
+import subprocess
+import tempfile
+
+DATA = '/var/lib/portmaster'
+INTEGRATION = '/var/lib/bazzite-dx/portmaster'
+SOURCE = '/usr/share/bazzite-dx/portmaster'
+UNIT = '/etc/systemd/system/portmaster.service'
+PROFILE = '/etc/profile.d/zzz-portmaster-to-xdg-data-dirs.sh'
+AUTOSTART = '/etc/xdg/autostart/portmaster-autostart.desktop'
+LABELS = (DATA + '/bin/portmaster(-core)?', INTEGRATION + '/portmaster-ui')
+
+
+def digest(path):
+    checksum = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            checksum.update(chunk)
+    return checksum.hexdigest()
+
+
+def run(*args, check=True):
+    return subprocess.run(args, check=check, text=True, capture_output=True)
+
+
+class Installer:
+    # root/source injection is for unprivileged tests only; no CLI/environment override.
+    def __init__(self, root=Path('/'), source=Path(SOURCE)):
+        self.root, self.source = root, source
+        self.base = self.path(INTEGRATION)
+        self.statefile = self.base / 'state.json'
+        self.trusted(self.statefile)
+        self.state = json.loads(self.statefile.read_text()) if self.statefile.exists() else {}
+        self.trusted(source)
+        self.legacy = json.loads((source / 'legacy.json').read_text())
+
+    def path(self, name):
+        return self.root / name.lstrip('/')
+
+    def trusted(self, path):
+        """Refuse symlinks, non-root ownership and writable privileged paths."""
+        for part in (path, *path.parents):
+            if part == self.root:
+                break
+            if not part.exists() and not part.is_symlink():
+                continue
+            info = part.lstat()
+            if (stat.S_ISLNK(info.st_mode) or info.st_uid != os.geteuid()
+                    or info.st_mode & 0o022):
+                raise RuntimeError(f'Untrusted path (owner/mode/symlink): {part}')
+
+    def write(self, path, content, mode=0o644):
+        self.trusted(path)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        fd, tmp = tempfile.mkstemp(dir=path.parent, prefix='.portmaster-')
+        try:
+            with os.fdopen(fd, 'wb') as stream:
+                stream.write(content)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.chmod(tmp, mode)
+            os.replace(tmp, path)
+        finally:
+            Path(tmp).unlink(missing_ok=True)
+
+    def save(self):
+        self.write(self.statefile, (json.dumps(self.state, indent=2) + '\n').encode(), 0o600)
+
+    def managed(self, name):
+        path = self.path(name)
+        self.trusted(path)
+        if not path.exists():
+            return
+        known = self.state.get('files', {}).get(name)
+        if digest(path) not in (known, self.legacy.get(name)):
+            raise RuntimeError(f'Preserving unrecognized/customized file: {name}')
+
+    def put(self, name, content, mode=0o644):
+        self.managed(name)
+        path = self.path(name)
+        if path.exists() and name not in self.state.get('files', {}):
+            self.backup(path)
+        # Record intended bytes first so a partial installation can be repaired.
+        self.state.setdefault('files', {})[name] = hashlib.sha256(content).hexdigest()
+        self.save()
+        self.write(path, content, mode)
+
+    def backup(self, path):
+        self.trusted(self.base / 'backups')
+        self.base.joinpath('backups').mkdir(parents=True, exist_ok=True)
+        directory = Path(tempfile.mkdtemp(prefix='saved-', dir=self.base / 'backups'))
+        destination = directory / path.name
+        try:
+            if path.is_dir():
+                shutil.copytree(path, destination, symlinks=True, copy_function=shutil.copy2)
+            else:
+                shutil.copy2(path, destination, follow_symlinks=False)
+        except BaseException:
+            if destination.is_dir():
+                shutil.rmtree(destination)
+            else:
+                destination.unlink(missing_ok=True)
+            directory.rmdir()
+            raise
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+
+    def binary_status(self, binary_dir, bootstrap):
+        migrations = {'exports', 'portmaster-ui-start.sh'}
+        entries = list(binary_dir.iterdir()) if binary_dir.exists() else []
+        entries = [entry for entry in entries
+                   if entry.name not in migrations and not entry.name.startswith('updatemgr')]
+        index_path = binary_dir / 'index.json'
+        if not entries:
+            return False
+        if not index_path.is_file():
+            raise RuntimeError('Existing Portmaster binaries have no index.json; their version is unknown. '
+                               'Preserving them: restore a valid index before repairing.')
+        try:
+            index = json.loads(index_path.read_text())
+            version = index['Version']
+            artifacts = index['Artifacts']
+        except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+            raise RuntimeError('Existing Portmaster index.json is invalid; preserving binaries.') from error
+        if not isinstance(version, str) or not isinstance(artifacts, list):
+            raise RuntimeError('Existing Portmaster index.json is invalid; preserving binaries.')
+        hashes = {}
+        known = set()
+        for artifact in artifacts:
+            if not isinstance(artifact, dict):
+                raise RuntimeError('Existing Portmaster index.json is invalid; preserving binaries.')
+            name = artifact.get('Filename')
+            if not isinstance(name, str) or Path(name).name != name or name in ('.', '..'):
+                raise RuntimeError('Existing Portmaster index.json has an invalid filename.')
+            known.add(name)
+            if artifact.get('Platform', 'linux_amd64') == 'linux_amd64':
+                hashes[name] = artifact.get('SHA256')
+        unexpected = [entry.name for entry in entries
+                      if entry.name != 'index.json' and entry.name not in known]
+        if unexpected:
+            raise RuntimeError('Preserving unrecognized/customized files in updater-owned bin/: '
+                               + ', '.join(sorted(unexpected)))
+        required = ('portmaster-core', 'portmaster', 'assets.zip', 'portmaster.zip')
+        complete = all((binary_dir / name).is_file()
+                       and hashes.get(name) == digest(binary_dir / name) for name in required)
+        bootstrap_version = bootstrap['Version']
+        if not complete and version != bootstrap_version:
+            raise RuntimeError('Incomplete installation has a different or unverifiable version than the '
+                               'bootstrap. Preserving it: update the reviewed bootstrap before repairing binaries.')
+        return complete
+
+    def selinux(self):
+        # Only add our exact file expressions; never relabel databases/config as bin_t.
+        local = run('semanage', 'fcontext', '-l', '-C').stdout
+        for expression in LABELS:
+            matches = [line.split() for line in local.splitlines()
+                       if line.split() and line.split()[0] == expression]
+            if matches:
+                if not all(':bin_t:' in row[-1] for row in matches):
+                    raise RuntimeError(f'Conflicting SELinux rule: {expression}')
+            else:
+                self.state.setdefault('labels', [])
+                if expression not in self.state['labels']:
+                    self.state['labels'].append(expression)
+                    self.save()
+                run('semanage', 'fcontext', '-a', '-t', 'bin_t', expression)
+        run('restorecon', '-F', str(self.path(DATA + '/bin/portmaster-core')),
+            str(self.path(DATA + '/bin/portmaster')), str(self.base / 'portmaster-ui'))
+
+    def stage(self):
+        """Download a reviewed, checksum-pinned bootstrap, never an updater in bin/."""
+        manifest = json.loads((self.source / 'bootstrap.json').read_text())
+        binary_dir = self.path(DATA + '/bin')
+        binary_dir.parent.mkdir(parents=True, exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(prefix='bootstrap-', dir=binary_dir.parent)
+        try:
+            target = Path(temporary.name)
+            for artifact in manifest['Artifacts']:
+                if artifact.get('Platform', 'linux_amd64') != 'linux_amd64':
+                    continue
+                name = artifact['Filename']
+                if Path(name).name != name or name in ('.', '..'):
+                    raise RuntimeError('Invalid bootstrap filename')
+                run('curl', '--fail', '--location', '--proto', '=https', '--proto-redir',
+                    '=https', '--retry', '3', '--connect-timeout', '30', '--max-time', '600',
+                    '--output', str(target / name), artifact['URLs'][0])
+                if digest(target / name) != artifact['SHA256']:
+                    raise RuntimeError(f'Bootstrap checksum mismatch: {name}')
+                (target / name).chmod(0o755 if name in ('portmaster', 'portmaster-core') else 0o644)
+            shutil.copyfile(self.source / 'bootstrap.json', target / 'index.json')
+            self.dependencies(target / 'portmaster')
+            return temporary
+        except BaseException:
+            temporary.cleanup()
+            raise
+
+    def dependencies(self, ui):
+        result = run('ldd', str(ui), check=False)
+        if result.returncode or 'not found' in result.stdout:
+            raise RuntimeError('Portmaster UI libraries unavailable. No packages were installed.\n'
+                               + result.stdout + result.stderr)
+
+    def install(self):
+        if platform.machine() != 'x86_64':
+            raise RuntimeError('The reviewed bootstrap supports x86_64 only.')
+        for command in ('curl', 'ldd', 'systemctl', 'semanage', 'restorecon'):
+            if shutil.which(command) is None:
+                raise RuntimeError(f'Missing prerequisite: {command}; see PORTMASTER.md')
+        for name in (*self.state.get('files', {}), UNIT, PROFILE, AUTOSTART):
+            self.managed(name)
+        for name in (DATA, DATA + '/bin', INTEGRATION):
+            self.trusted(self.path(name))
+        if not self.state and (self.path('/usr/lib/systemd/system/portmaster.service').exists()
+                               or self.path('/usr/lib/portmaster').exists()):
+            raise RuntimeError('A packaged Portmaster installation exists; remove it separately first.')
+        self.base.mkdir(parents=True, exist_ok=True)
+        binary_dir = self.path(DATA + '/bin')
+        # Validate any pre-existing executables before using them or stopping their service.
+        if binary_dir.exists():
+            for entry in binary_dir.iterdir():
+                self.trusted(entry)
+                if entry.is_dir() and entry.name != 'exports':
+                    raise RuntimeError(f'Unexpected directory in updater-owned bin/: {entry}')
+        bootstrap = json.loads((self.source / 'bootstrap.json').read_text())
+        complete = self.binary_status(binary_dir, bootstrap)
+        staged = None if complete else self.stage()
+        if complete:
+            self.dependencies(binary_dir / 'portmaster')
+        try:
+            active = run('systemctl', 'is-active', '--quiet', 'portmaster.service', check=False).returncode == 0
+            if self.path(UNIT).exists():
+                run('systemctl', 'stop', 'portmaster.service')
+            # Stopping the core quiesces its native updater; decide again before replacing bin/.
+            complete = self.binary_status(binary_dir, bootstrap)
+            if complete:
+                if staged:
+                    staged.cleanup()
+                    staged = None
+            elif staged is None:
+                staged = self.stage()
+            # Preserve rather than delete old integration and bootstrap leftovers.
+            if binary_dir.exists():
+                for entry in list(binary_dir.iterdir()):
+                    if entry.name in ('exports', 'portmaster-ui-start.sh') or entry.name.startswith('updatemgr'):
+                        self.backup(entry)
+            if staged:
+                binary_dir.parent.mkdir(parents=True, exist_ok=True)
+                if binary_dir.exists():
+                    self.backup(binary_dir)
+                Path(staged.name).chmod(0o755)
+                Path(staged.name).rename(binary_dir)
+            for name in ('portmaster', 'portmaster-core'):
+                (binary_dir / name).chmod(0o755)
+            for source, name, mode in (
+                ('portmaster.service', UNIT, 0o644),
+                ('portmaster-path.sh', PROFILE, 0o644),
+                ('portmaster-ui', INTEGRATION + '/portmaster-ui', 0o755),
+                ('portmaster.desktop', INTEGRATION + '/share/applications/portmaster.desktop', 0o644),
+            ):
+                self.put(name, (self.source / source).read_bytes(), mode)
+            # Retire the Gist's automatic UI startup. Enable creates a guarded replacement.
+            if self.path(AUTOSTART).exists() and AUTOSTART not in self.state.get('files', {}):
+                self.backup(self.path(AUTOSTART))
+            # Persistent management copy permits uninstall after rebasing away from DX.
+            self.put(INTEGRATION + '/manage', Path(__file__).read_bytes(), 0o755)
+            for name in ('legacy.json', 'bootstrap.json', 'portmaster.service', 'portmaster-ui',
+                         'portmaster.desktop', 'portmaster-path.sh'):
+                self.put(INTEGRATION + '/resources/' + name, (self.source / name).read_bytes())
+            self.selinux()
+            run('restorecon', '-RF', str(self.path('/etc/systemd/system/portmaster.service')),
+                str(self.path(PROFILE)))
+            run('systemctl', 'daemon-reload')
+            if active:
+                run('systemctl', 'start', 'portmaster.service')
+                run('systemctl', 'is-active', '--quiet', 'portmaster.service')
+            print('Installed/repaired. Settings and native updates preserved.\n'
+                  'For a new installation: ujust install-portmaster enable\n'
+                  'Log out and back in to refresh the application menu.')
+        except BaseException:
+            print('Repair did not complete. Files/settings are retained; rerun repair after correcting the error.',
+                  file=__import__('sys').stderr)
+            if 'firewalld' in self.state:
+                run('systemctl', 'disable', '--now', 'portmaster.service', check=False)
+                self.restore_firewalld()
+            raise
+        finally:
+            if staged:
+                staged.cleanup()
+
+    def restore_firewalld(self):
+        previous = self.state.get('firewalld')
+        if previous is None:
+            return
+        if previous['enabled']:
+            run('systemctl', 'enable', 'firewalld.service')
+        if previous['active']:
+            run('systemctl', 'start', 'firewalld.service')
+        del self.state['firewalld']
+        self.save()
+
+    def enable(self):
+        if UNIT not in self.state.get('files', {}):
+            raise RuntimeError('Run install or repair first.')
+        self.managed(UNIT)
+        self.managed(AUTOSTART)
+        if 'firewalld' not in self.state:
+            enabled = run('systemctl', 'is-enabled', 'firewalld.service', check=False).stdout.strip()
+            if enabled not in ('enabled', 'disabled', 'not-found', ''):
+                raise RuntimeError(f'Unsupported firewalld enablement state: {enabled}; resolve it explicitly first.')
+            self.state['firewalld'] = {
+                'enabled': enabled == 'enabled',
+                'active': run('systemctl', 'is-active', '--quiet', 'firewalld.service', check=False).returncode == 0,
+            }
+            self.save()
+        try:
+            if self.state['firewalld']['enabled']:
+                run('systemctl', 'disable', 'firewalld.service')
+            if self.state['firewalld']['active']:
+                run('systemctl', 'stop', 'firewalld.service')
+            run('systemctl', 'enable', '--now', 'portmaster.service')
+            run('systemctl', 'is-active', '--quiet', 'portmaster.service')
+            desktop = (self.source / 'portmaster.desktop').read_text().replace(
+                '--with-notifications\n', '--with-notifications --background\n')
+            desktop += 'NoDisplay=true\n'
+            self.put(AUTOSTART, desktop.encode())
+            print('Portmaster enabled. Open Portmaster to check initialization and intelligence downloads.')
+        except BaseException:
+            run('systemctl', 'disable', '--now', 'portmaster.service', check=False)
+            self.restore_firewalld()
+            raise
+
+    def disable(self):
+        if UNIT not in self.state.get('files', {}):
+            raise RuntimeError('Run install or repair first to migrate and back up any legacy installation.')
+        self.managed(UNIT)
+        self.managed(AUTOSTART)
+        if self.path(UNIT).exists():
+            run('systemctl', 'disable', '--now', 'portmaster.service')
+            core = self.path(DATA + '/bin/portmaster-core')
+            self.trusted(core)
+            if core.exists():
+                try:
+                    run(str(core), 'recover-iptables')
+                except (OSError, subprocess.CalledProcessError) as error:
+                    try:
+                        self.restore_firewalld()
+                    except (OSError, subprocess.CalledProcessError) as restore_error:
+                        raise RuntimeError(
+                            f'Portmaster iptables cleanup failed ({error}); stale rules may remain, '
+                            f'and restoring firewalld also failed ({restore_error}).') from error
+                    raise RuntimeError(
+                        f'Portmaster iptables cleanup failed ({error}); stale rules may remain. '
+                        'The recorded firewalld state was restored.') from error
+        if self.path(AUTOSTART).exists():
+            self.path(AUTOSTART).unlink()
+        self.restore_firewalld()
+
+    def uninstall(self):
+        if not self.state:
+            print('No Bazzite-DX integration to remove. For a Gist install, run repair first.')
+            return
+        # Preflight every owned file before stopping protection or removing anything.
+        for name in self.state.get('files', {}):
+            self.managed(name)
+        if UNIT in self.state.get('files', {}):
+            self.disable()
+        local = run('semanage', 'fcontext', '-l', '-C').stdout
+        for expression in self.state.get('labels', []):
+            if any(line.split() and line.split()[0] == expression for line in local.splitlines()):
+                run('semanage', 'fcontext', '-d', expression)
+        binaries = [str(self.path(DATA + '/bin/' + name))
+                    for name in ('portmaster', 'portmaster-core')
+                    if self.path(DATA + '/bin/' + name).exists()]
+        if binaries:
+            run('restorecon', '-F', *binaries)
+        recovery_files = {
+            name for name in self.state.get('files', {})
+            if name == INTEGRATION + '/manage' or name.startswith(INTEGRATION + '/resources/')
+        }
+        for name in self.state.get('files', {}):
+            if name not in recovery_files:
+                self.path(name).unlink(missing_ok=True)
+        run('systemctl', 'daemon-reload')
+        self.state['files'] = {name: self.state['files'][name] for name in recovery_files}
+        self.state.pop('labels', None)
+        self.save()
+        print('Integration removed. Recovery helper/resources and ownership ledger retained; '
+              '/var/lib/portmaster and backups are preserved.\n'
+              'Close any running Portmaster UI. See PORTMASTER.md for deliberate data removal.')
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('action', choices=('install', 'repair', 'enable', 'disable', 'uninstall', 'status'))
+    args = parser.parse_args()
+    if args.action == 'status':
+        subprocess.run(['systemctl', '--no-pager', 'status', 'portmaster.service'], check=False)
+        return
+    if os.geteuid() != 0:
+        parser.error('Run through ujust install-portmaster (administrator permission required).')
+    os.environ['LC_ALL'] = 'C'
+    os.environ['PATH'] = '/usr/sbin:/usr/bin:/sbin:/bin'
+    os.umask(0o022)
+    # Serialize privileged install/repair/remove; does not pretend to lock the native updater.
+    with open('/run/bazzite-dx-portmaster.lock', 'w') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        source = Path(SOURCE)
+        if not source.exists():
+            source = Path(INTEGRATION) / 'resources'
+        installer = Installer(source=source)
+        getattr(installer, 'install' if args.action == 'repair' else args.action)()
+
+
+if __name__ == '__main__':
+    try:
+        main()
+    except (RuntimeError, OSError, subprocess.CalledProcessError) as error:
+        print(f'Portmaster operation failed: {error}', file=__import__('sys').stderr)
+        if isinstance(error, subprocess.CalledProcessError):
+            print(error.stdout, error.stderr, file=__import__('sys').stderr)
+        raise SystemExit(1)

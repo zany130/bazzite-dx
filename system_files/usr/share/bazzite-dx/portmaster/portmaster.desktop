@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Portmaster
+GenericName=Application Firewall
+Exec=/var/lib/bazzite-dx/portmaster/portmaster-ui --with-prompts --with-notifications
+TryExec=/var/lib/portmaster/bin/portmaster
+Icon=security-high
+StartupWMClass=portmaster
+Terminal=false
+Type=Application
+Categories=System;Security;

@@ -26,3 +26,4 @@ jobs:
           find build_files -name '*.sh' -print0 | xargs -0 shellcheck
           shellcheck -x build_files/build.sh
           shellcheck system_files/usr/share/ublue-os/user-setup.hooks.d/{11-vscode-extensions,12-refind-gui}.sh system_files/usr/share/ublue-os/privileged-setup.hooks.d/20-dx.sh
+          shellcheck system_files/usr/share/bazzite-dx/portmaster/{portmaster-ui,portmaster-path.sh}

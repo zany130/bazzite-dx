@@ -1,0 +1,7 @@
+{
+  "/etc/systemd/system/portmaster.service": "2a9c1071a1f854c6e9e1187a9491d39474780036816727d800da60d242e35c45",
+  "/var/lib/portmaster/bin/portmaster-ui-start.sh": "3cce12903b2cf8ef465d7cef67abb6b48bfc3a5190c842112d07ccd995f0b3f2",
+  "/var/lib/portmaster/bin/exports/share/applications/portmaster.desktop": "ce446a240f99fba5aabf3fca6a661741caf94a8cb0fbd5cf4ebee6c4d0c1fe3f",
+  "/etc/xdg/autostart/portmaster-autostart.desktop": "476bda60d20c2318703274f06709a57ab2f14f5b6430dc1318e3cfe7e6199c27",
+  "/etc/profile.d/zzz-portmaster-to-xdg-data-dirs.sh": "17394d513601688fcce401fc431cb6de5bc55149577f8c2a2025575f4764748a"
+}
