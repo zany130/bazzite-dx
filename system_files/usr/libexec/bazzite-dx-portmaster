@@ -22,7 +22,11 @@ LABELS = (DATA + '/bin/portmaster(-core)?', INTEGRATION + '/portmaster-ui')
 
 
 def digest(path):
-    return hashlib.sha256(path.read_bytes()).hexdigest()
+    checksum = hashlib.sha256()
+    with path.open('rb') as stream:
+        for chunk in iter(lambda: stream.read(1024 * 1024), b''):
+            checksum.update(chunk)
+    return checksum.hexdigest()
 
 
 def run(*args, check=True):
@@ -95,7 +99,67 @@ class Installer:
         self.trusted(self.base / 'backups')
         self.base.joinpath('backups').mkdir(parents=True, exist_ok=True)
         directory = Path(tempfile.mkdtemp(prefix='saved-', dir=self.base / 'backups'))
-        path.rename(directory / path.name)
+        destination = directory / path.name
+        try:
+            if path.is_dir():
+                shutil.copytree(path, destination, symlinks=True, copy_function=shutil.copy2)
+            else:
+                shutil.copy2(path, destination, follow_symlinks=False)
+        except BaseException:
+            if destination.is_dir():
+                shutil.rmtree(destination)
+            else:
+                destination.unlink(missing_ok=True)
+            directory.rmdir()
+            raise
+        if path.is_dir():
+            shutil.rmtree(path)
+        else:
+            path.unlink()
+
+    def binary_status(self, binary_dir, bootstrap):
+        migrations = {'exports', 'portmaster-ui-start.sh'}
+        entries = list(binary_dir.iterdir()) if binary_dir.exists() else []
+        entries = [entry for entry in entries
+                   if entry.name not in migrations and not entry.name.startswith('updatemgr')]
+        index_path = binary_dir / 'index.json'
+        if not entries:
+            return False
+        if not index_path.is_file():
+            raise RuntimeError('Existing Portmaster binaries have no index.json; their version is unknown. '
+                               'Preserving them: restore a valid index before repairing.')
+        try:
+            index = json.loads(index_path.read_text())
+            version = index['Version']
+            artifacts = index['Artifacts']
+        except (OSError, KeyError, TypeError, json.JSONDecodeError) as error:
+            raise RuntimeError('Existing Portmaster index.json is invalid; preserving binaries.') from error
+        if not isinstance(version, str) or not isinstance(artifacts, list):
+            raise RuntimeError('Existing Portmaster index.json is invalid; preserving binaries.')
+        hashes = {}
+        known = set()
+        for artifact in artifacts:
+            if not isinstance(artifact, dict):
+                raise RuntimeError('Existing Portmaster index.json is invalid; preserving binaries.')
+            name = artifact.get('Filename')
+            if not isinstance(name, str) or Path(name).name != name or name in ('.', '..'):
+                raise RuntimeError('Existing Portmaster index.json has an invalid filename.')
+            known.add(name)
+            if artifact.get('Platform', 'linux_amd64') == 'linux_amd64':
+                hashes[name] = artifact.get('SHA256')
+        unexpected = [entry.name for entry in entries
+                      if entry.name != 'index.json' and entry.name not in known]
+        if unexpected:
+            raise RuntimeError('Preserving unrecognized/customized files in updater-owned bin/: '
+                               + ', '.join(sorted(unexpected)))
+        required = ('portmaster-core', 'portmaster', 'assets.zip', 'portmaster.zip')
+        complete = all((binary_dir / name).is_file()
+                       and hashes.get(name) == digest(binary_dir / name) for name in required)
+        bootstrap_version = bootstrap['Version']
+        if not complete and version != bootstrap_version:
+            raise RuntimeError('Incomplete installation has a different or unverifiable version than the '
+                               'bootstrap. Preserving it: update the reviewed bootstrap before repairing binaries.')
+        return complete
 
     def selinux(self):
         # Only add our exact file expressions; never relabel databases/config as bin_t.
@@ -118,7 +182,9 @@ class Installer:
     def stage(self):
         """Download a reviewed, checksum-pinned bootstrap, never an updater in bin/."""
         manifest = json.loads((self.source / 'bootstrap.json').read_text())
-        temporary = tempfile.TemporaryDirectory(prefix='bootstrap-', dir=self.base)
+        binary_dir = self.path(DATA + '/bin')
+        binary_dir.parent.mkdir(parents=True, exist_ok=True)
+        temporary = tempfile.TemporaryDirectory(prefix='bootstrap-', dir=binary_dir.parent)
         try:
             target = Path(temporary.name)
             for artifact in manifest['Artifacts']:
@@ -167,21 +233,23 @@ class Installer:
                 self.trusted(entry)
                 if entry.is_dir() and entry.name != 'exports':
                     raise RuntimeError(f'Unexpected directory in updater-owned bin/: {entry}')
-        complete = all((binary_dir / name).is_file() for name in
-                       ('portmaster-core', 'portmaster', 'assets.zip', 'portmaster.zip', 'index.json'))
-        if not complete and (binary_dir / 'index.json').is_file():
-            installed = json.loads((binary_dir / 'index.json').read_text())['Version']
-            bootstrap = json.loads((self.source / 'bootstrap.json').read_text())['Version']
-            if installed != bootstrap:
-                raise RuntimeError('Incomplete installation has a different version than the bootstrap. '
-                                   'Preserving it: update the reviewed bootstrap before repairing binaries.')
+        bootstrap = json.loads((self.source / 'bootstrap.json').read_text())
+        complete = self.binary_status(binary_dir, bootstrap)
         staged = None if complete else self.stage()
+        if complete:
+            self.dependencies(binary_dir / 'portmaster')
         try:
-            if complete:
-                self.dependencies(binary_dir / 'portmaster')
             active = run('systemctl', 'is-active', '--quiet', 'portmaster.service', check=False).returncode == 0
             if self.path(UNIT).exists():
                 run('systemctl', 'stop', 'portmaster.service')
+            # Stopping the core quiesces its native updater; decide again before replacing bin/.
+            complete = self.binary_status(binary_dir, bootstrap)
+            if complete:
+                if staged:
+                    staged.cleanup()
+                    staged = None
+            elif staged is None:
+                staged = self.stage()
             # Preserve rather than delete old integration and bootstrap leftovers.
             if binary_dir.exists():
                 for entry in list(binary_dir.iterdir()):
@@ -274,6 +342,8 @@ class Installer:
             raise
 
     def disable(self):
+        if UNIT not in self.state.get('files', {}):
+            raise RuntimeError('Run install or repair first to migrate and back up any legacy installation.')
         self.managed(UNIT)
         self.managed(AUTOSTART)
         if self.path(UNIT).exists():
@@ -281,7 +351,18 @@ class Installer:
             core = self.path(DATA + '/bin/portmaster-core')
             self.trusted(core)
             if core.exists():
-                run(str(core), 'recover-iptables')
+                try:
+                    run(str(core), 'recover-iptables')
+                except (OSError, subprocess.CalledProcessError) as error:
+                    try:
+                        self.restore_firewalld()
+                    except (OSError, subprocess.CalledProcessError) as restore_error:
+                        raise RuntimeError(
+                            f'Portmaster iptables cleanup failed ({error}); stale rules may remain, '
+                            f'and restoring firewalld also failed ({restore_error}).') from error
+                    raise RuntimeError(
+                        f'Portmaster iptables cleanup failed ({error}); stale rules may remain. '
+                        'The recorded firewalld state was restored.') from error
         if self.path(AUTOSTART).exists():
             self.path(AUTOSTART).unlink()
         self.restore_firewalld()
@@ -293,7 +374,8 @@ class Installer:
         # Preflight every owned file before stopping protection or removing anything.
         for name in self.state.get('files', {}):
             self.managed(name)
-        self.disable()
+        if UNIT in self.state.get('files', {}):
+            self.disable()
         local = run('semanage', 'fcontext', '-l', '-C').stdout
         for expression in self.state.get('labels', []):
             if any(line.split() and line.split()[0] == expression for line in local.splitlines()):
@@ -303,11 +385,19 @@ class Installer:
                     if self.path(DATA + '/bin/' + name).exists()]
         if binaries:
             run('restorecon', '-F', *binaries)
+        recovery_files = {
+            name for name in self.state.get('files', {})
+            if name == INTEGRATION + '/manage' or name.startswith(INTEGRATION + '/resources/')
+        }
         for name in self.state.get('files', {}):
-            self.path(name).unlink(missing_ok=True)
+            if name not in recovery_files:
+                self.path(name).unlink(missing_ok=True)
         run('systemctl', 'daemon-reload')
-        self.statefile.unlink()
-        print('Integration removed. /var/lib/portmaster and integration backups retained.\n'
+        self.state['files'] = {name: self.state['files'][name] for name in recovery_files}
+        self.state.pop('labels', None)
+        self.save()
+        print('Integration removed. Recovery helper/resources and ownership ledger retained; '
+              '/var/lib/portmaster and backups are preserved.\n'
               'Close any running Portmaster UI. See PORTMASTER.md for deliberate data removal.')
 
 

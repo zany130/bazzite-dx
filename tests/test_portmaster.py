@@ -22,12 +22,17 @@ loader.exec_module(pm)
 
 class Lifecycle(unittest.TestCase):
     def setUp(self):
+        previous_umask = os.umask(0o022)
+        self.addCleanup(os.umask, previous_umask)
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name) / 'root'
         self.root.mkdir()
         self.source = self.root / 'usr/share/bazzite-dx/portmaster'
         shutil.copytree(SOURCE, self.source)
+        for path in (self.root, *self.root.rglob('*')):
+            if path.is_dir():
+                path.chmod(path.stat().st_mode & ~0o022)
         artifacts = []
         for name in ('portmaster', 'portmaster-core', 'assets.zip', 'portmaster.zip'):
             artifacts.append({'Filename': name, 'URLs': ['https://example.invalid/' + name],
@@ -88,6 +93,16 @@ class Lifecycle(unittest.TestCase):
         path.write_text(content)
         return path
 
+    def write_payloads(self, binary, version, contents=None):
+        contents = contents or {name: 'payload-' + name for name in
+                                ('portmaster', 'portmaster-core', 'assets.zip', 'portmaster.zip')}
+        artifacts = []
+        for name, content in contents.items():
+            (binary / name).write_text(content)
+            artifacts.append({'Filename': name, 'SHA256': hashlib.sha256(content.encode()).hexdigest()})
+        (binary / 'index.json').write_text(json.dumps({'Version': version, 'Artifacts': artifacts}))
+        return contents
+
     def test_install_repeat_does_not_enable_or_redownload(self):
         self.inst.install()
         config = self.file(pm.DATA + '/config.json', 'user config')
@@ -107,8 +122,10 @@ class Lifecycle(unittest.TestCase):
         # Model upstream's replacement of *every* file in the configured bin directory.
         for path in binary.iterdir():
             path.unlink()
-        for name in ('portmaster', 'portmaster-core', 'assets.zip', 'portmaster.zip', 'index.json'):
-            (binary / name).write_text('new version')
+        self.write_payloads(binary, '99.0.0', {
+            name: 'new version' for name in
+            ('portmaster', 'portmaster-core', 'assets.zip', 'portmaster.zip')
+        })
         self.inst.install()
         self.assertEqual((binary / 'portmaster-core').read_text(), 'new version')
         for name, contents in before.items():
@@ -230,6 +247,33 @@ class Lifecycle(unittest.TestCase):
             self.inst.install()
         self.assertFalse(any(a[:2] == ('systemctl', 'stop') for a in self.calls))
 
+    def test_corrupt_matching_bootstrap_payload_is_repaired(self):
+        self.inst.install()
+        binary = self.inst.path(pm.DATA + '/bin')
+        (binary / 'portmaster-core').write_text('corrupt')
+        self.calls.clear()
+        self.inst.install()
+        self.assertTrue(any(a[0] == 'curl' for a in self.calls))
+        expected = json.loads((self.source / 'bootstrap.json').read_text())
+        core = next(a for a in expected['Artifacts'] if a['Filename'] == 'portmaster-core')
+        self.assertEqual(pm.digest(binary / 'portmaster-core'), core['SHA256'])
+
+    def test_bootstrap_staging_uses_binary_destination_filesystem(self):
+        staged = self.inst.stage()
+        self.addCleanup(staged.cleanup)
+        self.assertEqual(Path(staged.name).parent, self.inst.path(pm.DATA + '/bin').parent)
+
+    def test_existing_missing_library_does_not_mutate_service_or_firewall(self):
+        self.inst.install()
+        self.inst.enable()
+        self.calls.clear()
+        self.fail = lambda a: a[0] == 'ldd'
+        with self.assertRaisesRegex(RuntimeError, 'libraries unavailable'):
+            self.inst.install()
+        self.assertIn('portmaster.service', self.active)
+        self.assertNotIn('firewalld.service', self.active)
+        self.assertFalse(any(a[0] == 'systemctl' for a in self.calls))
+
     def test_repair_restores_executable_modes(self):
         self.inst.install()
         core = self.inst.path(pm.DATA + '/bin/portmaster-core')
@@ -240,11 +284,115 @@ class Lifecycle(unittest.TestCase):
     def test_partial_newer_version_is_not_downgraded(self):
         self.inst.install()
         self.inst.path(pm.DATA + '/bin/portmaster-core').unlink()
-        self.inst.path(pm.DATA + '/bin/index.json').write_text('{"Version":"99.0.0"}')
+        bootstrap = json.loads((self.source / 'bootstrap.json').read_text())
+        self.inst.path(pm.DATA + '/bin/index.json').write_text(
+            json.dumps({'Version': '99.0.0', 'Artifacts': bootstrap['Artifacts']}))
         self.calls.clear()
-        with self.assertRaisesRegex(RuntimeError, 'different version'):
+        with self.assertRaisesRegex(RuntimeError, 'different or unverifiable version'):
             self.inst.install()
         self.assertFalse(any(a[0] == 'curl' for a in self.calls))
+
+    def test_existing_binaries_without_index_are_not_treated_as_fresh(self):
+        binary = self.inst.path(pm.DATA + '/bin')
+        binary.mkdir(parents=True)
+        (binary / 'portmaster-core').write_text('unknown version')
+        with self.assertRaisesRegex(RuntimeError, 'version is unknown'):
+            self.inst.install()
+        self.assertFalse(any(a[0] == 'curl' for a in self.calls))
+
+    def test_custom_bin_file_is_refused_before_download(self):
+        self.inst.install()
+        custom = self.file(pm.DATA + '/bin/custom-module', 'keep me')
+        self.calls.clear()
+        with self.assertRaisesRegex(RuntimeError, 'unrecognized/customized'):
+            self.inst.install()
+        self.assertEqual(custom.read_text(), 'keep me')
+        self.assertFalse(any(a[0] == 'curl' for a in self.calls))
+
+    def test_update_finishing_during_download_is_kept(self):
+        self.inst.install()
+        self.inst.enable()
+        binary = self.inst.path(pm.DATA + '/bin')
+        (binary / 'portmaster-core').write_text('damaged bootstrap payload')
+        updated = {name: 'new version' for name in
+                   ('portmaster', 'portmaster-core', 'assets.zip', 'portmaster.zip')}
+        original_command = self.command
+
+        def command(*args, check=True):
+            result = original_command(*args, check=check)
+            if args[0] == 'curl' and args[args.index('--output') + 1].endswith('portmaster.zip'):
+                self.write_payloads(binary, '99.0.0', updated)
+            return result
+
+        with patch.object(pm, 'run', side_effect=command):
+            self.inst.install()
+        self.assertEqual((binary / 'portmaster-core').read_text(), 'new version')
+        self.assertEqual(json.loads((binary / 'index.json').read_text())['Version'], '99.0.0')
+
+    def test_backup_copies_across_filesystems_before_removing_source(self):
+        source = self.file('/etc/legacy.conf', 'legacy data')
+        with patch.object(Path, 'rename', side_effect=OSError('EXDEV')):
+            self.inst.backup(source)
+        self.assertFalse(source.exists())
+        copies = list((self.inst.base / 'backups').glob('*/legacy.conf'))
+        self.assertEqual(copies[0].read_text(), 'legacy data')
+
+    def test_backup_copy_failure_keeps_original(self):
+        source = self.file('/etc/legacy.conf', 'legacy data')
+        with patch.object(pm.shutil, 'copy2', side_effect=OSError('copy failed')):
+            with self.assertRaisesRegex(OSError, 'copy failed'):
+                self.inst.backup(source)
+        self.assertEqual(source.read_text(), 'legacy data')
+        self.assertEqual(list((self.inst.base / 'backups').glob('saved-*')), [])
+
+    def test_disable_requires_legacy_migration(self):
+        legacy = json.loads((self.source / 'legacy.json').read_text())
+        name = next(name for name in legacy if name == pm.UNIT)
+        original = self.file(name, (self.source / 'portmaster.service').read_text())
+        with self.assertRaisesRegex(RuntimeError, 'Run install or repair first'):
+            self.inst.disable()
+        self.assertTrue(original.exists())
+
+    def test_cleanup_failure_restores_firewall_and_reports_stale_rule_risk(self):
+        self.inst.install()
+        self.inst.enable()
+        core = self.inst.path(pm.DATA + '/bin/portmaster-core')
+        self.fail = lambda a: a == (str(core), 'recover-iptables')
+        with self.assertRaisesRegex(RuntimeError, 'stale rules may remain'):
+            self.inst.disable()
+        self.assertIn('firewalld.service', self.active)
+        self.assertIn('firewalld.service', self.enabled)
+
+    def test_uninstall_daemon_reload_failure_keeps_recovery_kit(self):
+        self.inst.install()
+        helper = self.inst.base / 'manage'
+        resource = self.inst.base / 'resources' / 'legacy.json'
+        state = self.inst.statefile
+        self.fail = lambda a: a == ('systemctl', 'daemon-reload')
+        with self.assertRaises(subprocess.CalledProcessError):
+            self.inst.uninstall()
+        self.assertTrue(helper.is_file())
+        self.assertTrue(resource.is_file())
+        self.assertTrue(state.is_file())
+
+    def test_uninstall_unlink_failure_keeps_recovery_kit(self):
+        self.inst.install()
+        helper = self.inst.base / 'manage'
+        resource = self.inst.base / 'resources' / 'legacy.json'
+        state = self.inst.statefile
+        original_unlink = Path.unlink
+
+        def unlink(path, *args, **kwargs):
+            if path == self.inst.path(pm.UNIT):
+                raise OSError('injected unlink failure')
+            return original_unlink(path, *args, **kwargs)
+
+        with patch.object(Path, 'unlink', unlink):
+            with self.assertRaisesRegex(OSError, 'unlink failure'):
+                self.inst.uninstall()
+        self.assertTrue(helper.is_file())
+        self.assertTrue(resource.is_file())
+        self.assertTrue(state.is_file())
 
     def test_repair_label_failure_restores_firewall_and_can_retry(self):
         self.inst.install()

@@ -15,7 +15,8 @@ Run `ujust install-portmaster` for the action picker, or use these explicit acti
 - `ujust install-portmaster enable`: confirm the firewall switch, enable/start Portmaster,
   and install background UI autostart for subsequent desktop logins.
 - `ujust install-portmaster disable`: stop/disable Portmaster, recover its iptables chains,
-  remove UI autostart, and restore the firewalld state recorded at enable time.
+  remove UI autostart, and restore the firewalld state recorded at enable time. Run repair
+  first to migrate a legacy Gist installation.
 - `ujust install-portmaster status`: view service status without administrator privileges.
 - `ujust install-portmaster uninstall`: disable and remove owned integration and SELinux
   rules; **retain settings, databases, downloaded binaries/intelligence, and backups**.
@@ -75,9 +76,11 @@ use Portmaster's own trust store. No downloaded bootstrap utility is run as root
 
 Maintainers should review a newer upstream manifest and update the whole file when refreshing
 the bootstrap, then verify the four checksums and repeat VM acceptance. Do not edit individual
-fields in a signed index. Healthy existing installations are never downgraded to the bootstrap.
-An incomplete installation whose index has a different version is refused until a matching
-reviewed bootstrap is available, instead of risking an implicit downgrade against newer data.
+fields in a signed index. Healthy existing installations are verified against the payload hashes
+in their installed index and are never downgraded to the bootstrap. An incomplete installation
+whose index has a different version, or whose existing binaries have no valid index, is refused
+until a matching reviewed bootstrap is available, instead of risking an implicit downgrade against
+newer data.
 
 Python 3, curl, systemd, `ldd`, `semanage`, and `restorecon` are required. The desktop binary needs
 GTK3/WebKitGTK 4.1 and its dependencies. The installer checks actual UI library resolution before
@@ -96,12 +99,13 @@ Existing systemd drop-ins are retained. RPM-managed or v1 installations are not 
 
 Repair moves `bin/exports`, `bin/portmaster-ui-start.sh`, and leftover `updatemgr*` files into
 private backup directories outside the updater area; it does not delete their contents.
-Other unexpected directories, symlinked privileged paths, or writable/untrusted executable
+Other unexpected files/directories, symlinked privileged paths, or writable/untrusted executable
 paths cause a failure. Standard data/configuration stays in place. A corrupt/missing payload
-with a matching bootstrap version is downloaded into a separate directory before the old binary
-directory is backed up and replaced. Checksum/download/library failures leave a running service
-untouched. Mutations are serialized against other installer invocations, and the core is stopped
-before changing its files so it cannot race repair with a native update.
+with a matching bootstrap version is downloaded into a separate directory on the destination
+filesystem before the old binary directory is backed up and replaced. Checksum/download/library
+failures leave a running service untouched. Mutations are serialized against other installer
+invocations; after staging, the core is stopped and the installed index/payloads are checked again
+before replacement so an update that completed during download is preserved.
 
 Failures after the service stops are reported and keep repair state/backups. If this integration
 previously took over firewalld, it restores that recorded state on repair failure. This is not a
@@ -119,8 +123,10 @@ Data persists, but compatibility with arbitrary distributions is not promised. R
 from a later DX image updates the integration templates without replacing native-updated binaries.
 
 Uninstall closes the service, not every user's UI process: close the UI yourself. It removes only
-recognized integration files/rules; modified files are refused before any removal. Empty integration
-directories and private backups may remain. After successful uninstall and exporting anything you
+recognized integration files/rules; modified files are refused before any removal. The management
+helper, its resource templates, and a reduced ownership ledger remain available for retrying
+removal after a rebase. Empty integration directories and private backups may remain. After
+successful uninstall and exporting anything you
 want to keep, **deliberately deleting** `/var/lib/portmaster` removes profiles, history, settings,
 intel, and binaries; deleting `/var/lib/bazzite-dx/portmaster` also deletes recovery backups.
 Neither deletion is automatic. User-owned desktop shortcuts/autostart overrides are not edited.
