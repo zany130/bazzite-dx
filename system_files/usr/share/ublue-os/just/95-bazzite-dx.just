@@ -137,3 +137,31 @@ toggle-gamemode ACTION="":
     fi
 
     echo -e "${green}${bold}Success:${normal} Default session set to $target_pretty. Reboot or log out to apply."
+
+# Optional Portmaster: install/repair, enable/disable, status, or uninstall (keep data)
+[group('applications')]
+install-portmaster $ACTION="prompt":
+    #!/usr/bin/bash
+    set -euo pipefail
+    source /usr/lib/ujust/ujust.sh
+    # ACTION is exported by just (the $ACTION recipe parameter).
+    # shellcheck disable=SC2153
+    action="${ACTION,,}"
+    if [[ "$action" == prompt ]]; then
+        action=$(ugum choose install repair enable disable status uninstall cancel)
+    fi
+    case "$action" in
+        cancel) exit 0 ;;
+        help)
+            echo 'Usage: ujust install-portmaster [install|repair|enable|disable|status|uninstall]'
+            echo 'Install leaves a new service disabled. Repair preserves existing activation.'
+            echo 'Enable replaces firewalld until disable/uninstall. Uninstall keeps settings and backups.'
+            exit 0 ;;
+        status) exec /usr/libexec/bazzite-dx-portmaster status ;;
+        install|repair|enable|disable|uninstall) ;;
+        *) echo "Unknown action: $action" >&2; exit 1 ;;
+    esac
+    if [[ "$action" == enable ]]; then
+        ugum confirm 'Enable Portmaster at boot and replace firewalld? Disable/uninstall will restore its recorded state.' || exit 0
+    fi
+    sudo /usr/libexec/bazzite-dx-portmaster "$action"
