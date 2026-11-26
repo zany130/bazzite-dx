@@ -110,6 +110,7 @@ class BuildLayoutTest(unittest.TestCase):
         for dep, version in [
             ("zany130/cockpit-probe", "COCKPIT_HARDWARE_PROBE_VERSION"),
             ("zany130/cockpit-diagnostics", "COCKPIT_DIAGNOSTICS_VERSION"),
+            ("NGxID18/Cockpit-BtrfsManager", "COCKPIT_BTRFS_MANAGER_VERSION"),
             ("realmcuser/cockpit-nspawn", "COCKPIT_NSPAWN_VERSION"),
         ]:
             self.assertRegex(

@@ -39,7 +39,7 @@ Alongside the Bazzite Deck base, this image adds the following tools and customi
 | Development and debugging | Android tools, Flatpak Builder, ccache, git-subtree, BCC, bpftrace, bpftop, sysprof, and tiptop |
 | Containers | Docker CE with Compose and Buildx, Podman Machine, and Podman TUI |
 | Virtual machines | QEMU/KVM, libvirt, native virt-manager, guestfs-tools, virtiofsd, swtpm, and AArch64 user-mode emulation |
-| System administration | Cockpit, machine and OSTree integration, plus file sharing, file navigation, benchmarking, hardware probe, diagnostics, and nspawn extensions |
+| System administration | Cockpit, machine and OSTree integration, plus file sharing, file navigation, benchmarking, hardware probe, diagnostics, Btrfs management, and nspawn extensions |
 | Compute | Ramalama and ROCm HIP, OpenCL, and diagnostic tools |
 | Remote access and backups | Waypipe, Mosh, rclone, restic, and Nmap |
 | Game and desktop streaming | web console, and scripting runner |
