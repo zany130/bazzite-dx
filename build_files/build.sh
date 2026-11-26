@@ -33,6 +33,11 @@ COCKPIT_DIAGNOSTICS_VERSION="V1.0"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_DIAGNOSTICS_VERSION changes.
 COCKPIT_DIAGNOSTICS_SHA256="809ad753057820d23406c57d7c5c67fd711e1262a7f5188a26240cf573bffcf1"
 
+# renovate: datasource=github-releases depName=NGxID18/Cockpit-BtrfsManager versioning=loose
+COCKPIT_BTRFS_MANAGER_VERSION="v1.0.1"
+# SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_BTRFS_MANAGER_VERSION changes.
+COCKPIT_BTRFS_MANAGER_SHA256="d0794a6f2a7be39327fd452fbe5b125b399598032d5e6b96bdc2eaf063cf5031"
+
 # renovate: datasource=github-releases depName=realmcuser/cockpit-nspawn versioning=loose
 COCKPIT_NSPAWN_VERSION="v1.0.0-83"
 # SHA256 is NOT auto-updated by Renovate; update manually when COCKPIT_NSPAWN_VERSION changes.

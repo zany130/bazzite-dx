@@ -34,6 +34,13 @@ install_pinned_rpm \
     "${COCKPIT_DIAGNOSTICS_RPM}" \
     "https://github.com/zany130/cockpit-diagnostics/releases/download/${COCKPIT_DIAGNOSTICS_VERSION}/${COCKPIT_DIAGNOSTICS_RPM}"
 
+COCKPIT_BTRFS_MANAGER_RELEASE_VERSION="$(loose_rpm_version "${COCKPIT_BTRFS_MANAGER_VERSION}")"
+COCKPIT_BTRFS_MANAGER_RPM="cockpit-btrfs-manager-${COCKPIT_BTRFS_MANAGER_RELEASE_VERSION}-1.noarch.rpm"
+install_pinned_rpm \
+    "${COCKPIT_BTRFS_MANAGER_SHA256}" \
+    "${COCKPIT_BTRFS_MANAGER_RPM}" \
+    "https://github.com/NGxID18/Cockpit-BtrfsManager/releases/download/${COCKPIT_BTRFS_MANAGER_VERSION}/${COCKPIT_BTRFS_MANAGER_RPM}"
+
 # cockpit-nspawn publishes the same RPM under more than one release tag and
 # is unpacked with cpio rather than installed as a package, so it does not
 # use install_pinned_rpm.

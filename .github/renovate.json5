@@ -46,6 +46,7 @@
       matchPackageNames: [
         'zany130/cockpit-probe',
         'zany130/cockpit-diagnostics',
+        'NGxID18/Cockpit-BtrfsManager',
       ],
       extractVersion: '^[Vv]?(?<version>\\d+\\.\\d+(?:\\.\\d+)?)$',
     },

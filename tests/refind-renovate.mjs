@@ -24,7 +24,7 @@ const text = readFileSync(new URL('../build_files/build.sh', import.meta.url), '
 const file = 'build_files/build.sh';
 const all = config.customManagers.flatMap((m) => extractPackageFile(text, file, m)?.deps ?? []);
 assert.equal(all.filter((d) => d.depName === 'jlobue10/rEFInd_GUI').length, 1);
-for (const name of ['zany130/cockpit-probe', 'zany130/cockpit-diagnostics', 'realmcuser/cockpit-nspawn']) {
+for (const name of ['zany130/cockpit-probe', 'zany130/cockpit-diagnostics', 'NGxID18/Cockpit-BtrfsManager', 'realmcuser/cockpit-nspawn']) {
   assert.equal(all.filter((d) => d.depName === name).length, 1);
 }
 const manager = config.customManagers.find((m) => m.datasourceTemplate === 'github-release-attachments');
